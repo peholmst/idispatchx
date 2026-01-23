@@ -10,7 +10,8 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "anthropic.claude-code"
+                "anthropic.claude-code",
+                "jebbs.plantuml"
             ],
             "settings": {
                 "editor.formatOnSave": true,
