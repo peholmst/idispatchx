@@ -2,6 +2,8 @@
 
 This document describes the system context of iDispatchX: what it is, who uses it and which external entities it interacts with.
 
+A C4 context diagram is provided in: [Context.puml](Context.puml)
+
 
 ## What is iDispatchX?
 

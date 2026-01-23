@@ -1,0 +1,28 @@
+@startuml iDispatchX_System_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title iDispatchX - System Context
+
+Person(dispatcher, "Dispatcher", "Handles emergency calls and dispatches units")
+Person(unit, "Unit", "Field personnel interacting via unit container")
+Person(station, "Station", "Personnel notified via station container")
+Person(admin, "Administrator", "Manages system configuration and data")
+
+System(iDispatchX, "iDispatchX", "Computer-Aided Dispatch system for emergency services")
+
+System_Ext(nls, "National Land Survey of Finland", "Map rasters and address data")
+System_Ext(smtp, "SMTP Server", "Email notifications")
+System_Ext(sms, "SMS Gateway", "SMS notifications")
+System_Ext(oidc, "OIDC Provider", "User authentication")
+
+Rel(dispatcher, iDispatchX, "Uses")
+Rel(unit, iDispatchX, "Receives alerts and updates status")
+Rel(station, iDispatchX, "Receives alerts")
+Rel(admin, iDispatchX, "Administers")
+
+Rel(iDispatchX, nls, "Imports map and address data", "Offline / batch")
+Rel(iDispatchX, smtp, "Sends email alerts")
+Rel(iDispatchX, sms, "Sends SMS alerts")
+Rel(iDispatchX, oidc, "Delegates authentication to")
+
+@enduml
