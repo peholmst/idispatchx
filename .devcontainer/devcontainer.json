@@ -38,5 +38,7 @@
         "CLAUDE_CONFIG_DIR": "/home/node/.claude"
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
-    "workspaceFolder": "/workspace"
+    "workspaceFolder": "/workspace",
+    "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
+    "waitFor": "postStartCommand"
 }
