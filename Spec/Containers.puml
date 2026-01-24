@@ -1,0 +1,64 @@
+@startuml iDispatchX_Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title iDispatchX - Containers
+
+Person(dispatcher, "Dispatcher", "Handles emergency calls and dispatches units")
+Person(unit, "Unit", "Field personnel interacting via unit container")
+Person(station, "Station", "Personnel notified via station container")
+Person(admin, "Administrator", "Manages system configuration and data")
+
+System_Boundary(idispatchx, "iDispatchX") {
+    Container(cadServer, "CAD Server", "Java", "Operational state and orchestration")
+    ContainerDb(cadWAL, "CAD WAL", "Filesystem", "Write-ahead log for operational events")
+    ContainerDb(cadArchive, "CAD Archive", "PostgreSQL", "Holds archived operational data")
+
+    Container(gisServer, "GIS Server", "Java", "Geospatial services")
+    ContainerDb(gisDatabase, "GIS DB", "PostGIS", "Holds address information")
+    ContainerDb(gisFileSystem, "GIS FS", "Filesystem", "Holds raster tiles")
+    Container(gisDataImporter, "GIS Data Importer", "Java/CLI", "Imports offline geospatial data")
+
+    Container(dispatcherClient, "Dispatcher Client", "SPA/PWA", "Dispatcher UI")
+    Container(mobileUnitClient, "Mobile Unit Client", "Android", "Unit UI")
+    Container(stationAlertClient, "Station Alert Client", "RaspberryPi", "Station alert controller")
+    Container(adminClient, "Admin Client", "SPA", "Admin UI")
+}
+
+System_Ext(nls, "National Land Survey of Finland", "Map rasters and address data")
+System_Ext(smtp, "SMTP Server", "Email notifications")
+System_Ext(sms, "SMS Gateway", "SMS notifications")
+System_Ext(oidc, "OIDC Provider", "User authentication")
+
+Rel(dispatcher, dispatcherClient, "Uses", "Browser")
+Rel(station, stationAlertClient, "Uses", "Displays and speakers")
+Rel(unit, mobileUnitClient, "Uses", "Android device")
+Rel(admin, adminClient, "Uses", "Browser")
+
+Rel(dispatcherClient, cadServer, "Uses", "REST / WS")
+Rel(dispatcherClient, gisServer, "Uses", "REST")
+Rel(dispatcherClient, oidc, "Authenticates")
+
+Rel(stationAlertClient, cadServer, "Uses", "WS")
+Rel(stationAlertClient, oidc, "Authenticates")
+
+Rel(mobileUnitClient, cadServer, "Uses", "WS")
+Rel(mobileUnitClient, oidc, "Authenticates")
+
+Rel(adminClient, cadServer, "Uses", "REST")
+Rel(adminClient, oidc, "Authenticates")
+
+Rel(cadServer, cadWAL, "Reads/Writes", "FS")
+Rel(cadServer, cadArchive, "Writes", "JDBC")
+Rel(cadServer, oidc, "Verifies tokens")
+Rel(cadServer, smtp, "Uses", "SMTP")
+Rel(cadServer, sms, "Uses", "REST")
+
+Rel(gisServer, gisDatabase, "Reads", "JDBC")
+Rel(gisServer, gisFileSystem, "Reads", "FS")
+Rel(gisServer, oidc, "Verifies tokens")
+
+Rel(gisDataImporter, gisDatabase, "Writes", "JDBC")
+Rel(gisDataImporter, gisFileSystem, "Writes", "FS")
+Rel(gisDataImporter, nls, "Parses data from")
+
+@enduml
