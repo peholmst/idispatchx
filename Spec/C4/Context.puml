@@ -4,6 +4,7 @@
 title iDispatchX - System Context
 
 Person(dispatcher, "Dispatcher", "Handles emergency calls and dispatches units")
+Person(observer, "Observer", "Views operational data with read-only access")
 Person(unit, "Unit", "Field personnel interacting via unit container")
 Person(station, "Station", "Personnel notified via station container")
 Person(admin, "Administrator", "Manages system configuration and data")
@@ -16,6 +17,7 @@ System_Ext(sms, "SMS Gateway", "SMS notifications")
 System_Ext(oidc, "OIDC Provider", "User authentication")
 
 Rel(dispatcher, iDispatchX, "Uses")
+Rel(observer, iDispatchX, "Views")
 Rel(unit, iDispatchX, "Receives alerts and updates status")
 Rel(station, iDispatchX, "Receives alerts")
 Rel(admin, iDispatchX, "Administers")

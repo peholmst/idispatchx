@@ -35,13 +35,13 @@ Rel(unit, mobileUnitClient, "Uses", "Android device")
 Rel(admin, adminClient, "Uses", "Browser")
 
 Rel(dispatcherClient, cadServer, "Uses", "REST / WS")
-Rel(dispatcherClient, gisServer, "Uses", "REST")
+Rel(dispatcherClient, gisServer, "Uses", "WMTS / REST")
 Rel(dispatcherClient, oidc, "Authenticates")
 
 Rel(stationAlertClient, cadServer, "Uses", "WS")
 Rel(stationAlertClient, oidc, "Authenticates")
 
-Rel(mobileUnitClient, cadServer, "Uses", "WS")
+Rel(mobileUnitClient, cadServer, "Uses", "REST / WS")
 Rel(mobileUnitClient, oidc, "Authenticates")
 
 Rel(adminClient, cadServer, "Uses", "REST")
@@ -59,6 +59,6 @@ Rel(gisServer, oidc, "Verifies tokens")
 
 Rel(gisDataImporter, gisDatabase, "Writes", "JDBC")
 Rel(gisDataImporter, gisFileSystem, "Writes", "FS")
-Rel(gisDataImporter, nls, "Parses data from")
+Rel(gisDataImporter, nls, "Parses manually downloaded files from")
 
 @enduml

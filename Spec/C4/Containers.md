@@ -4,7 +4,7 @@ This document describes the containers (deployment units) of iDispatchX, which t
 
 A C4 container diagram is provided in: [Containers.puml](Containers.puml)
 
-All iDispatchX containers are built *without a framework* by design. Instead, they utilize the newest features of their respective programming languages and platform APIs to the fullest. This keeps the number of external library dependencies small and the code easier to maintain in the future, as there is no need to upgrade from one framework version to the next.
+All iDispatchX containers are built *without a framework* by design, with the exception of Mobile Unit Client where platform constraints require it. Instead, they utilize the newest features of their respective programming languages and platform APIs to the fullest. This keeps the number of external library dependencies small and the code easier to maintain in the future, as there is no need to upgrade from one framework version to the next.
 
 
 ## Container Responsibility Summary

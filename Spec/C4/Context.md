@@ -25,6 +25,7 @@ iDispatchX does not include command and control or incident reporting functional
 iDispatchX is used by the following actors:
 
 * *Dispatchers* use the system to enter information about calls and incidents, geocode addresses, dispatch units and track their status and location on a map.
+* *Observers* use the system to view calls, incidents, and unit status with read-only access. They use the same client as dispatchers but cannot make changes.
 * *Units* (field personnel or vehicle-mounted systems) use the system to receive alerts and other messages, and update their status and location.
 * *Stations* (building-mounted systems) use the system to receive alerts and notify the personnel in quarters.
 * *Administrators* use the system to manage users, stations, units, unit types, and incident types. They also use the system to update the map and address information databases.
