@@ -32,3 +32,9 @@ The specifications for this system are located in the `Spec` directory and are a
   * non-functional requirements.
 * Degraded modes described in the NFRs are intentional and must not be “fixed” by adding hidden dependencies or shortcuts.
 * When in doubt, ask for clarification instead of making assumptions.
+
+## Git
+
+* You are sandboxed without direct access to the remote repository. 
+* Never try to push or pull.
+* Assume the branch is always up to date with the origin.
