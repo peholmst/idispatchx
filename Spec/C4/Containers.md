@@ -87,7 +87,7 @@ Dispatcher Client is a dual-monitor, progressive single page web application use
 #### Tech Stack
 
 * Programming language: *TypeScript*
-* Map component: *Leaflet or OpenLayers* (must support CRS-3067)
+* Map component: *Leaflet or OpenLayers* (must support EPSG:3067)
 * Dependency management: *NPM*
 * Build system: *Vite*
 
