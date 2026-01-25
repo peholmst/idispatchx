@@ -24,7 +24,7 @@
 * Dispatcher enters the call details.
 * If the coordinates of the call are known, System checks if there are other active calls or incidents in the vicinity of the coordinates and shows them on the screen.
 * If Dispatcher determines the call concerns an already reported incident, Dispatcher attaches the call to the incident for future reference, and ends the call.
-* If Dispatcher determines the call concerns a new incident, Dispatcher creates a new incident (separate use case), attaches the call to the incident and continues the call in the context of the incident.
+* If Dispatcher determines the call concerns a new incident, Dispatcher creates a new incident ([separate use case](UC-Create-Incident-From-Call.md)), attaches the call to the incident and continues the call in the context of the incident.
 * If Dispatcher determines the call does not require a response, Dispatcher enters the reason for not taking further action, and ends the call.
 * If the call is not attached to an active incident, System schedules the call for archival at the next convenient time.
 
