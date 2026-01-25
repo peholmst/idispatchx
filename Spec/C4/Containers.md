@@ -25,7 +25,7 @@ The containers of iDispatchX follow common communication patterns:
 
 * Commands (changing state): REST
 * Events and subscriptions: WebSocket
-* Authentication: OIDC -> JWT
+* Authentication: OIDC → JWT
 
 All servers have support for OIDC back channel logout so that administrators can immediately disconnect compromised clients from the system. Servers must also be aware of the fact that access tokens might still be valid even though the OIDC session might have ended or the account suspended, and take appropriate actions to deny access.
 
