@@ -7,6 +7,21 @@
         "--cap-add=NET_ADMIN",
         "--cap-add=NET_RAW"
     ],
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": "true",
+            "username": "vscode",
+            "userUid": "1000",
+            "userGid": "1000",
+            "upgradePackages": "true"
+        },
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "moby": false
+        },
+        "ghcr.io/devcontainers/features/java:1": {
+            "jdkDistro": "tem"
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
@@ -30,17 +45,14 @@
             }
         }
     },
-    "remoteUser": "node",
+    "remoteUser": "vscode",
     "mounts": [
-        "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-        "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume"
+        "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
     ],
     "containerEnv": {
-        "NODE_OPTIONS": "--max-old-space-size=4096",
-        "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
-    "postStartCommand": "sudo /usr/local/bin/init-firewall.sh",
-    "waitFor": "postStartCommand"
+    "privileged": false
 }
