@@ -11,7 +11,8 @@
         "vscode": {
             "extensions": [
                 "anthropic.claude-code",
-                "jebbs.plantuml"
+                "jebbs.plantuml",
+                "streetsidesoftware.code-spell-checker"
             ],
             "settings": {
                 "editor.formatOnSave": true,
