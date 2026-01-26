@@ -38,6 +38,14 @@ Use case specifications grouped by primary actor.
 * Capture human decision-making and system responses
 * Must reference relevant NFRs when behavior is constrained
 
+### `ADR/`
+Architectural Decision Records.
+
+* Document significant architectural decisions and their rationale
+* Capture the *why* behind design choices when multiple alternatives exist
+* Are historical records; superseded decisions get new ADRs rather than modifications
+* Do **not** override NFRs or C4 specifications
+
 ## Authority and Precedence
 
 In case of conflicts between specifications, the following order of precedence applies:
