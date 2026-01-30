@@ -4,6 +4,16 @@ This directory contains the domain concepts of iDispatchX.
 
 Domain concepts describe the *meaning*, *structure*, and *invariants* of the information handled by the system. They define what the system knows, not how it is implemented or presented.
 
+## Files
+
+| File | Description |
+|------|-------------|
+| [Call.md](Call.md) | Emergency call record with caller info, location, state |
+| [Incident.md](Incident.md) | Incident requiring emergency response (stub) |
+| [Location.md](Location.md) | Location variants: exact address, intersection, freeform, coordinates |
+| [MultilingualName.md](MultilingualName.md) | Name with multiple language versions (Finnish, Swedish, Sami) |
+| [Municipality.md](Municipality.md) | Finnish municipality with code and multilingual name |
+
 ## Purpose
 
 The domain model serves as the authoritative source for:

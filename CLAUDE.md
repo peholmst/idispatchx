@@ -66,6 +66,14 @@ Use cases must:
 
 Refer to `Spec/UseCases/README.md` for usage rules.
 
+## Maintaining Specification Indexes
+
+Each specification directory has a README with a file index table. When you add, rename, or remove a specification file:
+
+* Update the corresponding README's file index table
+* Keep entries alphabetically sorted within each section
+* Include a brief description (one line) for each file
+
 ## General Rules for AI Agents
 
 * Specifications are authoritative. Do not invent functionality, behavior, or requirements.

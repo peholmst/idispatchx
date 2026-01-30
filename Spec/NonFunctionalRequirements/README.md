@@ -4,6 +4,16 @@ This directory contains the Non-Functional Requirements (NFRs) of iDispatchX.
 
 Non-Functional Requirements define system-wide constraints and quality attributes such as availability, security, performance, maintainability, and internationalization.
 
+## Files
+
+| File | Description |
+|------|-------------|
+| [Availability.md](Availability.md) | HA configuration, failover, degraded modes, recovery objectives |
+| [Internationalization.md](Internationalization.md) | Finland-specific geospatial data, coordinate systems, language support |
+| [Maintainability.md](Maintainability.md) | 15-year lifespan guidelines, dependencies, documentation standards |
+| [Performance.md](Performance.md) | UI response times, alert delivery, cross-dispatcher sync |
+| [Security.md](Security.md) | Authentication, authorization, session handling, data access control |
+
 ## Authority
 
 Non-Functional Requirements are **authoritative**.
