@@ -5,6 +5,18 @@ This directory contains Architectural Decision Records (ADRs) for iDispatchX.
 ADRs document significant architectural decisions, their context, the chosen solution,
 and the alternatives that were considered.
 
+## Files
+
+| File | Description |
+|------|-------------|
+| [ADR-0001-oidc-provider-neutrality.md](ADR-0001-oidc-provider-neutrality.md) | OIDC provider independence for production portability |
+| [ADR-0002-docker-compose-development-ha.md](ADR-0002-docker-compose-development-ha.md) | Docker Compose for local HA-like development setup |
+| [ADR-0003-partial-ha-testing.md](ADR-0003-partial-ha-testing.md) | Simulating component failures for HA testing |
+| [ADR-0004-shared-reverse-proxy.md](ADR-0004-shared-reverse-proxy.md) | Single reverse proxy for CAD and GIS servers |
+| [ADR-0005-session-state-during-failover.md](ADR-0005-session-state-during-failover.md) | WebSocket session handling during failover |
+| [ADR-0006-wal-format-and-semantics.md](ADR-0006-wal-format-and-semantics.md) | Write-Ahead Log format, replay, and purging |
+| [ADR-0007-domain-primitives.md](ADR-0007-domain-primitives.md) | Mandates domain primitives for type-safe validation |
+
 ## Purpose
 
 ADRs exist to capture *why* the system is designed the way it is, especially when:
