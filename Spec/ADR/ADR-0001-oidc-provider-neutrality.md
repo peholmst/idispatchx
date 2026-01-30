@@ -34,3 +34,9 @@ must be cached or managed internally by iDispatchX.
 * The system remains portable across OIDC providers
 * Additional internal handling may be required for user metadata
 * Provider-specific extensions are explicitly avoided
+
+## Cross-References
+
+* [C4 Context](../C4/Context.md) — OIDC provider as external system (line 48)
+* [NFR Security](../NonFunctionalRequirements/Security.md) — Centralized identity provider requirement
+* [NFR Maintainability](../NonFunctionalRequirements/Maintainability.md) — 15-year lifespan goal (vendor lock-in avoidance)
