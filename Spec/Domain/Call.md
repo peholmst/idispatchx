@@ -79,6 +79,27 @@ If an incident was created based on a call and the call is later determined to b
 
 Changing the `outcome` does not automatically affect any linked incident.
 
+### Incident Linkage Mutability
+
+A call may be linked to an incident by setting `incident_id`. This occurs when:
+* A new incident is created in response to the call (`outcome = incident_created`)
+* The call is attached to an existing incident (`outcome = attached_to_incident`)
+
+Once a call transitions to `ended`, the `incident_id` becomes immutable.
+
+#### Detaching a Call
+
+A call may be detached from an incident while the call is in state `active`, but only if the call was attached to an existing incident (`outcome = attached_to_incident`).
+
+If the incident was created in response to the call (`outcome = incident_created`), the call cannot be detached.
+
+When a call is detached:
+* `incident_id` is cleared
+* `outcome` is cleared
+* An automatic [`IncidentLogEntry`](Incident.md) is created on the incident
+
+The dispatcher may then set a new outcome before ending the call.
+
 
 ## Lifecycle
 

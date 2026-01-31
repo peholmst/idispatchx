@@ -115,6 +115,7 @@ An automatic `IncidentLogEntry` is created when any of the following changes occ
 * `location` change
 * `description` change
 * A call is linked to the incident
+* A call is detached from the incident
 * An `IncidentUnit` is added
 
 Automatic log entries are immutable and must not be edited or deleted.
