@@ -47,6 +47,10 @@ C4 specifications do **not**:
   * Visual representations of the C4 context and container views
   * Diagrams are authoritative representations of the corresponding documents
 
+* `Reviews/`
+  * Contains architecture and technology review documents
+  * Reviews are informational, not authoritative
+
 ## Authority and Constraints
 
 C4 specifications are **architecturally authoritative**.
