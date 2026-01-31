@@ -156,6 +156,18 @@ When a unit transitions to `available_over_radio` while still assigned to an inc
 
 This records the timestamp when the unit reported operational availability, while preserving the assignment for administrative purposes (responsibility tracking, logging, incident closure coordination).
 
+### Staffing
+
+The `staffing` attribute represents the unit's current declared crew composition.
+
+When a `UnitStatus` is created for a new unit, `staffing` is initially unset. Units do not have default staffing.
+
+Staffing may be set or changed by:
+* The unit itself (via the Mobile Unit Client)
+* A dispatcher
+
+When `staffing` is changed, `staffing_changed_at` is updated to reflect the timestamp of the change.
+
 ### Authority and Control
 
 The following states may be set directly by the dispatcher or the unit:
