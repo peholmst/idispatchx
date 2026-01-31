@@ -85,7 +85,7 @@ The unit is at the scene of an incident
 * `en_route` → `available_over_radio` | `available_at_station` | `on_scene` | `unavailable`
 * `on_scene` → `available_over_radio` | `available_at_station` | `unavailable`
 
-When a unit is first added to the system, its initial state is `unavailable`.
+When a unit is first added to the system, its initial state is `unavailable` and `state_changed_at` is set to the timestamp when the UnitStatus is created.
 
 ## Semantics
 
