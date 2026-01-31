@@ -75,6 +75,10 @@ reflecting the unit’s progress. `IncidentUnit` records are append-only; reassi
 Staffing and unit timestamps are copied from [`UnitStatus` updates](UnitStatus.md).
 No inference or interpolation of timestamps is permitted.
 
+When the system creates automatic intermediate state transitions in `UnitStatus` (see [Dispatch and Immediate Transitions](UnitStatus.md#dispatch-and-immediate-transitions)), each intermediate transition is a `UnitStatus` update and records its corresponding timestamp in `IncidentUnit`. For example, if a dispatcher marks a unit directly as `en_route`, the system transitions through `dispatched`, and both `unit_dispatched` and `unit_en_route` are recorded.
+
+If a state is not transitioned through (neither explicitly nor via automatic intermediate transitions), its corresponding timestamp is left empty.
+
 An incident may contain multiple `IncidentUnit` entries referencing the same unit, provided their assignment intervals do not overlap.
 
 
