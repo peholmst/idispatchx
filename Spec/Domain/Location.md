@@ -79,6 +79,7 @@ An approximate location described relative to a known reference.
 
 ## Validation Rules
 
+* `address_number` has a maximum length of 30 characters.
 * `additional_details` has a maximum length of 1000 characters.
 * `coordinates` must conform to [Coordinate Precision and Bounds](../NonFunctionalRequirements/Internationalization.md#coordinate-precision-and-bounds):
   * Maximum 6 decimal places
