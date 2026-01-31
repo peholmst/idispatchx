@@ -191,6 +191,19 @@ An incident progresses through the following states:
 An incident in state `ended` must never transition to any other state.
 If further action is required, a new incident must be created.
 
+### State Transition Authorization
+
+**Automatic transitions:**
+
+* The system automatically transitions an incident to `active` when a unit is dispatched to the incident.
+
+**Manual transitions:**
+
+* A dispatcher may manually transition an incident to `queued`, `active`, or `monitored`, subject to the allowed state transitions.
+* A dispatcher ends an incident by issuing an explicit end command, which transitions the incident to `ended`.
+
+All state transitions, whether automatic or manual, must respect the allowed state transitions and invariants (e.g., all units must be unassigned before transitioning to `ended`).
+
 ## Archival
 
 Archival removes an incident and its associated data from live operational storage.
