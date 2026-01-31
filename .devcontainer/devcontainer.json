@@ -20,7 +20,9 @@
         },
         "ghcr.io/devcontainers/features/java:1": {
             "jdkDistro": "tem"
-        }
+        },
+        "ghcr.io/devcontainers/features/rust:1": {},
+        "ghcr.io/devcontainers/features/node:1": {}
     },
     "customizations": {
         "vscode": {
@@ -47,7 +49,8 @@
     },
     "remoteUser": "vscode",
     "mounts": [
-        "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
+        "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
+        "source=m2-${devcontainerId},target=/home/vscode/.m2,type=volume"
     ],
     "containerEnv": {
         "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
