@@ -50,6 +50,8 @@ Represents the participation of a unit in an incident. This is a historical reco
   * Type: [Staffing](Staffing.md)
 * `unit_assigned_at` (required)
   * Type: Timestamp (UTC)
+* `unit_unassigned_at` (optional)
+  * Type: Timestamp (UTC)
 * `unit_dispatched` (optional)
   * Type: Timestamp (UTC)
 * `unit_en_route` (optional)
@@ -61,11 +63,19 @@ Represents the participation of a unit in an incident. This is a historical reco
 * `unit_back_at_station` (optional)
   * Type: Timestamp (UTC)
 
-An `IncidentUnit` is created when a unit is assigned to an incident.
+An `IncidentUnit` represents a single, continuous assignment of a unit to an incident. It is created when a unit is assigned to an incident.
+
 Dispatch (`unit_dispatched`) may occur later or not at all.
+
+When a unit is unassigned from an incident, `unit_unassigned_at` is set and the `IncidentUnit` record becomes immutable. Setting `unit_unassigned_at` corresponds to clearing `assigned_to_incident_id` in `UnitStatus` for that assignment.
+
+Before `unit_unassigned_at` is set, an `IncidentUnit` may receive additional timestamps
+reflecting the unit’s progress. `IncidentUnit` records are append-only; reassignment results in a new record.
 
 Staffing and unit timestamps are copied from [`UnitStatus` updates](UnitStatus.md).
 No inference or interpolation of timestamps is permitted.
+
+An incident may contain multiple `IncidentUnit` entries referencing the same unit, provided their assignment intervals do not overlap.
 
 
 ### IncidentLogEntry
@@ -113,6 +123,11 @@ Priority `N` incidents:
 Unit timestamps:
 
 * For a given `IncidentUnit`, timestamps must be monotonically non-decreasing when present and applicable (e.g. `unit_assigned_at ≤ unit_dispatched ≤ unit_en_route ≤ ...`)
+  * No timestamp may precede `unit_assigned_at`.
+  * If `unit_unassigned_at` is set, it must be greater than or equal to all other timestamps in the same IncidentUnit.
+
+An incident must not transition to `ended` while there are any `IncidentUnit` records
+with an unset `unit_unassigned_at` attribute.
 
 ## Validation Rules
 
