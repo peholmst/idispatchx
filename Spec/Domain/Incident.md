@@ -79,6 +79,8 @@ When the system creates automatic intermediate state transitions in `UnitStatus`
 
 If a state is not transitioned through (neither explicitly nor via automatic intermediate transitions), its corresponding timestamp is left empty.
 
+`unit_back_at_station` is set when the unit transitions to `available_at_station`. Immediately after this timestamp is recorded, automatic unassignment occurs and `unit_unassigned_at` is set. These two timestamps may have the same value.
+
 An incident may contain multiple `IncidentUnit` entries referencing the same unit, provided their assignment intervals do not overlap.
 
 
