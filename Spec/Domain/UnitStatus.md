@@ -118,21 +118,43 @@ Setting `assigned_to_incident_id` and `assigned_to_incident_at` represents the s
 
 ### Unassignment Semantics
 
-A unit remains assigned to an incident until it either:
-* transitions to `available_at_station`, or
-* transitions to `unavailable`.
+A unit is automatically unassigned from an incident when it transitions to:
+* `available_at_station`, or
+* `unavailable`.
 
-When this occurs:
+When automatic unassignment occurs:
 
 * `assigned_to_incident_id` is cleared in Unit Status
 * `unit_unassigned_at` is set on the corresponding [`IncidentUnit`](Incident.md)
 
-This marks the end of the unit’s operational responsibility for that incident.
+This marks the end of the unit's operational responsibility for that incident.
 
-A unit can be unassigned by a dispatcher before it has been dispatched. In this case, the system performs the following automatic transitions:
+#### Explicit Unassignment
 
-* `assigned_radio` → `available_over_radio`
-* `assigned_station` → `available_at_station`
+A dispatcher may explicitly unassign a unit from an incident before dispatch. This is permitted only when the unit is in one of the following states:
+* `assigned_radio`
+* `assigned_station`
+
+This allows a dispatcher to correct an accidental assignment before the unit has been dispatched.
+
+When explicit unassignment is performed:
+
+* If the unit is in `assigned_radio`, the system transitions it to `available_over_radio`
+* If the unit is in `assigned_station`, the system transitions it to `available_at_station`
+* `assigned_to_incident_id` is cleared in Unit Status
+* `unit_unassigned_at` is set on the corresponding [`IncidentUnit`](Incident.md)
+
+For reassignment to another incident, see [Reassignment Between Incidents](#reassignment-between-incidents).
+
+#### Reporting Availability
+
+When a unit transitions to `available_over_radio` while still assigned to an incident:
+
+* `unit_available` is set on the corresponding [`IncidentUnit`](Incident.md)
+* The unit remains assigned to the incident
+* `assigned_to_incident_id` is NOT cleared
+
+This records the timestamp when the unit reported operational availability, while preserving the assignment for administrative purposes (responsibility tracking, logging, incident closure coordination).
 
 ### Authority and Control
 
@@ -173,7 +195,14 @@ In these cases, the system performs the following automatic transitions:
 
 A unit may be transferred from one incident to another.
 
-In such cases, the unit first transitions to `available_over_radio`, after which it may be assigned, dispatched, and tracked as part of the new incident.
+From the dispatcher's perspective, reassignment is a **single operation**. The dispatcher selects the unit and the target incident, and optionally specifies the desired state (`dispatched`, `en_route`, or `on_scene`).
+
+The system performs the following steps automatically:
+
+1. Transitions the unit to `available_over_radio` (setting `unit_available` on the current [`IncidentUnit`](Incident.md))
+2. Clears `assigned_to_incident_id` and sets `unit_unassigned_at` on the current [`IncidentUnit`](Incident.md)
+3. Assigns the unit to the new incident (setting `assigned_to_incident_id` and creating a new [`IncidentUnit`](Incident.md))
+4. Transitions the unit to the dispatcher-specified state (or `assigned_radio` if no state was specified)
 
 Each assignment interval is represented by a separate [`IncidentUnit`](Incident.md) record.
 
