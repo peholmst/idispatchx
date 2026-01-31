@@ -230,3 +230,7 @@ At the time of archival, there are no live references to the incident:
 * `Call.incident_id` references are archived together with the incident
 
 Archival is asynchronous and the scheduling mechanism is outside the scope of the domain model.
+
+## Relevant NFRs
+
+* [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md) - all timestamps must be stored in UTC
