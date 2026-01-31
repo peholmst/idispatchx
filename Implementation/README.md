@@ -9,11 +9,14 @@ For authoritative container specifications, see [../Spec/C4/Containers.md](../Sp
 
 ```
 Implementation/
+├── .mvn/wrapper/                  # Maven wrapper configuration
 ├── servers/                       # Backend services
 ├── clients/                       # Frontend applications
 ├── tools/                         # CLI tools
 ├── shared/                        # Shared code libraries
 ├── deploy/                        # Deployment configurations
+├── mvnw                           # Maven wrapper script (Unix)
+├── mvnw.cmd                       # Maven wrapper script (Windows)
 ├── pom.xml                        # Parent POM for Java modules
 └── README.md                      # This file
 ```
@@ -141,23 +144,25 @@ Deployment configurations and scripts.
 
 All build commands assume you are in the `Implementation/` directory.
 
+The repository includes wrapper scripts for Maven and Gradle that download the correct version automatically. No global installation of these tools is required.
+
 ### All Java Modules
 
 ```bash
-mvn clean package
+./mvnw clean package
 ```
 
 ### Individual Java Modules
 
 ```bash
 # CAD Server with dependencies
-mvn -pl servers/cad-server -am package
+./mvnw -pl servers/cad-server -am package
 
 # GIS Server with dependencies
-mvn -pl servers/gis-server -am package
+./mvnw -pl servers/gis-server -am package
 
 # GIS Data Importer with dependencies
-mvn -pl tools/gis-data-importer -am package
+./mvnw -pl tools/gis-data-importer -am package
 ```
 
 ### TypeScript Clients
