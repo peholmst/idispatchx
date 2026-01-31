@@ -40,6 +40,10 @@ Always required:
 * `receiving_dispatcher`
 * `call_started`
 
+Uniqueness:
+
+* `id` must be unique
+
 Conditionally required:
 
 * `call_ended` when `state = ended`
