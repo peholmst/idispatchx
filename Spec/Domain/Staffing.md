@@ -14,17 +14,17 @@ Staffing may change over time and is always interpreted in the context in which 
 
 ## Attributes
 
-* `officers` (required)
+* `officers` (optional)
   * Type: Integer
   * Default value: `0`
-* `subofficers` (required)
+* `subofficers` (optional)
   * Type: Integer
   * Default value: `0`
-* `crew` (required)
+* `crew` (optional)
   * Type: Integer
   * Default value: `0`
 
-All attributes are explicit counts. Absence of personnel is represented by zero, not by missing values.
+All attributes are explicit counts. If not provided, each attribute defaults to zero.
 
 ## Invariants
 
