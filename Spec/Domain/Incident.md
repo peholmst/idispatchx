@@ -190,3 +190,30 @@ An incident progresses through the following states:
 
 An incident in state `ended` must never transition to any other state.
 If further action is required, a new incident must be created.
+
+## Archival
+
+Archival removes an incident and its associated data from live operational storage.
+
+### Preconditions
+
+An incident may only be archived when:
+
+* The incident is in state `ended`
+* All `IncidentUnit` records have `unit_unassigned_at` set (guaranteed by the transition to `ended`)
+
+### Archival Scope
+
+When an incident is archived:
+
+* The incident record is archived
+* All linked [`Call`](Call.md) records are archived together with the incident
+* All `IncidentUnit` records are archived together with the incident
+* All `IncidentLogEntry` records are archived together with the incident
+
+At the time of archival, there are no live references to the incident:
+
+* `UnitStatus.assigned_to_incident_id` cannot reference the incident (units must be unassigned before `ended`)
+* `Call.incident_id` references are archived together with the incident
+
+Archival is asynchronous and the scheduling mechanism is outside the scope of the domain model.

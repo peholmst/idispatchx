@@ -113,6 +113,13 @@ State transitions:
 * `active` → `ended`
 
 
+## Archival
+
+Calls linked to an incident are archived together with the incident. See [Incident Archival](Incident.md#archival).
+
+Calls not linked to any incident (e.g., `outcome = caller_advised | hoax | accidental | other_no_actions_taken`) are archived independently based on retention policies outside the scope of the domain model.
+
+
 ## Relevant NFRs
 
 * [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md) - timestamps must be stored in UTC
