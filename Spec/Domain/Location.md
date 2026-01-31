@@ -80,8 +80,12 @@ An approximate location described relative to a known reference.
 ## Validation Rules
 
 * `additional_details` has a maximum length of 1000 characters.
+* `coordinates` must conform to [Coordinate Precision and Bounds](../NonFunctionalRequirements/Internationalization.md#coordinate-precision-and-bounds):
+  * Maximum 6 decimal places
+  * Latitude: 58.84° to 70.09°
+  * Longitude: 19.08° to 31.59°
 
 
 ## Relevant NFRs
 
-* [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md) - coordinates must be stored and processed in EPSG:4326
+* [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md) - coordinates must be stored and processed in EPSG:4326, with defined precision and bounds

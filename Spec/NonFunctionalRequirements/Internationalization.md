@@ -15,6 +15,16 @@ iDispatchX is designed to be used in Finland only. This implies the following:
   * The system must convert geocoded addresses from EPSG:3067 to EPSG:4326.
 * Coordinates are always presented in user interfaces in EPSG:4326. Clients must not assume or expose any other CRS.
 
+### Coordinate Precision and Bounds
+
+All EPSG:4326 coordinates in the system must adhere to the following rules:
+
+* **Precision:** 6 decimal places maximum. This provides approximately 0.1 meter precision, which is sufficient for operational purposes.
+* **Bounds:** Coordinates must fall within the WGS84 bounds of the EPSG:3067 coverage area (Finland):
+  * Latitude: 58.84° to 70.09° N
+  * Longitude: 19.08° to 31.59° E
+* Coordinates outside these bounds must be rejected by the system.
+
 ## Terminology and Language
 
 * Domain terminology is based on regulations, processes, and procedures of the Finnish emergency services.

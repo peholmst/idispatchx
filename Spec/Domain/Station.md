@@ -78,8 +78,9 @@ Stations are valid only within the Finnish operational context.
 
 ## Relevant Non-Functional Requirements
 
-* [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md)  
-Station names must preserve all provided language variants and must not be inferred or translated automatically.
+* [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md)
+  * Station names must preserve all provided language variants and must not be inferred or translated automatically
+  * Station location coordinates must conform to defined precision and bounds
 
 ## Notes
 

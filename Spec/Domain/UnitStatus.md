@@ -211,3 +211,14 @@ Each assignment interval is represented by a separate [`IncidentUnit`](Incident.
 An incident must not transition to ended while any [`IncidentUnit`](Incident.md) exists without `unit_unassigned_at` set.
 
 Unit Status provides the operational signals that determine when assignment ends, but **incident closure rules are enforced at the [Incident](Incident.md) level**.
+
+## Validation Rules
+
+* `coordinates` must conform to [Coordinate Precision and Bounds](../NonFunctionalRequirements/Internationalization.md#coordinate-precision-and-bounds):
+  * Maximum 6 decimal places
+  * Latitude: 58.84° to 70.09°
+  * Longitude: 19.08° to 31.59°
+
+## Relevant NFRs
+
+* [NFR: Internationalization](../NonFunctionalRequirements/Internationalization.md) - timestamps must be stored in UTC, coordinates must be in EPSG:4326 with defined precision and bounds
