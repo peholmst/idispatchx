@@ -89,16 +89,39 @@ An incident may contain multiple `IncidentUnit` entries referencing the same uni
 * `log_timestamp` (required)
   * Type: Timestamp (UTC)
   * Reflects the time the entry was recorded by the system and must not be supplied or overridden manually
-* `dispatcher` (required)
+* `dispatcher` (optional)
   * Type: User ID
+  * Set to the dispatcher's user ID if the change resulted from dispatcher input
+  * Empty if the change was triggered by the system
 * `entry_type` (required)
   * Type: `manual` | `automatic`
+
+For `manual` entries:
 * `description` (required)
   * Type: Text
 
-All changes to an `Incident` result in an automatic `IncidentLogEntry`.
+For `automatic` entries:
+* `change_data` (required)
+  * Type: Structured data (implementation detail, e.g., JSON)
+  * Contains the type of change and the new value
+
+#### Automatic Log Entry Triggers
+
+An automatic `IncidentLogEntry` is created when any of the following changes occur:
+
+* `state` change
+* `incident_type` change
+* `incident_priority` change
+* `location` change
+* `description` change
+* A call is linked to the incident
+* An `IncidentUnit` is added
+
 Automatic log entries are immutable and must not be edited or deleted.
-Dispatchers may append manual log entries.
+
+#### Manual Log Entries
+
+Dispatchers may append manual log entries with free-form text descriptions.
 
 
 ## Invariants
