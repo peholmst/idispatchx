@@ -14,9 +14,9 @@ A Location is exactly one of the following variants:
 An exact street address or address point. An address point is a named official address without an actual road, for instance on a small but permanently inhabited island. Address points can have numbers.
 
 * `municipality` (required)
-  * Type: [Municipality](Municipality.md)
+  * Type: Embedded [Municipality](Municipality.md)
 * `address_name` (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 * `address_number` (optional)
   * Type: Text
 * `coordinates` (optional)
@@ -29,11 +29,11 @@ An exact street address or address point. An address point is a named official a
 An intersection between two named roads.
 
 * `municipality` (required)
-  * Type: [Municipality](Municipality.md)
+  * Type: Embedded [Municipality](Municipality.md)
 * `road_name_a` (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 * `road_name_b` (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 * `coordinates` (optional)
   * Type: Decimal degrees (EPSG:4326)
 * `additional_details` (optional)
@@ -44,9 +44,9 @@ An intersection between two named roads.
 A named geographical place such as an island, village, or landmark.
 
 * `municipality` (required)
-  * Type: [Municipality](Municipality.md)
+  * Type: Embedded [Municipality](Municipality.md)
 * `name` (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 * `coordinates` (optional)
   * Type: Decimal degrees (EPSG:4326)
 * `additional_details` (optional)
@@ -57,9 +57,9 @@ A named geographical place such as an island, village, or landmark.
 An approximate location described relative to a known reference.
 
 * `municipality` (required)
-  * Type: [Municipality](Municipality.md)
+  * Type: Embedded [Municipality](Municipality.md)
 * `reference_place` (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 * `coordinates` (optional)
   * Type: Decimal degrees (EPSG:4326)
   * Approximate coordinates derived from the relative description

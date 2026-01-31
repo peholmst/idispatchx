@@ -17,9 +17,9 @@ Stations do not represent organizational hierarchy, staffing levels, or operatio
 * `state`: (required)
   * Type: `active` | `inactive`
 * `name`: (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 * `location`: (required)
-  * Type: [Location](Location.md)
+  * Type: Embedded [Location](Location.md)
 
 ## Invariants
 

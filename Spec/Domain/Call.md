@@ -20,7 +20,7 @@ A call is a record of a call that has been received and processed by the emergen
 * `caller_phone_number`
   * Type: Text
 * `location`
-  * Type: [Location](Location.md)
+  * Type: Embedded [Location](Location.md)
 * `description`
   * Type: Text
 * `outcome`

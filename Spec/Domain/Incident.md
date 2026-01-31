@@ -24,7 +24,7 @@ An incident may exist without any associated calls and may be created proactivel
 * `incident_priority` (optional)
   * Type: `A` | `B` | `C` | `D` | `N`
 * `location` (optional)
-  * Type: [Location](Location.md)
+  * Type: Embedded [Location](Location.md)
 * `description` (optional)
   * Type: Text
   * Free-form human description; may be empty or missing
@@ -47,7 +47,7 @@ Represents the participation of a unit in an incident. This is a historical reco
 * `unit` (required)
   * Type: Reference to [Unit](Unit.md) 
 * `unit_staffing` (optional)
-  * Type: [Staffing](Staffing.md)
+  * Type: Embedded [Staffing](Staffing.md)
 * `unit_assigned_at` (required)
   * Type: Timestamp (UTC)
 * `unit_unassigned_at` (optional)

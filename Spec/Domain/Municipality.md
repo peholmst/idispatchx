@@ -9,7 +9,7 @@ The official list of municipalities is typically updated once a year. The curren
 * `code`
   * Type: Fixed-length numeric string (3 digits)
 * `name`
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 
 
 ## Invariants

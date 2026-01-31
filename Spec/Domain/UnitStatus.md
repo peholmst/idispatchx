@@ -19,7 +19,7 @@ Changes to Unit Status may be of interest to other parts of the system and shoul
 * `state_changed_at` (required)
   * Type: Timestamp (UTC)
 * `staffing` (optional)
-  * Type: [`Staffing`](Staffing.md)
+  * Type: Embedded [`Staffing`](Staffing.md)
 * `staffing_changed_at` (optional)
   * Type: Timestamp (UTC)
 * `coordinates` (optional)

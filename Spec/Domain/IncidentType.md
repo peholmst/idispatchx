@@ -15,7 +15,7 @@ Incident Types do not represent actions taken, units dispatched, or outcomes ach
 * `code` (required)
   * Type: Alphanumeric string
 * `description` (required)
-  * Type: [MultilingualName](MultilingualName.md)
+  * Type: Embedded [MultilingualName](MultilingualName.md)
 
 ## Invariants
 
