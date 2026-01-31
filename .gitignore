@@ -2,6 +2,14 @@
 
 # Build output
 **/target/
+**/build/
+**/dist/
+
+# Dependencies
+**/node_modules/
+
+# Gradle
+**/.gradle/
 
 # Wrapper JARs (downloaded automatically)
 .mvn/wrapper/maven-wrapper.jar
