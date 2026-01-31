@@ -66,6 +66,36 @@ Use cases must:
 
 Refer to `Spec/UseCases/README.md` for usage rules.
 
+---
+
+### `Implementation/` – Container Implementations
+
+The `Implementation/` directory contains the actual code for all iDispatchX containers.
+
+Refer to `Implementation/README.md` for the complete directory structure, namespaces, tech stacks, and build instructions.
+
+#### Key Subdirectories
+
+| Directory        | Contents                                         |
+|------------------|--------------------------------------------------|
+| `servers/`       | Backend services (CAD Server, GIS Server)        |
+| `clients/`       | Frontend applications (Dispatcher, Admin, Mobile, Station Alert) |
+| `tools/`         | CLI utilities (GIS Data Importer)                |
+| `shared/`        | Shared libraries (Java Common)                   |
+| `deploy/`        | Deployment configurations (Docker, Kubernetes)   |
+
+#### Implementation Rules for AI Agents
+
+* **Specifications are authoritative.** All implementation code must conform to the specifications in `Spec/`.
+* Before implementing a feature:
+  1. Read the relevant NFRs
+  2. Read the relevant C4 specifications
+  3. Read the relevant domain concepts
+  4. Read the specific use case being implemented
+* Follow the namespace conventions defined in `Implementation/README.md`.
+* Use the tech stack specified for each container; do not introduce alternative frameworks or libraries without an ADR.
+* Build commands are documented in `Implementation/README.md`.
+
 ## Maintaining Specification Indexes
 
 Each specification directory has a README with a file index table. When you add, rename, or remove a specification file:
