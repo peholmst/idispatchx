@@ -31,6 +31,14 @@ All attributes are explicit counts. If not provided, each attribute defaults to 
 * No attribute may be negative
 * The sum of all attributes may be zero (e.g. unmanned unit or unknown staffing)
 
+## Validation Rules
+
+* `officers` must not exceed 99
+* `subofficers` must not exceed 99
+* `crew` must not exceed 999
+
+These limits are per-unit values. Aggregate staffing across an incident (sum of all assigned units) may exceed these limits.
+
 ## Semantics
 
 Staffing represents **declared staffing**, not verified presence.
