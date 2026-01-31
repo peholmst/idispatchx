@@ -151,6 +151,8 @@ Mobile Unit Client is the only iDispatchX application that is built on top of a 
 
 * Programming language: Kotlin
 * Framework: Android Jetpack
+* HTTP and WebSocket: *OkHttp*
+* OIDC support: *AppAuth-Android*
 * Build system and dependencies: Gradle
 
 Additional libraries may be added as needed, if the benefit the library provides is greater than the cost of keeping it up to date.
