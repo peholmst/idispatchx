@@ -1,11 +1,21 @@
 {
     "cSpell.words": [
+        "Dockerfiles",
         "EPSG",
         "EUREF",
         "Geospatial",
+        "Geotools",
+        "gradlew",
         "Helsingfors",
+        "idispatchx",
+        "Javalin",
+        "Jetpack",
+        "minifb",
+        "pkhapps",
         "Postconditions",
         "reconnections",
-        "Sami"
+        "Sami",
+        "tungstenite",
+        "WMTS"
     ]
 }
