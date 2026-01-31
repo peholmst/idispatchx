@@ -19,7 +19,9 @@
             "moby": false
         },
         "ghcr.io/devcontainers/features/java:1": {
-            "jdkDistro": "tem"
+            "jdkDistro": "tem",
+            "version": "25",
+            "additionalVersions": "21"
         },
         "ghcr.io/devcontainers/features/rust:1": {},
         "ghcr.io/devcontainers/features/node:1": {}
@@ -29,7 +31,8 @@
             "extensions": [
                 "anthropic.claude-code",
                 "jebbs.plantuml",
-                "streetsidesoftware.code-spell-checker"
+                "streetsidesoftware.code-spell-checker",
+                "fill-labs.dependi"
             ],
             "settings": {
                 "editor.formatOnSave": true,
@@ -43,7 +46,8 @@
                     "zsh": {
                         "path": "zsh"
                     }
-                }
+                },
+                "java.import.gradle.java.home": "/usr/local/sdkman/candidates/java/21.0.9-tem"
             }
         }
     },
