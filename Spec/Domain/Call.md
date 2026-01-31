@@ -67,6 +67,19 @@ Optional:
 * `outcome_rationale` has a maximum length of 1000 characters
 
 
+## Semantics
+
+### Outcome Mutability
+
+The `outcome` attribute may be set and changed while a call is in state `active`. It must be set before the call can transition to `ended`.
+
+Once the call transitions to `ended`, the `outcome` becomes immutable.
+
+If an incident was created based on a call and the call is later determined to be a hoax or accidental, the dispatcher may change the `outcome` to `hoax` or `accidental` while the call is still active. The `incident_id` remains set, preserving the link to the created incident. The dispatcher must take manual action to end the created incident (recalling dispatched units, etc.).
+
+Changing the `outcome` does not automatically affect any linked incident.
+
+
 ## Lifecycle
 
 A call progresses through the following states:
