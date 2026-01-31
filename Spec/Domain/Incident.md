@@ -117,7 +117,8 @@ Priority `N` incidents:
 
 * Must not represent real-world emergencies
 * Must not be linked to external calls originating from the public
-* May omit `location` but not `incident_type` (operational orders have their own incident type codes)
+* Must have an `incident_type` (operational orders have their own incident type codes)
+* Must have a `location`; if not otherwise applicable, the assigned unit's station location may be used
 * Are still subject to full logging and lifecycle rules
 
 Unit timestamps:
