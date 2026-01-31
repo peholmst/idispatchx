@@ -9,10 +9,15 @@ Domain concepts describe the *meaning*, *structure*, and *invariants* of the inf
 | File | Description |
 |------|-------------|
 | [Call.md](Call.md) | Emergency call record with caller info, location, state |
-| [Incident.md](Incident.md) | Incident requiring emergency response (stub) |
+| [Incident.md](Incident.md) | Incident requiring emergency response, with units, log entries, lifecycle |
+| [IncidentType.md](IncidentType.md) | Incident classification by nature and nominal scale |
 | [Location.md](Location.md) | Location variants: exact address, intersection, freeform, coordinates |
 | [MultilingualName.md](MultilingualName.md) | Name with multiple language versions (Finnish, Swedish, Sami) |
 | [Municipality.md](Municipality.md) | Finnish municipality with code and multilingual name |
+| [Staffing.md](Staffing.md) | Declared crew composition by role category (officers, subofficers, crew) |
+| [Station.md](Station.md) | Physical location where units are quartered |
+| [Unit.md](Unit.md) | Operational resource with identity and station assignment |
+| [UnitStatus.md](UnitStatus.md) | Current operational state and incident assignment of a unit |
 
 ## Purpose
 
