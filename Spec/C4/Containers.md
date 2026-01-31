@@ -88,6 +88,7 @@ Dispatcher Client is a dual-monitor, progressive single page web application use
 
 * Programming language: *TypeScript*
 * Map component: *OpenLayers*
+* UI components: *Vanilla Web Components*
 * Dependency management: *NPM*
 * Build system: *Vite*
 
@@ -172,6 +173,7 @@ Admin Client is a single-monitor, progressive single page web application used b
 #### Tech Stack
 
 * Programming language: *TypeScript*
+* UI components: *Vanilla Web Components*
 * Dependency management: *NPM*
 * Build system: *Vite*
 
