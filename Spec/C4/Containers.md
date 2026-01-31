@@ -119,12 +119,14 @@ Station Alert Client paints its UI directly to the framebuffer, removing the nee
 
 #### Tech Stack
 
-* Programming language: *To be decided*
-* Graphics library: *To be decided*
-* WebSocket client support: *To be decided*
-* OIDC client support: *To be decided*
+* Programming language: *Rust*
+* Graphics library: *minifb + embedded-graphics*
+* WebSocket client: *tokio-tungstenite*
+* OIDC client: *openidconnect-rs*
 * Text-to-speech: *Piper TTS*
-* Build system: *To be decided*
+* Build system: *Cargo + cross*
+
+This tech stack is provisional and may be revised once the station alert use cases are fully specified.
 
 #### Container Integrations
 
