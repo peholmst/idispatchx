@@ -109,7 +109,9 @@ A unit may be assigned to an incident only when its state is:
 * `available_over_radio`
 * `available_at_station`
 
-When this happens, the system performs the following automatic transitions:
+If a unit in state `available_over_radio` is still assigned to an incident (see [Reporting Availability](#reporting-availability)) and is assigned to a new incident, the system automatically unassigns it from the original incident before completing the new assignment. This is functionally equivalent to reassignment, but does not require the dispatcher to issue an explicit reassign command.
+
+When assignment occurs, the system performs the following automatic transitions:
 
 * `available_over_radio` → `assigned_radio`
 * `available_at_station` → `assigned_station`
