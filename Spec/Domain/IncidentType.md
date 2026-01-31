@@ -22,7 +22,7 @@ Incident Types do not represent actions taken, units dispatched, or outcomes ach
 * `code` is authoritative and must be used for identification, referencing, and filtering
 * `code` must be unique within the Incident Type reference set
 * `code` must consist only of characters `0–9`, `a–z`, and `A–Z`
-* `code` must not exceed 1000 characters
+* `code` must not exceed 10 characters
 
 ## Semantics
 
