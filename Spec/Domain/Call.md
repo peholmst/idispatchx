@@ -65,9 +65,19 @@ Optional:
 * `caller_name` has a maximum length of 100 characters
 * `description` has a maximum length of 1000 characters
 * `outcome_rationale` has a maximum length of 1000 characters
+* When attaching a call to an incident (`outcome = attached_to_incident`), the incident must not be in state `ended`
 
 
 ## Semantics
+
+### Outcome Values
+
+* `incident_created` — A new incident was created in response to this call
+* `attached_to_incident` — The call concerns an incident that was already reported. The call is valid but may not result in immediate action from the dispatcher unless the caller provided new relevant information.
+* `caller_advised` — The caller was given advice; no incident was created
+* `hoax` — The call was determined to be a hoax
+* `accidental` — The call was accidental (e.g., pocket dial)
+* `other_no_actions_taken` — No actions were taken for other reasons
 
 ### Outcome Mutability
 
