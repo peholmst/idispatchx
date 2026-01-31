@@ -5,6 +5,24 @@
 
 ---
 
+## Resolution Status
+
+**All issues resolved:** 2026-01-31
+
+| Issue | Resolution |
+|-------|------------|
+| I1 | Reduced IncidentType code maximum length to 10 characters |
+| I2 | Changed Staffing attributes to optional with default zero |
+| U1 | Documented unit_back_at_station trigger conditions in Incident.md |
+| U2 | Clarified automatic unassignment when available unit is assigned to new incident |
+| U3 | Documented that IncidentUnit timestamp updates do not trigger log entries |
+| M1 | Added uniqueness constraint for Call.id |
+| M2 | Added maximum values for Staffing attributes (99/99/999) |
+| M3 | Added maximum length (30) for address_number |
+| M4 | Clarified initial state_changed_at value for new units |
+
+---
+
 ## Summary
 
 This review identifies inconsistencies, contradictions, unclear specifications, and missing information across all domain concepts following the resolution of issues from the previous review.
