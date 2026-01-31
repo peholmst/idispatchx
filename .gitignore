@@ -1,1 +1,8 @@
 .claude/
+
+# Build output
+**/target/
+
+# Wrapper JARs (downloaded automatically)
+.mvn/wrapper/maven-wrapper.jar
+**/gradle/wrapper/gradle-wrapper.jar
