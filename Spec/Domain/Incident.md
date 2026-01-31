@@ -1,0 +1,148 @@
+# Domain Concept: Incident
+
+An incident is a record of a real or perceived event that requires, or may require, attention from the authorities (e.g. fire, accident, medical emergency, crime in progress).
+
+Incidents with priority `N` do not represent real-world incidents, but intra-agency operational orders (e.g. unit relocation, standby coverage, or area transfer).
+
+An incident may exist without any associated calls and may be created proactively by a dispatcher.
+
+
+## Attributes
+
+* `id` (required)
+  * Type: Nano ID
+* `state` (required)
+  * Type: `new` | `queued` | `active` | `monitored` | `ended`
+* `incident_created` (required)
+  * Type: Timestamp (UTC)
+* `incident_ended` (optional)
+  * Type: Timestamp (UTC)
+  * Must only be set when `state → ended`
+  * Immutable once set
+* `incident_type` (optional)
+  * Type: Reference to [IncidentType](IncidentType.md)
+* `incident_priority` (optional)
+  * Type: `A` | `B` | `C` | `D` | `N`
+* `location` (optional)
+  * Type: [Location](Location.md)
+* `description` (optional)
+  * Type: Text
+  * Free-form human description; may be empty or missing
+* `calls[0..n]` 
+  * Type: Reference to [Call](Call.md), mapped by `Call.incident_id`
+  * Calls may be linked to an incident at any time during its lifecycle. After an incident has ended, linking additional calls is not permitted because the incident may no longer be available in the system.
+* `units[0..n]`
+  * Type: IncidentUnit (see below)
+* `logEntries[0..n]`
+  * Type: IncidentLogEntry (see below)
+
+
+
+### IncidentUnit
+
+Represents the participation of a unit in an incident. This is a historical record and does not represent current unit state.
+
+* `id` (required)
+  * Type: Nano ID
+* `unit` (required)
+  * Type: Reference to [Unit](Unit.md) 
+* `unit_staffing` (optional)
+  * Type: [Staffing](Staffing.md)
+* `unit_assigned_at` (required)
+  * Type: Timestamp (UTC)
+* `unit_dispatched` (optional)
+  * Type: Timestamp (UTC)
+* `unit_en_route` (optional)
+  * Type: Timestamp (UTC)
+* `unit_on_scene` (optional)
+  * Type: Timestamp (UTC)
+* `unit_available` (optional)
+  * Type: Timestamp (UTC)
+* `unit_back_at_station` (optional)
+  * Type: Timestamp (UTC)
+
+An `IncidentUnit` is created when a unit is assigned to an incident.
+Dispatch (`unit_dispatched`) may occur later or not at all.
+
+Staffing and unit timestamps are copied from [`UnitStatus` updates](UnitStatus.md).
+No inference or interpolation of timestamps is permitted.
+
+
+### IncidentLogEntry
+
+* `id` (required)
+  * Type: Nano ID
+* `log_timestamp` (required)
+  * Type: Timestamp (UTC)
+  * Reflects the time the entry was recorded by the system and must not be supplied or overridden manually
+* `dispatcher` (required)
+  * Type: User ID
+* `entry_type` (required)
+  * Type: `manual` | `automatic`
+* `description` (required)
+  * Type: Text
+
+All changes to an `Incident` result in an automatic `IncidentLogEntry`.
+Automatic log entries are immutable and must not be edited or deleted.
+Dispatchers may append manual log entries.
+
+
+## Invariants
+
+Always required:
+
+* `id`
+* `state`
+* `incident_created`
+
+Conditionally required:
+
+* `incident_type`, `incident_priority`, and `location` must all be set before transition to:
+  * `state → active`
+  * `state → queued`
+* `units` must contain at least one entry before:
+  * `state → active`
+
+Priority `N` incidents:
+
+* Must not represent real-world emergencies
+* Must not be linked to external calls originating from the public
+* May omit `location` but not `incident_type` (operational orders have their own incident type codes)
+* Are still subject to full logging and lifecycle rules
+
+Unit timestamps:
+
+* For a given `IncidentUnit`, timestamps must be monotonically non-decreasing when present and applicable (e.g. `unit_assigned_at ≤ unit_dispatched ≤ unit_en_route ≤ ...`)
+
+## Validation Rules
+
+* `description` fields (`Incident` and `IncidentLogEntry`) have a maximum length of 1000 UTF-8 characters
+
+
+## Lifecycle
+
+An incident progresses through the following states:
+
+* `new`  
+   Incident created; no operational decisions made yet   
+* `queued`  
+   Action is required, but no suitable units are currently available
+* `active`  
+  One or more units have been dispatched
+* `monitored`  
+  The situation is being observed without immediate dispatch
+  Examples:
+  * Smoke reports near an already active terrain fire
+  * Post-clearance fire watch or inspection period
+* `ended`  
+  The incident has concluded and may be scheduled for archival. Archival is asynchronous and outside the scope of the domain model.
+
+### Allowed State Transitions
+
+* `new` → `queued` | `active` | `monitored` | `ended`
+* `queued` → `active` | `monitored` | `ended`
+* `active` → `monitored` | `ended`
+* `monitored` → `queued` | `active` | `ended`
+
+An incident in state `ended` must never transition to any other state.
+If further action is required, a new incident must be created.
