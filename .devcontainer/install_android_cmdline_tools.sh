@@ -42,3 +42,6 @@ export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin"
 
 # Accept licenses
 yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+# Install SDK components required by Mobile Unit Client
+sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
