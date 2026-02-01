@@ -32,7 +32,7 @@
         <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <jooq.version>3.20.11</jooq.version>
         <flyway.version>12.0.0</flyway.version>
-        <geotools.version>32.1</geotools.version>
+        <geotools.version>34.2</geotools.version>
         <postgresql.version>42.7.9</postgresql.version>
         <junit.version>5.14.2</junit.version>
     </properties>
