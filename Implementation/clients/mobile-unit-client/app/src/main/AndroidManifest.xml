@@ -12,7 +12,7 @@
         android:allowBackup="false"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Material3.DayNight">
+        android:theme="@style/Theme.iDispatchX">
 
         <activity
             android:name=".MainActivity"
