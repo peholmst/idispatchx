@@ -61,5 +61,6 @@
     },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
+    "postCreateCommand": "/workspace/.devcontainer/install_android_cmdline_tools.sh",
     "privileged": false
 }
