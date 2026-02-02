@@ -12,10 +12,10 @@ Changes to Unit Status may be of interest to other parts of the system and shoul
 * `unit` (required)
   * Type: Reference to [`Unit`](Unit.md)
 * `state` (required)
-  * Type:  
-  `unavailable` | `available_over_radio` | `available_at_station` |  
-  `assigned_radio` | `assigned_station` |  
-  `dispatched` | `en_route` | `on_scene`
+  * Type:
+  `unavailable` | `available_over_radio` | `available_at_station` |
+  `assigned_radio` | `assigned_station` |
+  `dispatching` | `dispatched` | `en_route` | `on_scene`
 * `state_changed_at` (required)
   * Type: Timestamp (UTC)
 * `staffing` (optional)
@@ -62,11 +62,14 @@ The unit is at its ordinary station and available for assignment
 * `assigned_radio`  
 The unit has been assigned to an incident while mobile
 
-* `assigned_station`  
+* `assigned_station`
 The unit has been assigned to an incident while at station
 
-* `dispatched`  
-The unit has been dispatched to an incident
+* `dispatching`
+Alerts have been sent to the unit's Alert Targets; awaiting acknowledgment of delivery
+
+* `dispatched`
+At least one Alert Target has acknowledged delivery of the dispatch alert
 
 * `en_route`  
 The unit is en route to an incident
@@ -79,8 +82,9 @@ The unit is at the scene of an incident
 * `unavailable` → `available_over_radio` | `available_at_station`
 * `available_over_radio` → `assigned_radio` | `available_at_station` | `unavailable`
 * `available_at_station` → `assigned_station` | `available_over_radio` | `unavailable`
-* `assigned_radio` → `available_over_radio` | `dispatched`
-* `assigned_station` → `available_at_station` | `dispatched`
+* `assigned_radio` → `available_over_radio` | `dispatching`
+* `assigned_station` → `available_at_station` | `dispatching`
+* `dispatching` → `dispatched` | `available_over_radio` | `available_at_station` | `unavailable`
 * `dispatched` → `available_over_radio` | `available_at_station` | `en_route` | `unavailable`
 * `en_route` → `available_over_radio` | `available_at_station` | `on_scene` | `unavailable`
 * `on_scene` → `available_over_radio` | `available_at_station` | `unavailable`
@@ -182,28 +186,44 @@ The following states may be set directly by the dispatcher or the unit:
 The following states are set exclusively by the system:
 * `assigned_radio`
 * `assigned_station`
-* `dispatched`
+* `dispatching`
 
-While a unit is in state `assigned_radio` or `assigned_station`, it cannot change its own state.
-During this phase, state transitions are controlled exclusively by the system.
+The following state may be set by the system or manually by the dispatcher:
+* `dispatched` — A dispatcher may manually confirm dispatch when Alert Target acknowledgment is unavailable (e.g., unit confirmed receipt over radio). This does not re-send alerts.
+
+While a unit is in state `assigned_radio`, `assigned_station`, or `dispatching`, it cannot change its own state.
+During this phase, state transitions are controlled exclusively by the system, except for the dispatcher's ability to manually confirm dispatch.
 
 ### Dispatch and Immediate Transitions
 
-Normally, dispatching a unit results in:
+Dispatching a unit is a two-phase process:
 
-* `assigned_*` → `dispatched`
+1. `assigned_*` → `dispatching`: Alerts are sent to the unit's Alert Targets
+2. `dispatching` → `dispatched`: At least one Alert Target acknowledges delivery
 
-However, a dispatcher may assign a unit and immediately mark it as `en_route` or `on_scene`, for example:
+When the first Alert Target acknowledges delivery, `unit_dispatched` is set on the corresponding [`IncidentUnit`](Incident.md) to the acknowledgment timestamp.
+
+#### Dispatch Timeout
+
+If a unit remains in `dispatching` state longer than a configurable timeout period, the system must notify the dispatcher so they can take manual action (e.g., contact the unit over radio).
+
+The timeout duration is a deployment configuration and is outside the scope of the domain model.
+
+#### Immediate Transitions
+
+A dispatcher may assign a unit and immediately mark it as `en_route` or `on_scene`, for example:
 
 * when a unit reports an incident directly (drive-by)
 * when a unit requests assignment to an existing incident
 
 In these cases, the system performs the following automatic transitions:
 
-* `en_route`:  
-  (`assigned_radio` | `assigned_station`) → `dispatched` → `en_route`
-* `on_scene`:  
-  (`assigned_radio` | `assigned_station`) → `dispatched` → `en_route` → `on_scene`
+* `en_route`:
+  (`assigned_radio` | `assigned_station`) → `dispatching` → `dispatched` → `en_route`
+* `on_scene`:
+  (`assigned_radio` | `assigned_station`) → `dispatching` → `dispatched` → `en_route` → `on_scene`
+
+For immediate transitions, the `dispatching` → `dispatched` transition occurs immediately without waiting for Alert Target acknowledgment. The `unit_dispatched` timestamp is set to the time the command was processed.
 
 ### Reassignment Between Incidents
 

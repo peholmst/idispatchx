@@ -119,6 +119,8 @@ An automatic `IncidentLogEntry` is created when any of the following changes occ
 * A call is linked to the incident
 * A call is detached from the incident
 * An `IncidentUnit` is added
+* A dispatch timeout occurs for a unit (unit remains in `dispatching` beyond configured timeout)
+* A dispatcher manually confirms dispatch for a unit (manual `dispatching` → `dispatched` transition)
 
 Updates to `IncidentUnit` timestamps (e.g., `unit_dispatched`, `unit_en_route`, `unit_on_scene`) do not trigger automatic log entries. These timestamps are append-only and serve as a self-contained record of unit participation. Additionally, these timestamps originate from `UnitStatus` updates, which are logged separately in the Unit Status audit log.
 

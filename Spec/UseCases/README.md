@@ -32,7 +32,7 @@ Use cases do **not**:
 | [UC-Create-Incident-From-Call.md](Dispatcher/UC-Create-Incident-From-Call.md) | Create incident from an active call |
 | [UC-Detach-Call-From-Incident.md](Dispatcher/UC-Detach-Call-From-Incident.md) | Detach an active call from an incident |
 | [UC-Assign-Units-To-Incident.md](Dispatcher/UC-Assign-Units-To-Incident.md) | Assign units to an incident |
-| [UC-Dispatch-Units.md](Dispatcher/UC-Dispatch-Units.md) | Dispatch units to an incident (stub) |
+| [UC-Dispatch-Units.md](Dispatcher/UC-Dispatch-Units.md) | Dispatch assigned units and send alerts |
 | [UC-Enter-Call-Details.md](Dispatcher/UC-Enter-Call-Details.md) | Record incoming call with caller info, location, description |
 | [UC-Put-Incident-On-Hold.md](Dispatcher/UC-Put-Incident-On-Hold.md) | Put an incident on hold (stub) |
 

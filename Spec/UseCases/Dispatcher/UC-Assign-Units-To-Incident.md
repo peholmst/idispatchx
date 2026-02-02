@@ -58,11 +58,12 @@
 2. Dispatcher issues the Assign to Incident command with the specified state.
 3. System creates the `IncidentUnit` record and sets `UnitStatus.assigned_to_incident_id` as in the Main Success Scenario.
 4. System performs automatic state transitions through intermediate states:
-   * For `en_route`: (`assigned_radio` | `assigned_station`) → `dispatched` → `en_route`
-   * For `on_scene`: (`assigned_radio` | `assigned_station`) → `dispatched` → `en_route` → `on_scene`
-5. Each intermediate transition records its corresponding timestamp in `IncidentUnit`.
-6. If the incident is not yet in state `active`, System automatically transitions it to `active`.
-7. Use case continues from step 6 of the Main Success Scenario.
+   * For `en_route`: (`assigned_radio` | `assigned_station`) → `dispatching` → `dispatched` → `en_route`
+   * For `on_scene`: (`assigned_radio` | `assigned_station`) → `dispatching` → `dispatched` → `en_route` → `on_scene`
+5. For immediate transitions, the `dispatching` → `dispatched` transition occurs immediately without waiting for Alert Target acknowledgment. The `unit_dispatched` timestamp is set to the time the command was processed.
+6. Each intermediate transition records its corresponding timestamp in `IncidentUnit`.
+7. If the incident is not yet in state `active`, System automatically transitions it to `active`.
+8. Use case continues from step 6 of the Main Success Scenario.
 
 ## Exceptions
 
