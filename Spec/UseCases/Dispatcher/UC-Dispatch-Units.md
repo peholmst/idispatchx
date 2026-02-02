@@ -76,6 +76,11 @@
   * If Dispatch New Units is issued but no units are in `assigned_radio` or `assigned_station` state, System displays a message indicating there are no new units to dispatch.
   * Dispatcher may use Dispatch Selected Unit to re-alert already-dispatched units.
 
+* **Exception: Unit has no active Alert Targets**
+  * If a unit to be dispatched has no active Alert Targets, System displays a warning indicating the unit cannot receive alerts.
+  * The unit is not transitioned to `dispatching` state.
+  * Dispatcher may contact the unit over radio and use Manual Dispatch Confirmation (Alternative Flow B) to complete the dispatch.
+
 * **Exception: Dispatch timeout**
   * If a unit remains in `dispatching` state longer than the configured timeout period without any Alert Target acknowledgment:
     * System creates an automatic `IncidentLogEntry` recording the dispatch timeout.
@@ -105,4 +110,4 @@ Network or server failures are handled per the [NFR: Availability](../../NonFunc
 * [Domain Concept: Unit](../../Domain/Unit.md) - unit identity
 * [Domain Concept: UnitStatus](../../Domain/UnitStatus.md) - `dispatching` and `dispatched` states, state transitions, dispatch timeout
 * [Domain Concept: Incident](../../Domain/Incident.md) - `IncidentUnit`, `unit_dispatched` timestamp, incident state transitions to `active`
-* Alert Targets (not yet defined) - configured channels for alert delivery to units
+* [Domain Concept: AlertTarget](../../Domain/AlertTarget.md) - configured channels for alert delivery to units

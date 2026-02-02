@@ -8,6 +8,7 @@ Domain concepts describe the *meaning*, *structure*, and *invariants* of the inf
 
 | File | Description |
 |------|-------------|
+| [AlertTarget.md](AlertTarget.md) | Delivery channel for dispatch alerts (client, email, SMS) |
 | [Call.md](Call.md) | Emergency call record with caller info, location, state |
 | [Incident.md](Incident.md) | Incident requiring emergency response, with units, log entries, lifecycle |
 | [IncidentType.md](IncidentType.md) | Incident classification by nature and nominal scale |
