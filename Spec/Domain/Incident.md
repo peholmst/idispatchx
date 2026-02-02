@@ -210,6 +210,14 @@ If further action is required, a new incident must be created.
 
 All state transitions, whether automatic or manual, must respect the allowed state transitions and invariants (e.g., all units must be unassigned before transitioning to `ended`).
 
+### Visibility of Ended Incidents
+
+Incidents in state `ended` remain in the system until they are archived.
+
+By default, ended incidents are not displayed in dispatcher views. Dispatchers may change filtering options to include ended incidents when needed (e.g., for review or reference purposes).
+
+Once an incident is archived, it is removed from the system entirely and can no longer be viewed through normal dispatcher interfaces.
+
 ## Archival
 
 Archival removes an incident and its associated data from live operational storage.
