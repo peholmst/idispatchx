@@ -1,5 +1,13 @@
 # NOTES-TO-SELF (written by humans, not AI)
 
+# 2026-02-02
+
+* Most important Dispatcher use cases should now be ready.
+* Additional domain concepts and ADRs also added
+* Next:
+  * [ ] Ask Claude to do a review of the use cases and domain concepts and look for missing things
+  * [ ] If nothing big shows up, proceed with technical design of CAD Server
+
 # 2026-02-01
 
 * All containers now build
@@ -11,7 +19,7 @@
   * Checked Maven dependency versions manually. Not sure which VSCode plugin to install yet.
 * Next:
   * [ ] cSpell does not need to check configuration files and installation scripts.
-  * [ ] Proceed with the use case specifications
+  * [x] Proceed with the use case specifications
 
 # 2026-01-31
 
