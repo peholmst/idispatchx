@@ -28,7 +28,7 @@ Use cases do **not**:
 |------|-------------|
 | [UC-Attach-Call-To-Incident.md](Dispatcher/UC-Attach-Call-To-Incident.md) | Attach an active call to an existing incident |
 | [UC-Close-Incident.md](Dispatcher/UC-Close-Incident.md) | Close an incident after all units are unassigned |
-| [UC-Create-Incident.md](Dispatcher/UC-Create-Incident.md) | Create a new incident (stub) |
+| [UC-Create-Incident.md](Dispatcher/UC-Create-Incident.md) | Create a new incident without an associated call |
 | [UC-Create-Incident-From-Call.md](Dispatcher/UC-Create-Incident-From-Call.md) | Create incident from an active call |
 | [UC-Detach-Call-From-Incident.md](Dispatcher/UC-Detach-Call-From-Incident.md) | Detach an active call from an incident |
 | [UC-Assign-Units-To-Incident.md](Dispatcher/UC-Assign-Units-To-Incident.md) | Assign units to an incident |
