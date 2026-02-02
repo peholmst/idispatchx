@@ -34,7 +34,7 @@ Use cases do **not**:
 | [UC-Assign-Units-To-Incident.md](Dispatcher/UC-Assign-Units-To-Incident.md) | Assign units to an incident |
 | [UC-Dispatch-Units.md](Dispatcher/UC-Dispatch-Units.md) | Dispatch assigned units and send alerts |
 | [UC-Enter-Call-Details.md](Dispatcher/UC-Enter-Call-Details.md) | Record incoming call with caller info, location, description |
-| [UC-Put-Incident-On-Hold.md](Dispatcher/UC-Put-Incident-On-Hold.md) | Put an incident on hold (stub) |
+| [UC-Set-Incident-State.md](Dispatcher/UC-Set-Incident-State.md) | Manually set incident state to queued, active, or monitored |
 
 ### Admin, Observer, Station, Unit
 
