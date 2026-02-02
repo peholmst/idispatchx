@@ -25,6 +25,21 @@ All EPSG:4326 coordinates in the system must adhere to the following rules:
   * Longitude: 19.08° to 31.59° E
 * Coordinates outside these bounds must be rejected by the system.
 
+### Coordinate Display and Entry Formats
+
+User interfaces that allow coordinate entry or display must support the following formats:
+
+* **DD (Decimal Degrees):** e.g., 60.169857, 24.938379
+* **DDM (Degrees Decimal Minutes):** e.g., 60° 10.1914' N, 24° 56.3027' E
+* **DMS (Degrees Minutes Seconds):** e.g., 60° 10' 11.49" N, 24° 56' 18.16" E
+
+Requirements:
+* Users must be able to enter coordinates in any of the three formats.
+* Users must be able to switch between display formats at any time.
+* When switching formats, entered data must be automatically converted without loss of precision (up to the 6 decimal place limit).
+* The default display format is **DDM (Degrees Decimal Minutes)**.
+* Format conversion is a client-side display concern; storage and processing always use DD in EPSG:4326.
+
 ## Terminology and Language
 
 * Domain terminology is based on regulations, processes, and procedures of the Finnish emergency services.

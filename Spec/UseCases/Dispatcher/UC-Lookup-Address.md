@@ -45,7 +45,7 @@
 
 ## Alternative Flow C: Lookup by Coordinates
 
-1. Dispatcher enters coordinates directly (latitude, longitude in EPSG:4326 format).
+1. Dispatcher enters coordinates directly in any supported format (DD, DDM, or DMS per [NFR: Internationalization](../../NonFunctionalRequirements/Internationalization.md)).
 2. System validates that coordinates are within Finland bounds (latitude 58.84 to 70.09, longitude 19.08 to 31.59).
 3. If valid, System centers the map view on the coordinates and places a temporary marker.
 4. If invalid, System displays an error indicating the coordinates are outside the supported area.
