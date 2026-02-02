@@ -26,6 +26,7 @@ Use cases do **not**:
 
 | File | Description |
 |------|-------------|
+| [UC-Attach-Call-To-Incident.md](Dispatcher/UC-Attach-Call-To-Incident.md) | Attach an active call to an existing incident |
 | [UC-Close-Incident.md](Dispatcher/UC-Close-Incident.md) | Close an incident (stub) |
 | [UC-Create-Incident.md](Dispatcher/UC-Create-Incident.md) | Create a new incident (stub) |
 | [UC-Create-Incident-From-Call.md](Dispatcher/UC-Create-Incident-From-Call.md) | Create incident from an active call |
