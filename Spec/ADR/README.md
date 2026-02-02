@@ -17,6 +17,7 @@ and the alternatives that were considered.
 | [ADR-0006-wal-format-and-semantics.md](ADR-0006-wal-format-and-semantics.md) | Write-Ahead Log format, replay, and purging |
 | [ADR-0007-domain-primitives.md](ADR-0007-domain-primitives.md) | Mandates domain primitives for type-safe validation |
 | [ADR-0008-cad-server-ports-and-adapters.md](ADR-0008-cad-server-ports-and-adapters.md) | CAD Server hexagonal architecture with primary and secondary ports |
+| [ADR-0009-archunit-and-package-visibility.md](ADR-0009-archunit-and-package-visibility.md) | ArchUnit tests and package visibility for enforcing architectural boundaries |
 
 ## Purpose
 
