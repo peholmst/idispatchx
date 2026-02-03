@@ -46,6 +46,14 @@ Architectural Decision Records.
 * Are historical records; superseded decisions get new ADRs rather than modifications
 * Do **not** override NFRs or C4 specifications
 
+### `TechnicalDesigns/`
+Technical design documents for specific components.
+
+* Provide detailed implementation guidance bridging specifications and code
+* Define package structures, interfaces, threading models, and data flow
+* Must comply with all higher-level specifications (NFRs, C4, Domain, Use Cases)
+* Serve as reference during implementation and code review
+
 ## Authority and Precedence
 
 In case of conflicts between specifications, the following order of precedence applies:
