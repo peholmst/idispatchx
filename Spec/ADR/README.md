@@ -18,6 +18,7 @@ and the alternatives that were considered.
 | [ADR-0007-domain-primitives.md](ADR-0007-domain-primitives.md) | Mandates domain primitives for type-safe validation |
 | [ADR-0008-cad-server-ports-and-adapters.md](ADR-0008-cad-server-ports-and-adapters.md) | CAD Server hexagonal architecture with primary and secondary ports |
 | [ADR-0009-archunit-and-package-visibility.md](ADR-0009-archunit-and-package-visibility.md) | ArchUnit tests and package visibility for enforcing architectural boundaries |
+| [ADR-0010-jspecify-nullability-annotations.md](ADR-0010-jspecify-nullability-annotations.md) | JSpecify nullability annotations for compile-time null safety |
 
 ## Purpose
 
