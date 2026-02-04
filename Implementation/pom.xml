@@ -35,6 +35,7 @@
         <geotools.version>34.2</geotools.version>
         <postgresql.version>42.7.9</postgresql.version>
         <junit.version>5.14.2</junit.version>
+        <jspecify.version>1.0.0</jspecify.version>
     </properties>
 
     <dependencyManagement>
@@ -102,6 +103,13 @@
                 <artifactId>junit-jupiter</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- Nullability Annotations (ADR-0010) -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${jspecify.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,6 +1,7 @@
 package net.pkhapps.idispatchx.cad.domain.event;
 
 import net.pkhapps.idispatchx.cad.domain.command.CommandId;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 
@@ -26,5 +27,5 @@ public interface DomainEvent {
      * Returns the ID of the command that caused this event, used for idempotency tracking.
      * May be null for system-generated events.
      */
-    CommandId causedBy();
+    @Nullable CommandId causedBy();
 }
