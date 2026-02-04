@@ -8,77 +8,9 @@ Callsigns are used for unit identification in emergency response, communications
 
 ## Attributes
 
-A Callsign is a structured string composed of the following components:
-
-* `sector` (required)
-  * Type: Single uppercase letter
-  * Represents the authority sector or stakeholder group
-  * Valid values: `R` (Rescue), `P` (Police), `E` (EMS), `B` (Border Guard), `S` (Social Services), `M` (Military), `C` (Customs), `V` (Volunteers), `A` (Aviation), `I` (Industrial), `K` (Municipality)
-
-* `organization` (required)
-  * Type: Two uppercase letters or digits
-  * Identifies the rescue department, police district, hospital district, or organizational unit
-  * Examples: `EP` (Etelä-Pohjanmaa), `HE` (Helsinki), `LA` (Lappi), `SM` (Ministry of Interior)
-
-* `station_number` (optional)
-  * Type: Two digits (00–99)
-  * Identifies the fire station from which the unit is dispatched
-  * Omitted for leadership units not tied to a station
-  * Special values: `00` (no fixed location), `0X` (administrative vehicles)
-
-* `property_code` (required for non-virtual units)
-  * Type: One or two digits
-  * Indicates unit type and capabilities
-  * Categories: `1X` (Firefighting), `2X` (Combination), `3X` (Agent transport), `4X` (Transport), `5X` (Rescue), `6X` (Aerial/Aircraft), `7X` (Crew/Support), `8X` (Water/Terrain), `9X` (Trailers)
-
-* `sequence_number` (optional)
-  * Type: Single digit (2–9)
-  * Differentiates multiple units of the same type at the same station
-  * First unit of a type omits this number
-
-* `modifier` (optional)
-  * Type: Single uppercase letter
-  * Additional identifier when numeric sequencing is not possible
-
----
-
-## Format Patterns
-
-### Standard Unit Format
-
-```
-[Sector][Organization][Station][Property][Sequence?][Modifier?]
-```
-
-Example: `REP101` (Rescue, Etelä-Pohjanmaa, Station 10, Property 1)
-
-### Leadership Unit Format
-
-```
-[Sector][Organization][Level][Area]
-```
-
-* Levels: `1` (Federation director), `2` (Duty chief), `3–4` (Duty fire chief), `5` (Duty group leader)
-* Areas: `0` (Command center), `1–9` (Field operations)
-
-Example: `REPP21` (Rescue, Etelä-Pohjanmaa, Duty chief, Field area 1)
-
-### Virtual Unit / Alert Group Format
-
-```
-[Sector][Organization]_[Station?][Purpose][Detail?]
-```
-
-Contains an underscore separator after the organization code.
-
-Purpose codes include: `JOH` (Leadership), `JVT` (Damage control), `PEL` (Rescue), `SR` (Fire brigade), `SUK` (Diving), `SURO` (Major incident), `TUTKI` (Investigation), `VA` (Hazmat), `VSS` (Civil defense), `VV` (Off-duty recall), `ÖT` (Oil response)
-
-Example: `REP_10VV` (Off-duty recall for Etelä-Pohjanmaa, Station 10)
-
-### Command/Situation Center Format
-
-* Command center: `[Sector][Organization]_JOKE`
-* Situation center: `[Sector][Organization]_TIKE`
+* `value` (required)
+  * Type: String
+  * A syntactically valid callsign string
 
 ---
 
@@ -88,6 +20,7 @@ Example: `REP_10VV` (Off-duty recall for Etelä-Pohjanmaa, Station 10)
 * Two Callsigns are equal if their string representations are identical (case-sensitive)
 * The canonical string representation uses uppercase letters only
 * A Callsign must be stored and compared in its normalized (uppercase) form
+* Changes to administrative boundaries (emergency response center areas, municipalities) do not affect existing callsigns
 
 ---
 
@@ -95,23 +28,106 @@ Example: `REP_10VV` (Off-duty recall for Etelä-Pohjanmaa, Station 10)
 
 * Length: 3–16 characters
 * First character must be a valid sector code (uppercase letter from the defined set)
-* Second and third characters must be uppercase letters or digits
+* Organization code (characters 2–3 or 2–4):
+  * Two uppercase letters (standard rescue departments, special codes)
+  * Two digits (some special organizations)
+  * One to three digits (municipalities with K prefix only)
 * Underscore, if present:
-  * Must appear after position 3
+  * Must appear after position 3 (or after position 4 for municipalities)
   * Only one underscore is allowed
   * Characters after underscore must be alphanumeric uppercase only
-* For non-virtual callsigns (no underscore):
+* For Rescue units (sector R), non-virtual callsigns:
   * Positions 4–5: Digits 0–9 (station number, may be omitted for leadership units)
   * Position 6: Digit 0–9 (property code)
   * Position 7: Optional digit or uppercase letter
   * Position 8+: Optional uppercase letters only
+* For Industrial units (IR/IE): First digit of station number must be 1–6 (or 7–9 if reserved numbers activated)
 * Permitted character set: Uppercase letters A–Z, digits 0–9, underscore (in designated position only)
 
 ---
 
-## Semantics
+## Syntax Reference
 
-### Syntactical vs Semantic Validation
+The following sections document the syntax of callsigns for reference. The Callsign value object does not parse or decompose the string into these components.
+
+### Sector Codes
+
+* `R` (Rescue), `P` (Police), `E` (EMS), `B` (Border Guard), `S` (Social Services), `M` (Military), `C` (Customs), `V` (Volunteers), `A` (Aviation), `I` (Industrial), `K` (Municipality)
+
+### Special Organization Codes
+
+* **Aviation**: `AR` (Aviation rescue), `AE` (Aviation emergency medical)
+* **Industrial**: `IR` (Industrial rescue), `IE` (Industrial emergency medical)
+* **Military**: `MR` (Army/Navy/Logistics rescue), `MRA` (Air Force rescue), `ME` (Military emergency medical), `MEA` (Air Force emergency medical)
+* **Railway**: `RR` (Finnish Transport Infrastructure Agency)
+
+### Format Patterns
+
+Note: These patterns apply to Rescue units only unless otherwise specified. Other sectors have their own patterns and meanings.
+
+#### Standard Unit Format
+
+```
+[Sector][Organization][Station][Property][Sequence?][Modifier?]
+```
+
+Example: `REP101`
+
+#### Leadership Unit Format
+
+```
+[Sector][Organization][Level][Area]
+```
+
+* Levels: `1` (Federation director), `2` (Duty chief), `3–4` (Duty fire chief), `5` (Duty group leader)
+* Areas: `0` (Command center), `1–9` (Field operations)
+
+Example: `REPP21`
+
+#### Industrial Format (IR/IE)
+
+```
+[I][R or E][EmergencyArea][FacilityNumber][Property][Sequence?][Modifier?]
+```
+
+* Emergency response center areas: `1` (Kerava), `2` (Turku), `3` (Pori), `4` (Vaasa), `5` (Oulu), `6` (Kuopio), `7–9` (reserved)
+
+Example: `IR1234`
+
+#### Municipal Format (K prefix)
+
+```
+K[MunicipalityCode][Station][Property][Sequence?][Modifier?]
+```
+
+Example: `K5101`
+
+#### Virtual Unit / Alert Group Format
+
+```
+[Sector][Organization]_[Station?][Purpose][Detail?]
+```
+
+Purpose codes include: `JOH`, `JVT`, `LSP`, `PEL`, `SR`, `SUK`, `SURO`, `TUTKI`, `VA`, `VSS`, `VV`, `ÖT`
+
+Example: `REP_10VV`
+
+#### Command/Situation Center Format
+
+* Command center: `[Sector][Organization]_JOKE`
+* Situation center: `[Sector][Organization]_TIKE`
+
+#### Foreign Unit Format
+
+```
+[Sector][CountryCode][HomeUnitIdentifier]
+```
+
+Examples: `RSE2116310`, `RNOD11`
+
+---
+
+## Semantics
 
 This specification defines **syntactical validation only**. The system does not validate:
 * Whether a sector code is appropriate for the organization
@@ -119,14 +135,9 @@ This specification defines **syntactical validation only**. The system does not 
 * Whether station numbers are in operationally valid ranges
 * Whether property codes match registered equipment types
 * Whether virtual unit abbreviations follow standardized conventions
-
-### Voice Communication
-
-Separate formatting rules apply for voice communication of callsigns. These rules are outside the scope of this value object.
-
-### Foreign Units
-
-Foreign unit callsigns follow the same pattern, using two-letter country codes as the organization component.
+* Whether municipality codes are valid
+* Whether foreign country codes are valid
+* Whether emergency response center area codes for IR units are correct
 
 ---
 
