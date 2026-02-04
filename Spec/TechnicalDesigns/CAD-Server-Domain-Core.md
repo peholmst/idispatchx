@@ -10,6 +10,7 @@ This document describes the technical design for the domain core of the CAD Serv
 
 ## References
 
+- [ADR-0006: WAL Format and Semantics](../ADR/ADR-0006-wal-format-and-semantics.md)
 - [ADR-0008: CAD Server Ports-and-Adapters Architecture](../ADR/ADR-0008-cad-server-ports-and-adapters.md)
 - [NFR: Performance](../NonFunctionalRequirements/Performance.md) - WAL sync constraint
 - [NFR: Availability](../NonFunctionalRequirements/Availability.md) - Idempotency requirement
@@ -39,6 +40,7 @@ net.pkhapps.idispatchx.cad/
 │   ├── primary/                  # Primary port interfaces (use case handlers)
 │   └── secondary/                # Secondary port interfaces
 │       ├── wal/                  # WalPort
+│       ├── snapshot/             # SnapshotPort
 │       ├── archive/              # ArchivePort
 │       ├── alert/                # EmailPort, SmsPort, ClientAlertPort
 │       └── clock/                # ClockPort
@@ -85,6 +87,7 @@ public record PhoneNumber(String value) {
 | `MultilingualName` | Map | ISO 639 language codes, max 200 chars per value |
 | `StationAlertClientId` | String | Nano ID format (21 URL-safe chars) |
 | `MobileUnitClientId` | String | Nano ID format (21 URL-safe chars) |
+| `SequenceNumber` | long | Positive, monotonically increasing |
 
 ---
 
@@ -241,10 +244,12 @@ on_scene → available_over_radio | available_at_station | unavailable
 
 ```java
 public interface WalPort {
-    void write(DomainEvent event);              // Blocks until synced
-    void writeBatch(List<DomainEvent> events);  // Atomic batch
-    void replay(Consumer<DomainEvent> consumer); // Startup reconstruction
-    void truncate(EventId upToEventId);         // Post-archival cleanup
+    SequenceNumber write(DomainEvent event);              // Returns assigned sequence number
+    SequenceNumber writeBatch(List<DomainEvent> events);  // Returns last sequence number
+    void replayFrom(SequenceNumber from, Consumer<DomainEvent> consumer); // Replay from sequence
+    void replay(Consumer<DomainEvent> consumer);          // Full replay
+    void truncate(SequenceNumber upTo);                   // Truncate by sequence number
+    SequenceNumber currentSequence();                     // Current WAL sequence
 }
 ```
 
@@ -282,6 +287,32 @@ public interface ClockPort {
     Instant now();  // Abstracted for testability
 }
 ```
+
+### 7.5 SnapshotPort
+
+Per ADR-0006, snapshots capture the complete operational state for faster startup recovery.
+
+```java
+public interface SnapshotPort {
+    void createSnapshot(OperationalState state, SequenceNumber upToSequence);
+    Optional<Snapshot> loadLatestSnapshot();
+    void purgeOlderSnapshots(SequenceNumber keepAfter);
+}
+
+public record Snapshot(OperationalState state, SequenceNumber sequenceNumber) {}
+
+public record OperationalState(
+    Collection<Incident> incidents,
+    Collection<Call> calls,
+    Collection<UnitStatus> unitStatuses
+) {}
+```
+
+**Constraints:**
+
+- Snapshots use the same format (text/JSON or binary) as the WAL
+- Atomic write: temporary file followed by rename
+- Contains only operational data (no reference data)
 
 ---
 
@@ -355,16 +386,64 @@ Per Availability NFR, all commands must be idempotent. `IdempotencyTracker` stor
 
 ---
 
-## 11. WAL Replay
+## 11. Startup and State Recovery
 
-On startup, `WalReplayService` reconstructs in-memory state by replaying all events:
+Per ADR-0006, CAD Server reconstructs in-memory state on startup using snapshots and WAL replay.
 
-1. Call `walPort.replay(consumer)`
-2. For each event, dispatch to appropriate handler:
-   - `IncidentCreatedEvent` → create Incident, add to repository
-   - `IncidentStateChangedEvent` → find Incident, call `applyEvent()`
-   - `IncidentArchivedEvent` → remove Incident from repository
-   - Similar for Call, Unit, UnitStatus events
+### 11.1 Startup Sequence
+
+`StartupService` performs the following sequence:
+
+1. Load reference data from configuration files (Station, AlertTarget, IncidentType)
+2. Call `snapshotPort.loadLatestSnapshot()`
+3. If snapshot present:
+   - Populate repositories from `snapshot.state()`
+   - Call `walPort.replayFrom(snapshot.sequenceNumber(), consumer)`
+4. If no snapshot:
+   - Call `walPort.replay(consumer)` (full replay)
+5. Mark server as ready to accept connections
+
+### 11.2 Event Replay Handler
+
+For each event during replay, dispatch to appropriate handler:
+
+- `IncidentCreatedEvent` → create Incident, add to repository
+- `IncidentStateChangedEvent` → find Incident, call `applyEvent()`
+- `IncidentArchivedEvent` → remove Incident from repository
+- Similar for Call, Unit, UnitStatus events
+
+### 11.3 Snapshot Service
+
+```java
+public class SnapshotService {
+    void createPeriodicSnapshot();  // Called by scheduler
+    void purgeAfterSnapshot(SequenceNumber snapshotSequence);
+}
+```
+
+**Periodic Snapshot Creation:**
+
+1. Scheduler triggers `createPeriodicSnapshot()` at configurable interval
+2. Gather current operational state from all repositories
+3. Get current `walPort.currentSequence()`
+4. Call `snapshotPort.createSnapshot(state, sequenceNumber)`
+5. After successful snapshot: call `walPort.truncate(sequenceNumber)` and `snapshotPort.purgeOlderSnapshots(sequenceNumber)`
+
+**Constraints:**
+
+- Atomic write: temporary file followed by rename
+- Purging is asynchronous and must not block normal operations
+- Snapshot interval is configurable
+
+### 11.4 Warm Standby Support
+
+Per ADR-0006, warm standby enables rapid failover:
+
+1. Continuously monitors WAL for new entries via `WalPort`
+2. Loads new snapshots as they are created via `SnapshotPort`
+3. On failover:
+   - Replay any remaining WAL entries not yet processed
+   - Begin accepting client connections
 
 ---
 
@@ -414,8 +493,16 @@ Validation is enforced at three levels:
 ### Integration Tests
 - WAL replay: write events, replay, verify state reconstructed
 - Cross-aggregate operations: dispatch, assignment, archival flows
+- Snapshot creation captures complete state
+- Startup with snapshot + WAL replay reconstructs correct state
+- Purging removes old WAL entries and snapshots
 
 ### Concurrency Tests
 - Parallel commands on same aggregate (should serialize)
 - Parallel commands on different aggregates (should execute concurrently)
 - WAL ordering: verify state not visible before WAL sync completes
+
+### Snapshot Tests
+- Atomic snapshot write: no partial snapshots on failure (verify temp file + rename)
+- Snapshot + partial WAL replay: state matches full replay
+- Warm standby: new snapshots are loaded correctly
