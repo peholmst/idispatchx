@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.cad.port.secondary.wal;
 
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
-import net.pkhapps.idispatchx.cad.domain.event.EventId;
+import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -18,32 +18,51 @@ public interface WalPort {
      * Writes an event to the WAL and blocks until synced to disk.
      *
      * @param event the event to write
+     * @return the sequence number assigned to this event
      * @throws WalWriteException if write or sync fails
      */
-    void write(DomainEvent event);
+    SequenceNumber write(DomainEvent event);
 
     /**
      * Writes multiple events atomically to the WAL and blocks until synced.
      * All events are written as a single batch or none.
      *
      * @param events the events to write
+     * @return the sequence number of the last event in the batch
      * @throws WalWriteException if write or sync fails
      */
-    void writeBatch(List<? extends DomainEvent> events);
+    SequenceNumber writeBatch(List<? extends DomainEvent> events);
+
+    /**
+     * Replays events from the WAL starting after the given sequence number.
+     * Used for startup recovery when a snapshot is present.
+     *
+     * @param from     replay events after this sequence number
+     * @param consumer receives each event in order
+     */
+    void replayFrom(SequenceNumber from, Consumer<DomainEvent> consumer);
 
     /**
      * Replays all events from the WAL in order.
-     * Called on startup to reconstruct in-memory state.
+     * Called on startup to reconstruct in-memory state when no snapshot exists.
      *
      * @param consumer receives each event in order
      */
     void replay(Consumer<DomainEvent> consumer);
 
     /**
-     * Truncates WAL entries up to the given event ID (inclusive).
-     * Called after archival to prevent unbounded WAL growth.
+     * Truncates WAL entries up to the given sequence number (inclusive).
+     * Called after snapshot creation to prevent unbounded WAL growth.
      *
-     * @param upToEventId truncate all events up to and including this ID
+     * @param upTo truncate all entries up to and including this sequence number
      */
-    void truncate(EventId upToEventId);
+    void truncate(SequenceNumber upTo);
+
+    /**
+     * Returns the current (highest) sequence number in the WAL.
+     * Returns a sequence number representing "start" if the WAL is empty.
+     *
+     * @return the current sequence number
+     */
+    SequenceNumber currentSequence();
 }

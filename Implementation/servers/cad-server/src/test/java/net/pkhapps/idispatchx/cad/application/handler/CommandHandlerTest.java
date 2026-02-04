@@ -4,6 +4,7 @@ import net.pkhapps.idispatchx.cad.domain.command.Command;
 import net.pkhapps.idispatchx.cad.domain.command.CommandId;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.event.EventId;
+import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalWriteException;
 import org.junit.jupiter.api.BeforeEach;
@@ -138,21 +139,33 @@ class CommandHandlerTest {
     static class RecordingWalPort implements WalPort {
         final List<DomainEvent> writtenEvents = new ArrayList<>();
         boolean failOnWrite = false;
+        private long sequenceCounter = 0;
 
         @Override
-        public void write(DomainEvent event) {
+        public SequenceNumber write(DomainEvent event) {
             if (failOnWrite) {
                 throw new WalWriteException("Simulated WAL failure");
             }
             writtenEvents.add(event);
+            return new SequenceNumber(++sequenceCounter);
         }
 
         @Override
-        public void writeBatch(List<? extends DomainEvent> events) {
+        public SequenceNumber writeBatch(List<? extends DomainEvent> events) {
             if (failOnWrite) {
                 throw new WalWriteException("Simulated WAL failure");
             }
             writtenEvents.addAll(events);
+            sequenceCounter += events.size();
+            return new SequenceNumber(sequenceCounter);
+        }
+
+        @Override
+        public void replayFrom(SequenceNumber from, Consumer<DomainEvent> consumer) {
+            // Skip events up to 'from' sequence number
+            writtenEvents.stream()
+                    .skip(from.value())
+                    .forEach(consumer);
         }
 
         @Override
@@ -161,8 +174,13 @@ class CommandHandlerTest {
         }
 
         @Override
-        public void truncate(EventId upToEventId) {
+        public void truncate(SequenceNumber upTo) {
             // Not needed for tests
+        }
+
+        @Override
+        public SequenceNumber currentSequence() {
+            return sequenceCounter == 0 ? SequenceNumber.start() : new SequenceNumber(sequenceCounter);
         }
     }
 
@@ -174,13 +192,13 @@ class CommandHandlerTest {
         }
 
         @Override
-        public void write(DomainEvent event) {
+        public SequenceNumber write(DomainEvent event) {
             try {
                 Thread.sleep(delayMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            super.write(event);
+            return super.write(event);
         }
     }
 
@@ -267,9 +285,9 @@ class CommandHandlerTest {
         }
 
         @Override
-        public void write(DomainEvent event) {
+        public SequenceNumber write(DomainEvent event) {
             executionOrder.add("wal-write-" + counter.get());
-            super.write(event);
+            return super.write(event);
         }
     }
 
