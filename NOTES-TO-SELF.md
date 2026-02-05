@@ -1,12 +1,32 @@
 # NOTES-TO-SELF (written by humans, not AI)
 
+# 2026-02-05
+
+* Continued with small value objects. Even with them you have to be careful about nitty-gritty details.
+
+# 2026-02-04
+
+* Updated design and implementation with snapshot support.
+* Address items from yesterday before proceeding with new stuff
+* [ ] Consider adding ArchUnit tests (and an ADR about this).
+* [ ] Before implementing the first use case, have Claude write a use case execution plan that splits it up into steps. Iterate it until you're happy with it. Then use it to actually implement the thing, one step at a time. Regularly have Claude check whether there are missing pieces of a use case, but never let it fill in the gaps itself. Update the execution plan instead.
+
+# 2026-02-03
+
+* Started to work on the technical design of CAD Server. Did not do a review of use cases and domain concepts yet.
+  * [x] Callsign must be defined
+* Claude did an initial design of the domain core of CAD Server, but forgot to include WAL snapshots
+  * [x] Proceed with adding support for snapshots to the design and implementation
+  * [ ] Review the code carefully, including the tests. Make sure you understand it fully yourself before proceeding.
+* [x] Consider adding nullability annotations (and an ADR about this).
+
 # 2026-02-02
 
 * Most important Dispatcher use cases should now be ready.
 * Additional domain concepts and ADRs also added
 * Next:
   * [ ] Ask Claude to do a review of the use cases and domain concepts and look for missing things
-  * [ ] If nothing big shows up, proceed with technical design of CAD Server
+  * [x] If nothing big shows up, proceed with technical design of CAD Server
 
 # 2026-02-01
 
