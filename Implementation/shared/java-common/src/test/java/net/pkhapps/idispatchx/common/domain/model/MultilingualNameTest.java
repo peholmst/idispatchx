@@ -2,23 +2,23 @@ package net.pkhapps.idispatchx.common.domain.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class MultilingualNameTest {
 
-    private static final Locale FINNISH = Locale.of("fi");
-    private static final Locale SWEDISH = Locale.of("sv");
-    private static final Locale ENGLISH = Locale.of("en");
-    private static final Locale NORTHERN_SAMI = Locale.of("sme");
+    private static final Language FINNISH = Language.of("fi");
+    private static final Language SWEDISH = Language.of("sv");
+    private static final Language ENGLISH = Language.of("en");
+    private static final Language NORTHERN_SAMI = Language.of("sme");
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -67,11 +67,11 @@ class MultilingualNameTest {
     }
 
     @Test
-    void withUnspecifiedLanguage_createsInstanceWithLocaleRoot() {
+    void withUnspecifiedLanguage_createsInstanceWithUnspecified() {
         var name = MultilingualName.withUnspecifiedLanguage("Manually Entered Name");
         assertEquals(1, name.size());
         assertEquals("Manually Entered Name", name.getUnspecified().orElseThrow());
-        assertEquals("Manually Entered Name", name.get(Locale.ROOT).orElseThrow());
+        assertEquals("Manually Entered Name", name.get(Language.unspecified()).orElseThrow());
     }
 
     @Test
@@ -91,19 +91,19 @@ class MultilingualNameTest {
 
     @Test
     void of_nullMap_throwsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> MultilingualName.of((Map<Locale, String>) null));
+        assertThrows(NullPointerException.class, () -> MultilingualName.of((Map<Language, String>) null));
     }
 
     @Test
-    void of_nullLocale_throwsNullPointerException() {
-        var map = new HashMap<Locale, String>();
+    void of_nullLanguage_throwsNullPointerException() {
+        var map = new HashMap<Language, String>();
         map.put(null, "value");
         assertThrows(NullPointerException.class, () -> MultilingualName.of(map));
     }
 
     @Test
     void of_nullValue_throwsNullPointerException() {
-        var map = new HashMap<Locale, String>();
+        var map = new HashMap<Language, String>();
         map.put(FINNISH, null);
         assertThrows(NullPointerException.class, () -> MultilingualName.of(map));
     }
@@ -114,30 +114,6 @@ class MultilingualNameTest {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> MultilingualName.of(FINNISH, value));
         assertTrue(exception.getMessage().contains("blank"));
-    }
-
-    @Test
-    void of_localeWithCountry_throwsIllegalArgumentException() {
-        var localeWithCountry = Locale.of("fi", "FI");
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> MultilingualName.of(localeWithCountry, "value"));
-        assertTrue(exception.getMessage().contains("only language code is allowed"));
-    }
-
-    @Test
-    void of_localeWithScript_throwsIllegalArgumentException() {
-        var localeWithScript = new Locale.Builder().setLanguage("zh").setScript("Hans").build();
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> MultilingualName.of(localeWithScript, "value"));
-        assertTrue(exception.getMessage().contains("only language code is allowed"));
-    }
-
-    @Test
-    void of_localeWithVariant_throwsIllegalArgumentException() {
-        var localeWithVariant = new Locale.Builder().setLanguage("en").setVariant("posix").build();
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> MultilingualName.of(localeWithVariant, "value"));
-        assertTrue(exception.getMessage().contains("only language code is allowed"));
     }
 
     @Test
@@ -153,16 +129,6 @@ class MultilingualNameTest {
         var maxValue = "a".repeat(200);
         var name = MultilingualName.of(FINNISH, maxValue);
         assertEquals(maxValue, name.get(FINNISH).orElseThrow());
-    }
-
-    // === Normalization Tests ===
-
-    @Test
-    void of_localeNormalizedToLanguageOnly() {
-        // Even though Locale.ENGLISH has country info in some JVMs, we normalize
-        var name = MultilingualName.of(FINNISH, "Helsinki");
-        assertEquals("Helsinki", name.get(FINNISH).orElseThrow());
-        assertEquals("Helsinki", name.get(Locale.of("FI")).orElseThrow());
     }
 
     // === Query Method Tests ===
@@ -181,7 +147,7 @@ class MultilingualNameTest {
     }
 
     @Test
-    void get_nullLocale_returnsEmpty() {
+    void get_nullLanguage_returnsEmpty() {
         var name = MultilingualName.of(FINNISH, "Helsinki");
         assertTrue(name.get(null).isEmpty());
     }
@@ -199,7 +165,7 @@ class MultilingualNameTest {
     }
 
     @Test
-    void hasLanguage_nullLocale_returnsFalse() {
+    void hasLanguage_nullLanguage_returnsFalse() {
         var name = MultilingualName.of(FINNISH, "Helsinki");
         assertFalse(name.hasLanguage(null));
     }
@@ -216,21 +182,21 @@ class MultilingualNameTest {
     }
 
     @Test
-    void locales_excludesUnspecifiedLanguage() {
-        var name = MultilingualName.of(Map.of(FINNISH, "Helsinki", Locale.ROOT, "Manual"));
-        var locales = name.locales();
-        assertEquals(1, locales.size());
-        assertTrue(locales.contains(FINNISH));
-        assertFalse(locales.contains(Locale.ROOT));
+    void languages_excludesUnspecifiedLanguage() {
+        var name = MultilingualName.of(Map.of(FINNISH, "Helsinki", Language.unspecified(), "Manual"));
+        var languages = name.languages();
+        assertEquals(1, languages.size());
+        assertTrue(languages.contains(FINNISH));
+        assertFalse(languages.contains(Language.unspecified()));
     }
 
     @Test
-    void locales_returnsAllSpecifiedLanguages() {
+    void languages_returnsAllSpecifiedLanguages() {
         var name = MultilingualName.of(Map.of(FINNISH, "Helsinki", SWEDISH, "Helsingfors"));
-        var locales = name.locales();
-        assertEquals(2, locales.size());
-        assertTrue(locales.contains(FINNISH));
-        assertTrue(locales.contains(SWEDISH));
+        var languages = name.languages();
+        assertEquals(2, languages.size());
+        assertTrue(languages.contains(FINNISH));
+        assertTrue(languages.contains(SWEDISH));
     }
 
     @Test
@@ -255,15 +221,15 @@ class MultilingualNameTest {
     }
 
     @Test
-    void locales_returnsImmutableSet() {
+    void languages_returnsImmutableSet() {
         var name = MultilingualName.of(FINNISH, "Helsinki");
         assertThrows(UnsupportedOperationException.class,
-                () -> name.locales().add(SWEDISH));
+                () -> name.languages().add(SWEDISH));
     }
 
     @Test
     void sourceMapModifications_doNotAffectInstance() {
-        var sourceMap = new HashMap<Locale, String>();
+        var sourceMap = new HashMap<Language, String>();
         sourceMap.put(FINNISH, "Helsinki");
         var name = MultilingualName.of(sourceMap);
 
@@ -362,7 +328,7 @@ class MultilingualNameTest {
         var original = MultilingualName.of(Map.of(
                 FINNISH, "Helsinki",
                 SWEDISH, "Helsingfors",
-                Locale.ROOT, "Manual"
+                Language.unspecified(), "Manual"
         ));
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, MultilingualName.class);
@@ -374,7 +340,7 @@ class MultilingualNameTest {
         var json = """
                 {"invalid-code":"value"}
                 """;
-        assertThrows(ValueInstantiationException.class,
+        assertThrows(JsonMappingException.class,
                 () -> objectMapper.readValue(json, MultilingualName.class));
     }
 
@@ -386,44 +352,5 @@ class MultilingualNameTest {
                 """.formatted(longValue);
         assertThrows(ValueInstantiationException.class,
                 () -> objectMapper.readValue(json, MultilingualName.class));
-    }
-
-    // === fromLanguageTags Tests ===
-
-    @Test
-    void fromLanguageTags_validTags_createsInstance() {
-        var name = MultilingualName.fromLanguageTags(Map.of("fi", "Helsinki", "sv", "Helsingfors"));
-        assertEquals("Helsinki", name.get(FINNISH).orElseThrow());
-        assertEquals("Helsingfors", name.get(SWEDISH).orElseThrow());
-    }
-
-    @Test
-    void fromLanguageTags_emptyStringTag_createsUnspecified() {
-        var name = MultilingualName.fromLanguageTags(Map.of("", "Manual"));
-        assertEquals("Manual", name.getUnspecified().orElseThrow());
-    }
-
-    @Test
-    void fromLanguageTags_emptyMap_returnsEmpty() {
-        var name = MultilingualName.fromLanguageTags(Map.of());
-        assertSame(MultilingualName.empty(), name);
-    }
-
-    // === toLanguageTags Tests ===
-
-    @Test
-    void toLanguageTags_returnsCorrectMap() {
-        var name = MultilingualName.of(Map.of(FINNISH, "Helsinki", SWEDISH, "Helsingfors"));
-        var tags = name.toLanguageTags();
-        assertEquals(2, tags.size());
-        assertEquals("Helsinki", tags.get("fi"));
-        assertEquals("Helsingfors", tags.get("sv"));
-    }
-
-    @Test
-    void toLanguageTags_unspecifiedLanguage_usesEmptyString() {
-        var name = MultilingualName.withUnspecifiedLanguage("Manual");
-        var tags = name.toLanguageTags();
-        assertEquals("Manual", tags.get(""));
     }
 }

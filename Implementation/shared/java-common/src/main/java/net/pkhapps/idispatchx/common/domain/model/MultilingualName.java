@@ -1,17 +1,13 @@
 package net.pkhapps.idispatchx.common.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.jspecify.annotations.Nullable;
 
-import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -21,77 +17,38 @@ import java.util.stream.Collectors;
  * are also used. This class supports ISO 639 language codes (ISO 639-1 where available,
  * otherwise ISO 639-2 or 639-3).
  * <p>
- * When a name is manually entered without language specification, {@link Locale#ROOT} is used
- * as the key. The system must not assume or infer a language for such entries.
+ * When a name is manually entered without language specification, {@link Language#unspecified()}
+ * is used as the key. The system must not assume or infer a language for such entries.
  * <p>
  * An empty MultilingualName (with no language versions) represents an unknown or unspecified
  * name. The absence of a name must be represented as an empty MultilingualName, not as null.
  *
- * @param values an immutable map of locales to name values
+ * @param values an immutable map of languages to name values
  */
-public record MultilingualName(Map<Locale, String> values) {
+public record MultilingualName(Map<Language, String> values) {
 
     /**
      * Maximum length of a name value in characters.
      */
     public static final int MAX_VALUE_LENGTH = 200;
 
-    /**
-     * Locale representing an unspecified language (for manually entered names).
-     */
-    public static final Locale UNSPECIFIED_LANGUAGE = Locale.ROOT;
-
     private static final MultilingualName EMPTY = new MultilingualName(Map.of());
-
-    private static final Pattern ISO_639_PATTERN = Pattern.compile("^[a-z]{2,3}$");
 
     /**
      * Compact constructor that validates and normalizes the input map.
      *
-     * @param values the map of locales to name values
+     * @param values the map of languages to name values
      * @throws NullPointerException     if values is null, or any key or value is null
-     * @throws IllegalArgumentException if any locale is invalid or any value is blank/too long
+     * @throws IllegalArgumentException if any value is blank or too long
      */
     public MultilingualName {
         Objects.requireNonNull(values, "values must not be null");
-        var normalized = new LinkedHashMap<Locale, String>();
         for (var entry : values.entrySet()) {
-            var locale = entry.getKey();
-            var value = entry.getValue();
-            Objects.requireNonNull(locale, "locale must not be null");
-            Objects.requireNonNull(value, "value must not be null");
-            validateLocale(locale);
-            validateValue(value);
-            normalized.put(normalizeLocale(locale), value);
+            Objects.requireNonNull(entry.getKey(), "language must not be null");
+            Objects.requireNonNull(entry.getValue(), "value must not be null");
+            validateValue(entry.getValue());
         }
-        values = Map.copyOf(normalized);
-    }
-
-    private static void validateLocale(Locale locale) {
-        var language = locale.getLanguage();
-        if (language.isEmpty()) {
-            if (!locale.getCountry().isEmpty() || !locale.getVariant().isEmpty()) {
-                throw new IllegalArgumentException(
-                        "invalid locale '" + locale.toLanguageTag() + "': unspecified language must use Locale.ROOT");
-            }
-            return; // Locale.ROOT is allowed for unspecified language
-        }
-        if (!ISO_639_PATTERN.matcher(language).matches()) {
-            throw new IllegalArgumentException(
-                    "invalid locale '" + locale.toLanguageTag() + "': language must be 2-3 lowercase letters (ISO 639)");
-        }
-        if (!locale.getScript().isEmpty() || !locale.getCountry().isEmpty() || !locale.getVariant().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "invalid locale '" + locale.toLanguageTag() + "': only language code is allowed, no script/country/variant");
-        }
-    }
-
-    private static Locale normalizeLocale(Locale locale) {
-        var language = locale.getLanguage();
-        if (language.isEmpty()) {
-            return Locale.ROOT;
-        }
-        return Locale.forLanguageTag(language.toLowerCase());
+        values = Map.copyOf(values);
     }
 
     private static void validateValue(String value) {
@@ -105,39 +62,15 @@ public record MultilingualName(Map<Locale, String> values) {
     }
 
     /**
-     * Creates a MultilingualName from a map of language tags to values.
-     * This is the JSON deserialization entry point.
+     * Creates a MultilingualName from the given map of languages to values.
      *
-     * @param values the map of language tags to name values
+     * @param values the map of languages to name values
      * @return the MultilingualName instance
      * @throws NullPointerException     if values is null, or any key or value is null
-     * @throws IllegalArgumentException if any language tag is invalid or any value is blank/too long
+     * @throws IllegalArgumentException if any value is blank or too long
      */
     @JsonCreator
-    public static MultilingualName fromLanguageTags(Map<String, String> values) {
-        Objects.requireNonNull(values, "values must not be null");
-        if (values.isEmpty()) {
-            return EMPTY;
-        }
-        var localeMap = new LinkedHashMap<Locale, String>();
-        for (var entry : values.entrySet()) {
-            var languageTag = entry.getKey();
-            Objects.requireNonNull(languageTag, "language tag must not be null");
-            var locale = languageTag.isEmpty() ? Locale.ROOT : Locale.forLanguageTag(languageTag);
-            localeMap.put(locale, entry.getValue());
-        }
-        return new MultilingualName(localeMap);
-    }
-
-    /**
-     * Creates a MultilingualName from the given map of locales to values.
-     *
-     * @param values the map of locales to name values
-     * @return the MultilingualName instance
-     * @throws NullPointerException     if values is null, or any key or value is null
-     * @throws IllegalArgumentException if any locale is invalid or any value is blank/too long
-     */
-    public static MultilingualName of(Map<Locale, String> values) {
+    public static MultilingualName of(Map<Language, String> values) {
         if (values.isEmpty()) {
             return EMPTY;
         }
@@ -145,16 +78,28 @@ public record MultilingualName(Map<Locale, String> values) {
     }
 
     /**
+     * Returns the immutable map of languages to name values.
+     * This is the JSON serialization method.
+     *
+     * @return map of languages to values
+     */
+    @JsonValue
+    @Override
+    public Map<Language, String> values() {
+        return values;
+    }
+
+    /**
      * Creates a MultilingualName with a single language version.
      *
-     * @param locale the locale (must have only a language code, no script/country/variant)
-     * @param value  the name value
+     * @param language the language
+     * @param value    the name value
      * @return the MultilingualName instance
-     * @throws NullPointerException     if locale or value is null
-     * @throws IllegalArgumentException if locale is invalid or value is blank/too long
+     * @throws NullPointerException     if language or value is null
+     * @throws IllegalArgumentException if value is blank or too long
      */
-    public static MultilingualName of(Locale locale, String value) {
-        return new MultilingualName(Map.of(locale, value));
+    public static MultilingualName of(Language language, String value) {
+        return new MultilingualName(Map.of(language, value));
     }
 
     /**
@@ -166,7 +111,7 @@ public record MultilingualName(Map<Locale, String> values) {
      * @throws IllegalArgumentException if value is blank or too long
      */
     public static MultilingualName withUnspecifiedLanguage(String value) {
-        return new MultilingualName(Map.of(UNSPECIFIED_LANGUAGE, value));
+        return new MultilingualName(Map.of(Language.unspecified(), value));
     }
 
     /**
@@ -179,32 +124,16 @@ public record MultilingualName(Map<Locale, String> values) {
     }
 
     /**
-     * Returns the values as a map of language tags to name values.
-     * This is the JSON serialization method.
+     * Gets the name value for the specified language.
      *
-     * @return map of language tags to values
-     */
-    @JsonValue
-    public Map<String, String> toLanguageTags() {
-        var result = new LinkedHashMap<String, String>();
-        for (var entry : values.entrySet()) {
-            var languageTag = entry.getKey().equals(Locale.ROOT) ? "" : entry.getKey().toLanguageTag();
-            result.put(languageTag, entry.getValue());
-        }
-        return result;
-    }
-
-    /**
-     * Gets the name value for the specified locale.
-     *
-     * @param locale the locale (or {@link Locale#ROOT} for unspecified)
+     * @param language the language (or {@link Language#unspecified()} for unspecified)
      * @return the name value, or empty if not present
      */
-    public Optional<String> get(@Nullable Locale locale) {
-        if (locale == null) {
+    public Optional<String> get(@Nullable Language language) {
+        if (language == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(values.get(normalizeLocale(locale)));
+        return Optional.ofNullable(values.get(language));
     }
 
     /**
@@ -212,22 +141,21 @@ public record MultilingualName(Map<Locale, String> values) {
      *
      * @return the unspecified language value, or empty if not present
      */
-    @JsonIgnore
     public Optional<String> getUnspecified() {
-        return get(UNSPECIFIED_LANGUAGE);
+        return get(Language.unspecified());
     }
 
     /**
-     * Checks if this multilingual name has a value for the specified locale.
+     * Checks if this multilingual name has a value for the specified language.
      *
-     * @param locale the locale (or {@link Locale#ROOT} for unspecified)
-     * @return true if a value exists for the locale
+     * @param language the language (or {@link Language#unspecified()} for unspecified)
+     * @return true if a value exists for the language
      */
-    public boolean hasLanguage(@Nullable Locale locale) {
-        if (locale == null) {
+    public boolean hasLanguage(@Nullable Language language) {
+        if (language == null) {
             return false;
         }
-        return values.containsKey(normalizeLocale(locale));
+        return values.containsKey(language);
     }
 
     /**
@@ -235,20 +163,18 @@ public record MultilingualName(Map<Locale, String> values) {
      *
      * @return true if empty
      */
-    @JsonIgnore
     public boolean isEmpty() {
         return values.isEmpty();
     }
 
     /**
-     * Returns the set of locales in this multilingual name, excluding the unspecified language.
+     * Returns the set of languages in this multilingual name, excluding the unspecified language.
      *
-     * @return set of locales (excluding {@link Locale#ROOT})
+     * @return set of languages (excluding {@link Language#unspecified()})
      */
-    @JsonIgnore
-    public Set<Locale> locales() {
+    public Set<Language> languages() {
         return values.keySet().stream()
-                .filter(locale -> !locale.equals(Locale.ROOT))
+                .filter(language -> !language.isUnspecified())
                 .collect(Collectors.toUnmodifiableSet());
     }
 
@@ -257,7 +183,6 @@ public record MultilingualName(Map<Locale, String> values) {
      *
      * @return the number of language versions
      */
-    @JsonIgnore
     public int size() {
         return values.size();
     }
@@ -270,7 +195,6 @@ public record MultilingualName(Map<Locale, String> values) {
      *
      * @return any value, or empty if this multilingual name is empty
      */
-    @JsonIgnore
     public Optional<String> anyValue() {
         return values.values().stream().findFirst();
     }
