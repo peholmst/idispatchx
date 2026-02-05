@@ -16,6 +16,8 @@
         "reconnections",
         "Sami",
         "tungstenite",
-        "WMTS"
+        "WMTS",
+        "callsign",
+        "callsigns"
     ]
 }
