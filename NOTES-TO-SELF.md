@@ -1,5 +1,13 @@
 # NOTES-TO-SELF (written by humans, not AI)
 
+# 2026-02-06
+
+* Still haven't checked the code from 2026-02-03
+* Did a first UX spec for the Dispatcher Client. It is pretty good, but the location selector must be smarter. The dispatcher doesn't necessarily know what type of address they are getting until after the caller has told them. Therefore you can't start by selecting a type; the type selection must be automatic and contextual.
+  * [ ] Iterate this design with Claude
+* Asked Claude to generate HTML mockups based on the UX spec, and they look quite nice!!!
+  * Although some details need tweaking, and the background colors of the footer and header have been mixed up. Although I kind of like it.
+
 # 2026-02-05
 
 * Continued with small value objects. Even with them you have to be careful about nitty-gritty details.
