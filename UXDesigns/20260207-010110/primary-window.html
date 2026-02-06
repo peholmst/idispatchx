@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>iDispatchX — Primary Window</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-icon">iD</div>
+        iDispatchX
+      </div>
+      <span class="header-datetime">Sat 07.02.2026 &nbsp; 14:32:08</span>
+    </div>
+
+    <div class="header-center">
+      <button class="btn btn-primary">+ New Call</button>
+      <button class="btn btn-primary">+ New Incident</button>
+    </div>
+
+    <div class="header-right">
+      <!-- Layout presets -->
+      <button class="layout-btn" title="Call focused (Ctrl+Shift+1)">
+        <span class="layout-bar" style="width:6px"></span>
+        <span class="layout-bar" style="width:4px"></span>
+        <span class="layout-bar" style="width:4px"></span>
+      </button>
+      <button class="layout-btn active" title="Equal columns (Ctrl+Shift+2)">
+        <span class="layout-bar"></span>
+        <span class="layout-bar"></span>
+        <span class="layout-bar"></span>
+      </button>
+      <button class="layout-btn" title="Incident focused (Ctrl+Shift+3)">
+        <span class="layout-bar" style="width:4px"></span>
+        <span class="layout-bar" style="width:6px"></span>
+        <span class="layout-bar" style="width:4px"></span>
+      </button>
+      <button class="layout-btn" title="Lists focused (Ctrl+Shift+4)">
+        <span class="layout-bar" style="width:4px"></span>
+        <span class="layout-bar" style="width:4px"></span>
+        <span class="layout-bar" style="width:6px"></span>
+      </button>
+    </div>
+  </header>
+
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="main">
+
+    <!-- ========== COLUMN 1: CALL DETAILS ========== -->
+    <section class="column">
+      <div class="column-header">
+        <span>Call Details</span>
+        <span class="state-badge call-active">Active</span>
+      </div>
+
+      <div class="column-body">
+
+        <!-- Caller Name -->
+        <div class="form-group">
+          <label class="form-label">Caller Name</label>
+          <input class="form-control" type="text" value="Matti Virtanen" readonly>
+        </div>
+
+        <!-- Caller Phone -->
+        <div class="form-group">
+          <label class="form-label">Caller Phone</label>
+          <input class="form-control" type="text" value="+358 40 123 4567" readonly>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <div class="location-variant-tabs">
+            <span class="location-variant-tab active">Exact Address</span>
+            <span class="location-variant-tab">Intersection</span>
+            <span class="location-variant-tab">Named Place</span>
+            <span class="location-variant-tab">Relative</span>
+          </div>
+          <div class="location-fields">
+            <div class="form-group">
+              <label class="form-label">Municipality</label>
+              <input class="form-control" type="text" value="Helsinki (091)" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address Name</label>
+              <input class="form-control" type="text" value="Mannerheimintie" readonly>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Number</label>
+                <input class="form-control" type="text" value="12" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Coordinates (DDM)</label>
+                <input class="form-control coord-display" type="text" value="60&deg;10.220'N  024&deg;56.380'E" readonly>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Additional Details</label>
+              <input class="form-control" type="text" value="2nd floor, apartment 4B" readonly>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" rows="3" readonly>Caller reports smoke coming from the apartment above. No visible flames. Multiple residents evacuating the building.</textarea>
+        </div>
+
+        <!-- Outcome -->
+        <div class="form-group">
+          <label class="form-label">Outcome</label>
+          <div class="outcome-group">
+            <span class="outcome-option auto">Incident Created</span>
+            <span class="outcome-option auto">Attached to Incident</span>
+            <span class="outcome-option">Caller Advised</span>
+            <span class="outcome-option">Hoax</span>
+            <span class="outcome-option">Accidental</span>
+            <span class="outcome-option">No Actions</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Call Actions -->
+      <div class="column-actions">
+        <button class="btn btn-secondary">End Call</button>
+        <button class="btn btn-primary">Create Incident From Call</button>
+        <button class="btn btn-secondary">Attach to Incident</button>
+        <button class="btn btn-secondary">Copy Location to Incident</button>
+        <button class="btn btn-secondary btn-small">Show on Map</button>
+      </div>
+    </section>
+
+
+    <!-- ========== COLUMN 2: INCIDENT DETAILS ========== -->
+    <section class="column">
+      <div class="column-header">
+        <span>Incident Details</span>
+        <span style="display:flex; gap:6px; align-items:center;">
+          <span class="priority-badge priority-a">A</span>
+          <span class="state-badge incident-active">Active</span>
+        </span>
+      </div>
+
+      <div class="column-body" style="display:flex; flex-direction:column;">
+
+        <!-- State Indicator -->
+        <div class="state-indicator incident-active">
+          <span class="state-label">Active</span>
+          <div class="state-actions">
+            <button class="btn btn-small btn-secondary">Monitored</button>
+            <button class="btn btn-small btn-danger">Close</button>
+          </div>
+        </div>
+
+        <!-- Incident Type -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Incident Type</label>
+            <select class="form-control">
+              <option selected>202 — Building Fire</option>
+            </select>
+          </div>
+          <div class="form-group" style="max-width:80px">
+            <label class="form-label">Priority</label>
+            <select class="form-control">
+              <option>A</option>
+              <option>B</option>
+              <option>C</option>
+              <option>D</option>
+              <option>N</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <div class="location-variant-tabs">
+            <span class="location-variant-tab active">Exact Address</span>
+            <span class="location-variant-tab">Intersection</span>
+            <span class="location-variant-tab">Named Place</span>
+            <span class="location-variant-tab">Relative</span>
+          </div>
+          <div class="location-fields">
+            <div class="form-group">
+              <label class="form-label">Municipality</label>
+              <input class="form-control" type="text" value="Helsinki (091)" readonly>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address Name</label>
+              <input class="form-control" type="text" value="Mannerheimintie" readonly>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Number</label>
+                <input class="form-control" type="text" value="12" readonly>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Coordinates (DDM)</label>
+                <input class="form-control coord-display" type="text" value="60&deg;10.220'N  024&deg;56.380'E" readonly>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" rows="2" readonly>Smoke reported from 2nd floor apartment in a residential building. Residents evacuating.</textarea>
+        </div>
+
+        <!-- Bottom tabs area -->
+        <div class="incident-bottom">
+          <div class="tabs">
+            <div class="tab active">Assigned Units</div>
+            <div class="tab">Linked Calls</div>
+            <div class="tab">Incident Log</div>
+          </div>
+          <div class="tab-content">
+
+            <!-- Unit 1 — dispatched -->
+            <div class="unit-assignment">
+              <span class="unit-state-dot dispatched"></span>
+              <span class="unit-callsign">RVS11</span>
+              <span class="unit-state-label">Dispatched</span>
+              <span class="text-muted" style="font-size:11px">1+1+3</span>
+              <span class="unit-timestamps">disp 14:28</span>
+              <div class="unit-actions-inline">
+                <button class="btn btn-icon btn-small" title="Show on Map">&#9737;</button>
+              </div>
+            </div>
+
+            <!-- Unit 2 — en route -->
+            <div class="unit-assignment">
+              <span class="unit-state-dot en-route"></span>
+              <span class="unit-callsign">RVS21</span>
+              <span class="unit-state-label">En Route</span>
+              <span class="text-muted" style="font-size:11px">1+0+2</span>
+              <span class="unit-timestamps">disp 14:28 &middot; enr 14:30</span>
+              <div class="unit-actions-inline">
+                <button class="btn btn-icon btn-small" title="Show on Map">&#9737;</button>
+              </div>
+            </div>
+
+            <!-- Unit 3 — on scene -->
+            <div class="unit-assignment">
+              <span class="unit-state-dot on-scene"></span>
+              <span class="unit-callsign">HKI12</span>
+              <span class="unit-state-label">On Scene</span>
+              <span class="text-muted" style="font-size:11px">1+1+4</span>
+              <span class="unit-timestamps">disp 14:25 &middot; enr 14:27 &middot; sce 14:31</span>
+              <div class="unit-actions-inline">
+                <button class="btn btn-icon btn-small" title="Show on Map">&#9737;</button>
+              </div>
+            </div>
+
+            <!-- Unit 4 — assigned, pending dispatch -->
+            <div class="unit-assignment" style="opacity:0.7">
+              <span class="unit-state-dot" style="background:#e3a008"></span>
+              <span class="unit-callsign">ESP41</span>
+              <span class="unit-state-label" style="color:#e3a008">Assigned</span>
+              <span class="text-muted" style="font-size:11px">1+0+3</span>
+              <span class="unit-timestamps">asgn 14:31</span>
+              <div class="unit-actions-inline">
+                <button class="btn btn-icon btn-small" title="Unassign">&#10005;</button>
+                <button class="btn btn-icon btn-small" title="Show on Map">&#9737;</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Incident Actions -->
+      <div class="column-actions">
+        <button class="btn btn-primary">Dispatch New Units</button>
+        <button class="btn btn-secondary">Dispatch Selected</button>
+        <button class="btn btn-secondary btn-small">Show on Map</button>
+      </div>
+    </section>
+
+
+    <!-- ========== COLUMN 3: CALL & INCIDENT LISTS ========== -->
+    <section class="column" style="display:flex; flex-direction:column;">
+
+      <!-- --- Call List --- -->
+      <div class="list-panel">
+        <div class="list-header">
+          <span class="list-title">Calls</span>
+          <div class="list-filter">
+            <input class="filter-input" type="text" placeholder="Filter calls...">
+          </div>
+        </div>
+        <div class="list-table-wrapper">
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th class="col-time">Time <span class="sort-arrow">&#9660;</span></th>
+                <th>Caller</th>
+                <th>Phone</th>
+                <th>Location</th>
+                <th class="col-state">State</th>
+                <th>Outcome</th>
+                <th>Dispatcher</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="selected">
+                <td class="col-time">14:26</td>
+                <td>Matti Virtanen</td>
+                <td>+358 40 123 4567</td>
+                <td>Mannerheimintie 12, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-active">Active</span></td>
+                <td class="text-muted">—</td>
+                <td>J. Korhonen</td>
+              </tr>
+              <tr>
+                <td class="col-time">14:18</td>
+                <td>Anna Lehtonen</td>
+                <td>+358 50 987 6543</td>
+                <td>Hämeentie 45, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-ended">Ended</span></td>
+                <td>Caller Advised</td>
+                <td>M. Niemi</td>
+              </tr>
+              <tr>
+                <td class="col-time">14:11</td>
+                <td>Juhani Mäkelä</td>
+                <td>+358 44 555 1234</td>
+                <td>Aleksanterinkatu 8, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-ended">Ended</span></td>
+                <td>Incident Created</td>
+                <td>J. Korhonen</td>
+              </tr>
+              <tr>
+                <td class="col-time">13:54</td>
+                <td>Liisa Koskinen</td>
+                <td>+358 40 222 3344</td>
+                <td>Fredrikinkatu 30, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-ended">Ended</span></td>
+                <td>Attached</td>
+                <td>M. Niemi</td>
+              </tr>
+              <tr>
+                <td class="col-time">13:41</td>
+                <td>Pekka Järvinen</td>
+                <td>+358 50 111 2233</td>
+                <td>Bulevardi 3, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-ended">Ended</span></td>
+                <td>Incident Created</td>
+                <td>J. Korhonen</td>
+              </tr>
+              <tr>
+                <td class="col-time">13:22</td>
+                <td>Eero Tuominen</td>
+                <td>+358 44 333 4455</td>
+                <td>Runeberginkatu 17, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-ended">Ended</span></td>
+                <td>No Actions</td>
+                <td>M. Niemi</td>
+              </tr>
+              <tr>
+                <td class="col-time">13:05</td>
+                <td>Sari Laaksonen</td>
+                <td>+358 40 444 5566</td>
+                <td>Töölönkatu 22, Helsinki</td>
+                <td class="col-state"><span class="state-badge call-ended">Ended</span></td>
+                <td>Hoax</td>
+                <td>J. Korhonen</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- --- Incident List --- -->
+      <div class="list-panel">
+        <div class="list-header">
+          <span class="list-title">Incidents</span>
+          <div class="list-filter">
+            <input class="filter-input" type="text" placeholder="Filter incidents...">
+            <button class="filter-toggle">State</button>
+            <button class="filter-toggle">Priority</button>
+            <button class="filter-toggle">Show Ended</button>
+          </div>
+        </div>
+        <div class="list-table-wrapper">
+          <table class="list-table">
+            <thead>
+              <tr>
+                <th class="col-time">Time <span class="sort-arrow">&#9660;</span></th>
+                <th>Type</th>
+                <th class="col-priority">Pri</th>
+                <th>Location</th>
+                <th class="col-state">State</th>
+                <th class="col-units">Units</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="selected">
+                <td class="col-time">14:26</td>
+                <td>202 — Building Fire</td>
+                <td class="col-priority"><span class="priority-badge priority-a">A</span></td>
+                <td>Mannerheimintie 12, Helsinki</td>
+                <td class="col-state"><span class="state-badge incident-active">Active</span></td>
+                <td class="col-units">4</td>
+              </tr>
+              <tr>
+                <td class="col-time">14:11</td>
+                <td>401 — Traffic Accident</td>
+                <td class="col-priority"><span class="priority-badge priority-b">B</span></td>
+                <td>Aleksanterinkatu 8, Helsinki</td>
+                <td class="col-state"><span class="state-badge incident-active">Active</span></td>
+                <td class="col-units">2</td>
+              </tr>
+              <tr>
+                <td class="col-time">13:41</td>
+                <td>301 — First Response</td>
+                <td class="col-priority"><span class="priority-badge priority-c">C</span></td>
+                <td>Bulevardi 3, Helsinki</td>
+                <td class="col-state"><span class="state-badge incident-monitored">Monitored</span></td>
+                <td class="col-units">1</td>
+              </tr>
+              <tr>
+                <td class="col-time">12:55</td>
+                <td>501 — Hazmat Spill</td>
+                <td class="col-priority"><span class="priority-badge priority-b">B</span></td>
+                <td>Satamakatu 15, Helsinki</td>
+                <td class="col-state"><span class="state-badge incident-queued">Queued</span></td>
+                <td class="col-units">0</td>
+              </tr>
+              <tr>
+                <td class="col-time">12:30</td>
+                <td>102 — Automatic Alarm</td>
+                <td class="col-priority"><span class="priority-badge priority-d">D</span></td>
+                <td>Kalevankatu 9, Helsinki</td>
+                <td class="col-state"><span class="state-badge incident-new">New</span></td>
+                <td class="col-units">0</td>
+              </tr>
+              <tr>
+                <td class="col-time">11:45</td>
+                <td>601 — Operational Order</td>
+                <td class="col-priority"><span class="priority-badge priority-n">N</span></td>
+                <td>Keskuspaloasema, Helsinki</td>
+                <td class="col-state"><span class="state-badge incident-active">Active</span></td>
+                <td class="col-units">1</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="footer-left">
+      <span>Jarkko Korhonen</span>
+    </div>
+    <div class="footer-right">
+      <span class="mode-indicator">
+        <span class="mode-dot"></span>
+        Normal Mode
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>
