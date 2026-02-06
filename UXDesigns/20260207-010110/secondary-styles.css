@@ -1,0 +1,649 @@
+/* ============================================================
+   iDispatchX Dispatcher Client – Secondary Window
+   Visual sketch – VS Code dark theme inspired
+   ============================================================ */
+
+/* ---------- Secondary layout: two-panel split ---------- */
+
+.split-view {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.panel + .panel {
+  border-left: 1px solid #2b2b2b;
+}
+
+.panel-map {
+  flex: 1;
+}
+
+.panel-dashboard {
+  flex: 1;
+}
+
+/* ---------- Map placeholder ---------- */
+
+.map-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #252526;
+  border-bottom: 1px solid #2b2b2b;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.map-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.map-toolbar-separator {
+  width: 1px;
+  height: 18px;
+  background: #444444;
+  margin: 0 4px;
+}
+
+.map-toolbar-label {
+  font-size: 10px;
+  color: #777777;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-right: 2px;
+}
+
+.layer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  background: #3a3d41;
+  color: #9d9d9d;
+  border: 1px solid #555555;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.layer-toggle.active {
+  background: #0e4579;
+  color: #4daafc;
+  border-color: #0078d4;
+}
+
+.layer-toggle .toggle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555555;
+}
+
+.layer-toggle.active .toggle-dot {
+  background: #4daafc;
+}
+
+.layer-select {
+  padding: 2px 6px;
+  font-size: 11px;
+  background: #3c3c3c;
+  color: #cccccc;
+  border: 1px solid #555555;
+  border-radius: 3px;
+  font-family: inherit;
+}
+
+.map-lookup-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #2a2a2a;
+  border-bottom: 1px solid #2b2b2b;
+  flex-shrink: 0;
+}
+
+.map-lookup-bar .form-label {
+  margin-bottom: 0;
+  min-width: fit-content;
+}
+
+.lookup-input {
+  padding: 3px 8px;
+  background: #3c3c3c;
+  border: 1px solid #555555;
+  border-radius: 3px;
+  color: #cccccc;
+  font-family: inherit;
+  font-size: 12px;
+  flex: 1;
+  min-width: 80px;
+}
+
+.lookup-input::placeholder {
+  color: #666666;
+}
+
+.map-placeholder {
+  flex: 1;
+  position: relative;
+  background: #1a2a1a;
+  overflow: hidden;
+}
+
+/* Simulated dark map background using CSS */
+.map-placeholder .map-image {
+  position: absolute;
+  inset: 0;
+  background:
+    /* Water areas */
+    radial-gradient(ellipse 40% 25% at 15% 80%, #1a2535 0%, transparent 100%),
+    radial-gradient(ellipse 30% 20% at 85% 20%, #1a2535 0%, transparent 100%),
+    /* Parks */
+    radial-gradient(ellipse 15% 12% at 55% 45%, #1e2e1e 0%, transparent 100%),
+    radial-gradient(ellipse 10% 8% at 30% 30%, #1e2e1e 0%, transparent 100%),
+    /* Base terrain */
+    linear-gradient(145deg, #222c22 0%, #1e261e 30%, #202820 60%, #1c241c 100%);
+}
+
+/* Grid lines (roads) */
+.map-placeholder .map-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    /* Horizontal roads */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 80px,
+      rgba(60, 60, 50, 0.3) 80px,
+      rgba(60, 60, 50, 0.3) 81px
+    ),
+    /* Vertical roads */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 100px,
+      rgba(60, 60, 50, 0.3) 100px,
+      rgba(60, 60, 50, 0.3) 101px
+    ),
+    /* Major horizontal */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 240px,
+      rgba(80, 75, 55, 0.4) 240px,
+      rgba(80, 75, 55, 0.4) 242px
+    ),
+    /* Major vertical */
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 300px,
+      rgba(80, 75, 55, 0.4) 300px,
+      rgba(80, 75, 55, 0.4) 302px
+    );
+}
+
+/* Zoom controls */
+.map-zoom {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 2;
+}
+
+.map-zoom button {
+  width: 30px;
+  height: 30px;
+  background: rgba(37, 37, 38, 0.9);
+  border: 1px solid #444444;
+  color: #cccccc;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-zoom button:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.map-zoom button:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+.map-zoom button:hover {
+  background: rgba(60, 60, 60, 0.95);
+}
+
+/* Map scale indicator */
+.map-scale {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  z-index: 2;
+}
+
+.map-scale-bar {
+  width: 80px;
+  height: 3px;
+  background: rgba(180, 180, 180, 0.6);
+  border-left: 1px solid rgba(180, 180, 180, 0.6);
+  border-right: 1px solid rgba(180, 180, 180, 0.6);
+}
+
+.map-scale-label {
+  font-size: 10px;
+  color: rgba(180, 180, 180, 0.6);
+}
+
+/* Map attribution */
+.map-attribution {
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 9px;
+  color: rgba(120, 120, 120, 0.6);
+  z-index: 2;
+}
+
+/* ---------- Map markers ---------- */
+
+.map-marker {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+}
+
+.map-marker .marker-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.map-marker .marker-icon span {
+  transform: rotate(45deg);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.map-marker .marker-label {
+  margin-top: 2px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.7);
+  color: #e0e0e0;
+}
+
+/* Marker colors */
+.marker-incident .marker-icon {
+  background: #dc3545;
+}
+
+.marker-call .marker-icon {
+  background: #0078d4;
+  border-radius: 4px;
+  transform: none;
+}
+
+.marker-call .marker-icon span {
+  transform: none;
+}
+
+.marker-unit .marker-icon {
+  background: #3a7d44;
+  border-radius: 50%;
+  transform: none;
+  width: 24px;
+  height: 24px;
+}
+
+.marker-unit .marker-icon span {
+  transform: none;
+  font-size: 9px;
+}
+
+.marker-station .marker-icon {
+  background: #555555;
+  border-radius: 2px;
+  transform: none;
+  width: 22px;
+  height: 22px;
+}
+
+.marker-station .marker-icon span {
+  transform: none;
+  font-size: 10px;
+}
+
+/* ---------- Unit Dashboard ---------- */
+
+.dashboard-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #252526;
+  border-bottom: 1px solid #2b2b2b;
+  flex-shrink: 0;
+}
+
+.dashboard-toolbar .filter-input {
+  width: 130px;
+}
+
+.sort-select {
+  padding: 3px 6px;
+  font-size: 11px;
+  background: #3c3c3c;
+  color: #cccccc;
+  border: 1px solid #555555;
+  border-radius: 3px;
+  font-family: inherit;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+}
+
+.view-toggle-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  background: #3a3d41;
+  color: #9d9d9d;
+  border: 1px solid #555555;
+  cursor: pointer;
+}
+
+.view-toggle-btn:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+.view-toggle-btn:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+.view-toggle-btn.active {
+  background: #0e4579;
+  color: #4daafc;
+  border-color: #0078d4;
+}
+
+.dashboard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* ---------- Unit cards (card view) ---------- */
+
+.unit-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+
+.unit-card {
+  background: #252526;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+
+.unit-card:hover {
+  border-color: #555555;
+}
+
+.unit-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.unit-card-callsign {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e0e0e0;
+  letter-spacing: 0.3px;
+}
+
+.unit-card-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Unit state colors */
+.unit-state-unavailable {
+  background: rgba(80, 80, 80, 0.25);
+  color: #777777;
+  border: 1px solid rgba(80, 80, 80, 0.4);
+}
+
+.unit-state-available-radio {
+  background: rgba(58, 125, 68, 0.2);
+  color: #5cba6e;
+  border: 1px solid rgba(58, 125, 68, 0.4);
+}
+
+.unit-state-available-station {
+  background: rgba(58, 125, 68, 0.25);
+  color: #6dcc7f;
+  border: 1px solid rgba(58, 125, 68, 0.5);
+}
+
+.unit-state-assigned {
+  background: rgba(227, 160, 8, 0.2);
+  color: #e3a008;
+  border: 1px solid rgba(227, 160, 8, 0.4);
+}
+
+.unit-state-dispatching {
+  background: rgba(230, 126, 34, 0.25);
+  color: #e67e22;
+  border: 1px solid rgba(230, 126, 34, 0.4);
+  animation: pulse-active 1.5s ease-in-out infinite;
+}
+
+.unit-state-dispatched {
+  background: rgba(230, 126, 34, 0.2);
+  color: #e67e22;
+  border: 1px solid rgba(230, 126, 34, 0.4);
+}
+
+.unit-state-en-route {
+  background: rgba(52, 152, 219, 0.2);
+  color: #5dade2;
+  border: 1px solid rgba(52, 152, 219, 0.4);
+}
+
+.unit-state-on-scene {
+  background: rgba(231, 72, 86, 0.2);
+  color: #e74856;
+  border: 1px solid rgba(231, 72, 86, 0.4);
+}
+
+.unit-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 11px;
+}
+
+.unit-card-detail {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.unit-card-detail-label {
+  color: #666666;
+}
+
+.unit-card-detail-value {
+  color: #aaaaaa;
+}
+
+.unit-card-detail-value.stale {
+  color: #e3a008;
+}
+
+.unit-card-incident {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  background: rgba(220, 50, 47, 0.12);
+  border: 1px solid rgba(220, 50, 47, 0.25);
+  border-radius: 3px;
+  font-size: 11px;
+  color: #ff6b6b;
+}
+
+.unit-card-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 5px;
+  border-top: 1px solid #333333;
+}
+
+/* ---------- Secondary layout buttons ---------- */
+
+.layout-btn-secondary {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 3px;
+  background: transparent;
+  border: none;
+  align-items: center;
+}
+
+.layout-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.layout-btn-secondary.active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.layout-block {
+  height: 14px;
+  background: #666666;
+  border-radius: 1px;
+}
+
+.layout-btn-secondary.active .layout-block {
+  background: #0078d4;
+}
+
+/* ---------- Map placeholder label ---------- */
+
+.map-placeholder-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.map-placeholder-label .icon {
+  font-size: 48px;
+  color: #666666;
+}
+
+.map-placeholder-label .text {
+  font-size: 14px;
+  color: #666666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ---------- Coord display in map ---------- */
+
+.map-coords {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  background: rgba(30, 30, 30, 0.85);
+  border: 1px solid #444444;
+  border-radius: 3px;
+  font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  font-size: 10px;
+  color: #9d9d9d;
+  z-index: 2;
+  white-space: nowrap;
+}
