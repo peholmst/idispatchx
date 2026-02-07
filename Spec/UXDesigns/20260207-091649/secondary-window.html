@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <title>iDispatchX — Secondary Window</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="secondary-styles.css">
+</head>
+<body>
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-icon">iD</div>
+        iDispatchX
+      </div>
+      <span class="header-datetime">Sat 07.02.2026 &nbsp; 14:32:08</span>
+    </div>
+
+    <div class="header-center">
+      <!-- No primary actions on secondary window -->
+    </div>
+
+    <div class="header-right">
+      <!-- Layout presets: Map only, 2:1, 1:1, 1:2, Dashboard only -->
+      <button class="layout-btn-secondary" title="Map only (Ctrl+Shift+1)">
+        <span class="layout-block" style="width:20px"></span>
+      </button>
+      <button class="layout-btn-secondary" title="Map 2:1 Dashboard (Ctrl+Shift+2)">
+        <span class="layout-block" style="width:14px"></span>
+        <span class="layout-block" style="width:7px"></span>
+      </button>
+      <button class="layout-btn-secondary active" title="Map 1:1 Dashboard (Ctrl+Shift+3)">
+        <span class="layout-block" style="width:10px"></span>
+        <span class="layout-block" style="width:10px"></span>
+      </button>
+      <button class="layout-btn-secondary" title="Map 1:2 Dashboard (Ctrl+Shift+4)">
+        <span class="layout-block" style="width:7px"></span>
+        <span class="layout-block" style="width:14px"></span>
+      </button>
+      <button class="layout-btn-secondary" title="Dashboard only (Ctrl+Shift+5)">
+        <span class="layout-block" style="width:20px; background:#666"></span>
+      </button>
+    </div>
+  </header>
+
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="split-view">
+
+    <!-- ========== LEFT PANEL: MAP ========== -->
+    <div class="panel panel-map">
+      <div class="map-container">
+
+        <!-- Map toolbar -->
+        <div class="map-toolbar">
+          <span class="map-toolbar-label">Base:</span>
+          <select class="layer-select">
+            <option selected>Navigation</option>
+            <option>Terrain</option>
+            <option>Satellite</option>
+          </select>
+
+          <span class="map-toolbar-separator"></span>
+
+          <span class="map-toolbar-label">Layers:</span>
+          <div class="map-toolbar-group">
+            <button class="layer-toggle active">
+              <span class="toggle-dot"></span> Stations
+            </button>
+            <button class="layer-toggle active">
+              <span class="toggle-dot"></span> Units
+            </button>
+            <button class="layer-toggle active">
+              <span class="toggle-dot"></span> Incidents
+            </button>
+            <button class="layer-toggle active">
+              <span class="toggle-dot"></span> Calls
+            </button>
+          </div>
+        </div>
+
+        <!-- Lookup bar -->
+        <div class="map-lookup-bar">
+          <label class="form-label">Address</label>
+          <input class="lookup-input" type="text" placeholder="Search address (geocoding)...">
+          <label class="form-label" style="margin-left:8px">Coordinates</label>
+          <input class="lookup-input" type="text" placeholder="e.g. 60&deg;10.220'N 024&deg;56.380'E" style="max-width:220px">
+          <button class="btn btn-secondary btn-small">Lookup</button>
+        </div>
+
+        <!-- Map placeholder (dummy image area) -->
+        <div class="map-placeholder">
+          <!-- Simulated dark map using CSS layers -->
+          <div class="map-image"></div>
+          <div class="map-grid"></div>
+
+          <!-- Placeholder label -->
+          <div class="map-placeholder-label">
+            <div class="icon">&#9873;</div>
+            <div class="text">Map View</div>
+          </div>
+
+          <!-- Zoom controls -->
+          <div class="map-zoom">
+            <button title="Zoom in">+</button>
+            <button title="Zoom out">&minus;</button>
+          </div>
+
+          <!-- Sample markers -->
+
+          <!-- Incident marker (Building Fire) -->
+          <div class="map-marker marker-incident" style="top:42%; left:48%">
+            <div class="marker-icon"><span>!</span></div>
+            <div class="marker-label">202 — Mannerheimintie 12</div>
+          </div>
+
+          <!-- Call marker -->
+          <div class="map-marker marker-call" style="top:40%; left:46%">
+            <div class="marker-icon"><span>C</span></div>
+            <div class="marker-label">Call — Virtanen</div>
+          </div>
+
+          <!-- Unit markers -->
+          <div class="map-marker marker-unit" style="top:50%; left:44%">
+            <div class="marker-icon"><span>H12</span></div>
+            <div class="marker-label">HKI12 — On Scene</div>
+          </div>
+
+          <div class="map-marker marker-unit" style="top:36%; left:55%">
+            <div class="marker-icon"><span>R21</span></div>
+            <div class="marker-label">RVS21 — En Route</div>
+          </div>
+
+          <div class="map-marker marker-unit" style="top:58%; left:62%">
+            <div class="marker-icon"><span>R11</span></div>
+            <div class="marker-label">RVS11 — Dispatched</div>
+          </div>
+
+          <div class="map-marker marker-unit" style="top:72%; left:30%">
+            <div class="marker-icon"><span>E41</span></div>
+            <div class="marker-label">ESP41 — Assigned</div>
+          </div>
+
+          <!-- Station markers -->
+          <div class="map-marker marker-station" style="top:65%; left:42%">
+            <div class="marker-icon"><span>&#9965;</span></div>
+            <div class="marker-label">Keskuspaloasema</div>
+          </div>
+
+          <div class="map-marker marker-station" style="top:30%; left:68%">
+            <div class="marker-icon"><span>&#9965;</span></div>
+            <div class="marker-label">Ruskeasuon pa</div>
+          </div>
+
+          <!-- Cursor coordinates -->
+          <div class="map-coords">60&deg;10.305'N &nbsp; 024&deg;56.412'E &nbsp; &mdash; &nbsp; Zoom 14</div>
+
+          <!-- Scale bar -->
+          <div class="map-scale">
+            <div class="map-scale-bar"></div>
+            <span class="map-scale-label">500 m</span>
+          </div>
+
+          <!-- Attribution -->
+          <div class="map-attribution">GIS Server &middot; NLS Finland</div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ========== RIGHT PANEL: UNIT DASHBOARD ========== -->
+    <div class="panel panel-dashboard">
+      <div class="dashboard-container">
+
+        <!-- Dashboard header -->
+        <div class="column-header">
+          <span>Unit Dashboard</span>
+          <span style="font-size:11px; font-weight:400; text-transform:none; color:#9d9d9d; letter-spacing:0;">12 units</span>
+        </div>
+
+        <!-- Dashboard toolbar -->
+        <div class="dashboard-toolbar">
+          <input class="filter-input" type="text" placeholder="Filter by callsign...">
+          <select class="sort-select">
+            <option selected>Sort: Callsign &#9650;</option>
+            <option>Sort: Callsign &#9660;</option>
+            <option>Sort: State &#9650;</option>
+            <option>Sort: State &#9660;</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-toggle-btn active" title="Card view">&#9638;</button>
+            <button class="view-toggle-btn" title="List view">&#9776;</button>
+          </div>
+        </div>
+
+        <!-- Dashboard body (card view) -->
+        <div class="dashboard-body">
+          <div class="unit-cards">
+
+            <!-- Unit: ESP11 — Available at Station -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">ESP11</span>
+                <span class="unit-card-state unit-state-available-station">Avail. Station</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+1+3</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Espoon pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">2 min ago</span>
+                </div>
+              </div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Assign</button>
+              </div>
+            </div>
+
+            <!-- Unit: ESP41 — Assigned (to incident) -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">ESP41</span>
+                <span class="unit-card-state unit-state-assigned">Assigned</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+0+3</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Espoon pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">1 min ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0042 &middot; 202 Building Fire</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: HKI11 — Available over Radio -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">HKI11</span>
+                <span class="unit-card-state unit-state-available-radio">Avail. Radio</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+1+4</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Keskuspaloasema</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">30 sec ago</span>
+                </div>
+              </div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Assign</button>
+              </div>
+            </div>
+
+            <!-- Unit: HKI12 — On Scene -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">HKI12</span>
+                <span class="unit-card-state unit-state-on-scene">On Scene</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+1+4</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Keskuspaloasema</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">15 sec ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0042 &middot; 202 Building Fire</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: HKI21 — Unavailable -->
+            <div class="unit-card" style="opacity:0.6">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">HKI21</span>
+                <span class="unit-card-state unit-state-unavailable">Unavailable</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">—</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Keskuspaloasema</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value stale">18 min ago</span>
+                </div>
+              </div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+              </div>
+            </div>
+
+            <!-- Unit: RVS11 — Dispatched -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">RVS11</span>
+                <span class="unit-card-state unit-state-dispatched">Dispatched</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+1+3</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Ruskeasuon pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">45 sec ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0042 &middot; 202 Building Fire</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: RVS21 — En Route -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">RVS21</span>
+                <span class="unit-card-state unit-state-en-route">En Route</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+0+2</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Ruskeasuon pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">20 sec ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0042 &middot; 202 Building Fire</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: VAN11 — Available at Station -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">VAN11</span>
+                <span class="unit-card-state unit-state-available-station">Avail. Station</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+0+2</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Vantaan pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">3 min ago</span>
+                </div>
+              </div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Assign</button>
+              </div>
+            </div>
+
+            <!-- Unit: VAN21 — En Route (different incident) -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">VAN21</span>
+                <span class="unit-card-state unit-state-en-route">En Route</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+1+3</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Vantaan pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">10 sec ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0041 &middot; 401 Traffic Accident</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: VAN31 — Dispatching (pulsing) -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">VAN31</span>
+                <span class="unit-card-state unit-state-dispatching">Dispatching</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+0+2</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Vantaan pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">1 min ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0041 &middot; 401 Traffic Accident</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: KAU11 — On Scene (different incident) -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">KAU11</span>
+                <span class="unit-card-state unit-state-on-scene">On Scene</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+0+3</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Kauniaisten pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">5 sec ago</span>
+                </div>
+              </div>
+              <div class="unit-card-incident">INC-2026-0040 &middot; 301 First Response</div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Open Incident</button>
+              </div>
+            </div>
+
+            <!-- Unit: KAU21 — Available over Radio -->
+            <div class="unit-card">
+              <div class="unit-card-top">
+                <span class="unit-card-callsign">KAU21</span>
+                <span class="unit-card-state unit-state-available-radio">Avail. Radio</span>
+              </div>
+              <div class="unit-card-details">
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Staff:</span>
+                  <span class="unit-card-detail-value">1+0+2</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Station:</span>
+                  <span class="unit-card-detail-value">Kauniaisten pa</span>
+                </div>
+                <div class="unit-card-detail">
+                  <span class="unit-card-detail-label">Pos:</span>
+                  <span class="unit-card-detail-value">4 min ago</span>
+                </div>
+              </div>
+              <div class="unit-card-actions">
+                <button class="btn btn-secondary btn-small">Change State</button>
+                <button class="btn btn-secondary btn-small">Show on Map</button>
+                <button class="btn btn-secondary btn-small">Assign</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="footer-left">
+      <span>Jarkko Korhonen</span>
+    </div>
+    <div class="footer-right">
+      <span class="mode-indicator">
+        <span class="mode-dot"></span>
+        Normal Mode
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

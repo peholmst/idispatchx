@@ -221,29 +221,93 @@ This document is an advisory document for the visual design of Dispatcher Client
 
 Location entry is used in the call detail form and the incident detail form. It maps to the four [Location](../Domain/Location.md) variants.
 
-* The dispatcher first selects the location variant: Exact Address, Road Intersection, Named Place, or Relative Location.
-* Based on the selected variant, the form shows the appropriate fields:
-  * **Exact Address**: municipality, address name, address number (optional), coordinates (optional), additional details (optional)
-  * **Road Intersection**: municipality, road name A, road name B, coordinates (optional), additional details (optional)
-  * **Named Place**: municipality, name, coordinates (optional), additional details (optional)
-  * **Relative Location**: municipality, reference place, coordinates (optional), additional details (required)
-* Municipality is selected from a searchable list of Finnish municipalities.
-* Address name, road names, place names, and reference places can be looked up via the GIS Server geocoding service:
-  * The dispatcher types a search query.
-  * Matching results from the GIS Server are shown in a dropdown.
-  * Selecting a result fills in the corresponding fields and coordinates.
-* Manual coordinate entry:
-  * The dispatcher can enter coordinates manually in DD, DDM, or DMS format.
-  * Entered coordinates are validated against Finland bounds (latitude 58.84° to 70.09°, longitude 19.08° to 31.59°).
-  * Invalid coordinates are rejected with an inline error message.
-* Map marker synchronization:
-  * When coordinates are entered or geocoded, a marker appears on the map in the secondary window.
-  * Moving the marker on the map updates the coordinates in the form.
-  * This synchronization works bidirectionally between the primary and secondary windows.
-* Degraded mode (GIS Server unavailable):
-  * Geocoding search is unavailable; the system displays a message indicating this.
-  * All fields can be entered manually by the dispatcher.
-  * Manual coordinate entry and map marker placement remain functional.
+### Flat Form — "Fill What You Know"
+
+Instead of selecting a location variant before entering data, the dispatcher fills in a single flat form and the variant resolves automatically from which fields are filled. All fields are visible from the start in a stable layout that never changes shape.
+
+#### Form Layout
+
+```
+Municipality:     [                         ▼]
+Location name:    [                           ]
+Number: [        ]    or    Cross street: [                   ]
+Coordinates:      [                           ]
+Details:          [                           ]
+                                    ☐ Approximate location
+```
+
+* **Municipality** — selected from a searchable list of Finnish municipalities.
+* **Location name** — maps to `address_name`, `road_name_a`, `name`, or `reference_place` depending on the resolved variant. Supports geocoding search when GIS Server is available (see [Geocoding Integration](#geocoding-integration)).
+* **Number** and **Cross street** — mutually exclusive fields on the same row, separated by an "or" label (see [Mutual Exclusivity](#mutual-exclusivity-number-vs-cross-street)).
+* **Coordinates** — manual entry in DD, DDM, or DMS format.
+* **Details** — additional information about the location.
+* **Approximate location** checkbox — toggles between NamedPlace and RelativeLocation semantics (see [NamedPlace vs. RelativeLocation](#namedplace-vs-relativelocation)).
+
+#### Variant Auto-Resolution Rules
+
+The location variant is determined automatically by which fields the dispatcher fills in:
+
+| Number filled | Cross street filled | Approximate flag | Resolved variant |
+|:---:|:---:|:---:|---|
+| yes | no | no | **ExactAddress** |
+| no | yes | no | **RoadIntersection** |
+| no | no | no | **NamedPlace** |
+| no | no | yes | **RelativeLocation** |
+
+* A small **variant badge** (e.g., `Exact Address`, `Intersection`) appears near the location section header, updating in real time as fields change.
+* The badge helps the dispatcher confirm what the system will save, but requires no action from them.
+
+#### Mutual Exclusivity: Number vs. Cross Street
+
+* Number and Cross street are on the **same row**, visually separated by an "or" label.
+* When the dispatcher types in one, the other is **visually deemphasized** (e.g., dimmed border, reduced opacity) to signal they are alternatives.
+* If the dispatcher fills in both, an inline validation error appears: "Enter either a number or a cross street, not both."
+* Clearing one re-enables the other. The primary location name is never lost.
+
+#### NamedPlace vs. RelativeLocation
+
+* An **"Approximate location" checkbox** below the Details field toggles between NamedPlace and RelativeLocation semantics.
+* When checked:
+  * The "Location name" label changes to "Reference place" to reflect the different semantics.
+  * Details becomes **required** (inline validation if empty).
+  * The variant badge shows "Relative Location".
+* When unchecked (default): variant is NamedPlace (assuming Number and Cross street are both empty).
+
+#### Geocoding Integration
+
+* The "Location name" field supports geocoding search when GIS Server is available.
+* As the dispatcher types, matching results appear in a dropdown, including location type indicators (address, intersection, place).
+* Selecting a geocoding result **auto-fills the appropriate fields**:
+  * Selecting an address result fills location name, optionally number, municipality, and coordinates.
+  * Selecting an intersection result fills location name (road A) and cross street (road B), municipality, and coordinates.
+  * Selecting a place result fills location name, municipality, and coordinates.
+* After auto-fill, the variant badge updates to reflect the resolved type.
+* The dispatcher can always edit or clear auto-filled fields.
+
+#### Manual Coordinate Entry
+
+* The dispatcher can enter coordinates manually in DD, DDM, or DMS format.
+* Entered coordinates are validated against Finland bounds (latitude 58.84° to 70.09°, longitude 19.08° to 31.59°).
+* Invalid coordinates are rejected with an inline error message.
+
+#### Map Marker Synchronization
+
+* When coordinates are entered or geocoded, a marker appears on the map in the secondary window.
+* Moving the marker on the map updates the coordinates in the form.
+* This synchronization works bidirectionally between the primary and secondary windows.
+
+#### Keyboard Workflow
+
+* Tab order: Municipality → Location name → Number → Cross street → Coordinates → Details → Approximate checkbox.
+* The dispatcher can Tab through fields quickly, filling in what they know and skipping past what they don't.
+* The form's stable shape means the Tab order never changes.
+
+#### Degraded Mode (GIS Server Unavailable)
+
+* The flat form and variant auto-resolution work identically to connected mode — they do not depend on geocoding.
+* The only difference: geocoding suggestions do not appear in the location name dropdown.
+* All fields can be entered manually by the dispatcher.
+* Manual coordinate entry and map marker placement remain functional.
 
 
 ## Unit State Visual Encoding
