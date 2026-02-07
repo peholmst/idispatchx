@@ -19,6 +19,7 @@ This document is an advisory document for the visual design of Dispatcher Client
   * They either disappear when the error is resolved, or when the user closes them (depending on the type of error).
 * Intermediate status messages (e.g. disconnected -> connecting -> connected) are used where appropriate.
 * The application can be used with a keyboard only for power users who don't want to reach for the mouse.
+* The UI is optimized for Full HD (1920×1080) resolution monitors, but should be usable on smaller or larger displays as well.
 
 ### Language
 
