@@ -7,7 +7,7 @@ This document describes the PostGIS database schema used by the GIS Server for g
 1. **NLS topographic GML files** — municipality boundaries, road segments, address points, and place names from the National Land Survey of Finland (Maastotietojärjestelmä).
 2. **Municipality reference JSON** — municipality codes and multilingual names from the Finnish interoperability platform (koodistot.suomi.fi).
 
-The GIS Server provides geocoding services to dispatchers (address/place name lookup), and map tiles via WMTS. This design covers the geocoding data layer only — raster tile storage is a filesystem concern handled separately.
+The GIS Server provides geocoding services to dispatchers (address/place name lookup), and map tiles via WMTS. Sections 1–8 cover the geocoding data layer (GML and JSON to PostGIS). Sections 9–13 cover raster tile import from NLS source images to the filesystem tile directory served by the GIS Server's WMTS endpoint.
 
 The importer converts GML coordinates from EPSG:3067 to EPSG:4326 and writes all data to the shared PostGIS database. It supports both full imports and incremental patch imports.
 
@@ -23,6 +23,8 @@ The importer converts GML coordinates from EPSG:3067 to EPSG:4326 and writes all
 - [Domain: Location](../Domain/Location.md) — ExactAddress, RoadIntersection, NamedPlace variants
 - [Domain: Municipality](../Domain/Municipality.md) — Municipality code and multilingual name
 - [Domain: MultilingualName](../Domain/MultilingualName.md) — Language-keyed name values
+- [UX: Dispatcher Client Guidelines](../UXDesigns/Dispatcher-Client-UX-Guidelines.md) — Background layer selection, map component
+- JHS 180: ETRS-TM35FIN tile matrix set standard for Finnish WMTS services
 - NLS Topographic Database GML Schema: `https://xml.nls.fi/XML/Schema/Maastotietojarjestelma/MTK/201405/Maastotiedot.xsd`
 
 ---
@@ -702,6 +704,12 @@ net.pkhapps.idispatchx.gis.importer/
 │       ├── OsoitepisteFeature.java    Parsed Osoitepiste data (Java record)
 │       ├── PaikannimiFeature.java     Parsed Paikannimi data (Java record)
 │       └── MunicipalityEntry.java     Parsed municipality JSON entry (Java record)
+├── raster/
+│   ├── WorldFileParser.java           Parses .pgw world files into affine transform parameters
+│   ├── TileMatrixSet.java             ETRS-TM35FIN tile matrix set constants and tile coordinate math
+│   ├── TileExtractor.java             Extracts 256×256 tile images from a source BufferedImage
+│   ├── TileWriter.java                Writes tile PNGs to the filesystem, composites with existing tiles
+│   └── RasterTileImporter.java        Orchestrates the raster tile import pipeline
 ├── transform/
 │   └── CoordinateTransformer.java     EPSG:3067 → EPSG:4326 via Geotools
 └── db/
@@ -724,24 +732,34 @@ java -jar gis-data-importer.jar \
     --input /path/to/L3311R.xml [/path/to/L3312R.xml ...] \
     [--input-dir /path/to/gml/directory] \
     [--municipalities /path/to/codelist_kunta_1_20250101.json] \
-    [--truncate]                   # Truncate all tables before import (full import mode)
+    [--tiles /path/to/L3311F.png ...] \
+    [--tile-input-dir /path/to/raster/directory] \
+    [--tile-dir /data/tiles] \
+    [--tile-layer terrain] \
+    [--truncate]                   # Truncate before import (full import mode)
     [--features kunta,tieviiva,osoitepiste,paikannimi]  # Import only specific GML feature types
 ```
 
 | Argument | Required | Description |
 |----------|----------|-------------|
-| `--db-url` | Yes | JDBC URL for the PostgreSQL database |
-| `--db-user` | Yes | Database username |
-| `--db-password` | Yes | Database password |
+| `--db-url` | Yes† | JDBC URL for the PostgreSQL database |
+| `--db-user` | Yes† | Database username |
+| `--db-password` | Yes† | Database password |
 | `--input` | Yes* | One or more GML file paths |
 | `--input-dir` | Yes* | Directory containing GML files. All `*.xml` files in the directory are imported. Not recursive. |
 | `--municipalities` | No | Path to municipality reference JSON from koodistot.suomi.fi |
-| `--truncate` | No | Enable full import mode (truncate before insert) |
+| `--tiles` | Yes* | One or more source raster PNG file paths. World files (`.pgw`) must be co-located (same directory, same base name). |
+| `--tile-input-dir` | Yes* | Directory containing source raster PNG files. All `*.png` files with co-located `.pgw` world files are imported. Not recursive. |
+| `--tile-dir` | Yes‡ | Base directory for tile output. Must exist and be writable. |
+| `--tile-layer` | Yes‡ | Layer name for the imported tiles (e.g., `terrain`, `buildings`). |
+| `--truncate` | No | Enable full import mode. For GML data: truncates database tables. For tiles: removes the specified layer's tile directory before import. |
 | `--features` | No | Comma-separated list of GML feature types to import (default: all four) |
 
-*At least one of `--input`, `--input-dir`, or `--municipalities` must be provided. `--input` and `--input-dir` can be combined (files are merged into a single set, duplicates ignored). Both file arguments can be used together with `--municipalities`.
+\*At least one of `--input`, `--input-dir`, `--municipalities`, `--tiles`, or `--tile-input-dir` must be provided. File arguments can be combined. †Database arguments are required when importing GML/JSON data (`--input`, `--input-dir`, or `--municipalities`). They are not required for tile-only imports. ‡Required when `--tiles` or `--tile-input-dir` is provided.
 
-The importer exits with code 0 on success and non-zero on failure, printing a summary of imported/updated/deleted record counts per feature type.
+Tile import and GML/JSON import are independent and can run in the same invocation or separately.
+
+The importer exits with code 0 on success and non-zero on failure, printing a summary of imported/updated/deleted record counts per feature type and tile counts per layer/zoom level.
 
 ---
 
@@ -924,3 +942,526 @@ WHERE (rs.name_fi = 'Kuggöntie' OR rs.name_sv = 'Kuggövägen')
 5. Create a test patch file with one feature having `loppupvm` set.
 6. Import the patch file.
 7. Verify the feature was deleted.
+
+### 8.5 Tile Import Verification
+
+After importing `L3311F.png` with `--tile-layer terrain --tile-dir /data/tiles`:
+
+| Check | Expected |
+|-------|----------|
+| Zoom level detected | 14 (pixel size 0.5m) |
+| Tile directory created | `/data/tiles/terrain/ETRS-TM35FIN/14/` |
+| Tile row directories | 48 directories (13364 through 13411) |
+| Total tile files | Up to 2,304 (48 × 48; some edge tiles may be skipped if fully outside source coverage) |
+| Tile dimensions | All tiles are 256 × 256 pixels |
+| Tile format | PNG with alpha channel (RGBA) |
+| Edge tiles | Tiles at boundaries have transparent pixels where no source data exists |
+| Interior tiles | Fully opaque, contain map imagery |
+| Visual spot check | Open tile at row 13388, col 6058 (approximately center of source image). Should show archipelago map imagery consistent with the source. |
+
+### 8.6 Tile Serving Verification
+
+After importing tiles and starting the GIS Server:
+
+```
+# Request a known tile
+GET /wmts/terrain/ETRS-TM35FIN/14/13388/6058.png
+# Expected: 200 OK, Content-Type: image/png, 256×256 pixel image
+
+# Request a tile outside coverage
+GET /wmts/terrain/ETRS-TM35FIN/14/0/0.png
+# Expected: 204 No Content (or transparent tile)
+
+# Request a tile at a non-imported zoom level (runtime resampling)
+GET /wmts/terrain/ETRS-TM35FIN/13/6694/3029.png
+# Expected: 200 OK, resampled from level 14 tiles
+```
+
+---
+
+## 9. NLS Raster Source Format
+
+NLS (National Land Survey of Finland, Maanmittauslaitos) distributes pre-rendered raster map images as PNG files with accompanying world files providing georeferencing. Each map sheet covers a fixed geographic area and is available at one or more product scales.
+
+### 9.1 Map Sheet Naming
+
+NLS raster files follow the Finnish national grid map sheet naming convention. For example, `L3311F`:
+
+- `L`: major grid zone letter
+- `3311`: numeric grid subdivision
+- `F`: sub-sheet partition (A through H at finer divisions)
+
+The same geographic area may be covered by multiple NLS products at different scales (e.g., terrain maps at 0.5 m/pixel, overview maps at 2 m/pixel). Each product scale is a separate download set.
+
+### 9.2 Source Files
+
+Each map sheet consists of two files:
+
+| File | Example | Description |
+|------|---------|-------------|
+| PNG image | `L3311F.png` | Pre-rendered map image |
+| World file | `L3311F.pgw` | Georeferencing via 6 affine transform coefficients |
+
+The world file must share the same base name as the PNG file, with the `.pgw` extension, and be co-located in the same directory.
+
+### 9.3 World File Format
+
+The world file is a 6-line text file defining an affine transformation from pixel coordinates to map coordinates in EPSG:3067:
+
+```
+Line 1: pixel width in meters (easting direction)
+Line 2: rotation about Y axis (always 0.0 for NLS data)
+Line 3: rotation about X axis (always 0.0 for NLS data)
+Line 4: pixel height in meters (negative = north-up)
+Line 5: X coordinate (easting) of center of upper-left pixel
+Line 6: Y coordinate (northing) of center of upper-left pixel
+```
+
+**Example** (`L3311F.pgw`):
+
+```
+0.5
+0.0
+0.0
+-0.5
+224000.25
+6677999.75
+```
+
+This means:
+- Each pixel is 0.5 × 0.5 meters on the ground.
+- The **center** of the upper-left pixel is at easting 224000.25, northing 6677999.75 in EPSG:3067.
+- The upper-left **corner** of the image raster (edge of first pixel) is at `(224000.25 − 0.5/2, 6677999.75 + 0.5/2)` = `(224000.0, 6678000.0)`.
+
+All coordinates are in EPSG:3067 (EUREF-FIN / TM35FIN). Per the Internationalization NFR, the system uses EPSG:3067 for rasters — no CRS conversion is needed between the source data and the WMTS tile grid.
+
+### 9.4 PNG Image Characteristics
+
+Based on the sample data (`L3311F.png`):
+
+| Property | Value |
+|----------|-------|
+| Dimensions | 12,000 × 12,000 pixels |
+| Bit depth | 8-bit |
+| Color type | Indexed color (palette PNG) |
+| File size | ~1.3 MB |
+| Content | Pre-rendered topographic map: terrain coloring, water, roads, place names |
+
+The image dimensions and pixel size determine the geographic coverage: 12,000 pixels × 0.5 m/pixel = 6,000 m in each direction. The sample image covers the area from (224000, 6672000) to (230000, 6678000) in EPSG:3067 — part of the Turku archipelago (municipalities 322 Kemiönsaari and 445 Parainen).
+
+### 9.5 Pixel Size and Zoom Level
+
+The absolute value of the pixel width (world file line 1) determines which WMTS zoom level the source image matches. In the ETRS-TM35FIN tile matrix set (section 10), each zoom level has a defined pixel size. A source image with 0.5 m/pixel corresponds to zoom level 14.
+
+NLS provides separate raster products at different scales. Each is imported independently, producing tiles at the corresponding zoom level:
+
+| NLS Product Scale | Pixel Size | Zoom Level |
+|-------------------|------------|------------|
+| 1:5,000 | 0.5 m | 14 |
+| 1:10,000 | 1 m | 13 |
+| 1:20,000 | 2 m | 12 |
+| 1:40,000 | 4 m | 11 |
+| 1:80,000 | 8 m | 10 |
+| 1:160,000 | 16 m | 9 |
+| 1:320,000 | 32 m | 8 |
+
+Not all NLS products are available at every scale. The administrator imports whichever scales are available. Zoom levels without pre-rendered tiles are handled by runtime resampling in the GIS Server (section 13).
+
+---
+
+## 10. ETRS-TM35FIN Tile Matrix Set
+
+The WMTS tile matrix set follows the Finnish JHS 180 standard. Both NLS source data and the tile grid use EPSG:3067, so no coordinate reprojection is needed during tile import.
+
+### 10.1 Tile Matrix Set Parameters
+
+| Parameter | Value |
+|-----------|-------|
+| Identifier | `ETRS-TM35FIN` |
+| CRS | EPSG:3067 (EUREF-FIN / TM35FIN) |
+| Tile size | 256 × 256 pixels |
+| Top-left origin | (−548576.0, 8388608.0) in EPSG:3067 |
+| Zoom levels | 0 through 15 |
+| Pixel size progression | Halves at each level, starting at 8192 m at level 0 |
+
+### 10.2 Tile Matrix Table
+
+| Level | Pixel Size (m) | Tile Span (m) | Scale Denominator |
+|-------|----------------|---------------|-------------------|
+| 0 | 8192 | 2,097,152 | 29,257,143 |
+| 1 | 4096 | 1,048,576 | 14,628,571 |
+| 2 | 2048 | 524,288 | 7,314,286 |
+| 3 | 1024 | 262,144 | 3,657,143 |
+| 4 | 512 | 131,072 | 1,828,571 |
+| 5 | 256 | 65,536 | 914,286 |
+| 6 | 128 | 32,768 | 457,143 |
+| 7 | 64 | 16,384 | 228,571 |
+| 8 | 32 | 8,192 | 114,286 |
+| 9 | 16 | 4,096 | 57,143 |
+| 10 | 8 | 2,048 | 28,571 |
+| 11 | 4 | 1,024 | 14,286 |
+| 12 | 2 | 512 | 7,143 |
+| 13 | 1 | 256 | 3,571 |
+| 14 | 0.5 | 128 | 1,786 |
+| 15 | 0.25 | 64 | 893 |
+
+**Formulas**:
+- Pixel size at level `z`: `8192 / 2^z` meters
+- Tile span at level `z`: `pixel_size × 256` meters
+- Scale denominator: `pixel_size / 0.00028` (OGC standard pixel size of 0.28 mm)
+
+### 10.3 Tile Coordinate System
+
+Column index increases eastward and row index increases southward from the top-left origin:
+
+```
+col = floor((easting  − origin_x) / tile_span)
+row = floor((origin_y − northing) / tile_span)
+```
+
+Where `origin_x = −548576.0`, `origin_y = 8388608.0`, and `tile_span = pixel_size × 256`.
+
+**Inverse** (tile bounds in EPSG:3067 meters):
+
+```
+tile_west  = origin_x + col × tile_span
+tile_north = origin_y − row × tile_span
+tile_east  = tile_west  + tile_span
+tile_south = tile_north − tile_span
+```
+
+### 10.4 Sample Data Tile Coverage
+
+For `L3311F.png` at zoom level 14 (tile span = 128 m):
+
+| Property | Value |
+|----------|-------|
+| Source upper-left | (224000, 6678000) |
+| Source lower-right | (230000, 6672000) |
+| First column | floor((224000 − (−548576)) / 128) = floor(6035.75) = 6035 |
+| Last column | floor((230000 − (−548576)) / 128 − ε) = 6082 |
+| First row | floor((8388608 − 6678000) / 128) = floor(13364.125) = 13364 |
+| Last row | floor((8388608 − 6672000) / 128 − ε) = 13411 |
+| Columns | 48 (6035 through 6082) |
+| Rows | 48 (13364 through 13411) |
+| Total tiles | up to 2,304 |
+
+The source image does not align to tile boundaries (fractional offsets of 0.75 tiles in column direction and 0.125 tiles in row direction). Tiles at the edges of the source image are only partially covered; uncovered pixels are transparent.
+
+---
+
+## 11. Tile Directory Structure
+
+Pre-rendered tiles are stored on the filesystem in a hierarchy that maps directly to the WMTS RESTful URL pattern. The GIS Server reads tiles from this directory without any database involvement.
+
+### 11.1 Directory Layout
+
+```
+{base-dir}/
+└── {layer}/
+    └── ETRS-TM35FIN/
+        └── {zoom}/
+            └── {row}/
+                └── {col}.png
+```
+
+**Example** (after importing `L3311F.png` into the `terrain` layer):
+
+```
+/data/tiles/
+└── terrain/
+    └── ETRS-TM35FIN/
+        └── 14/
+            ├── 13364/
+            │   ├── 6035.png
+            │   ├── 6036.png
+            │   └── ...
+            ├── 13365/
+            │   └── ...
+            └── 13411/
+                └── ...
+```
+
+### 11.2 Path Components
+
+| Component | Description |
+|-----------|-------------|
+| `{base-dir}` | Root tile directory. Configured in the GIS Server and specified via `--tile-dir` in the importer. |
+| `{layer}` | Layer identifier (e.g., `terrain`, `buildings`). One subdirectory per tile layer. Matches the UX Guidelines: "Select background layer (GIS Server may provide different tile sets, one for terrain, another for navigation and buildings, etc)". |
+| `ETRS-TM35FIN` | Tile matrix set identifier. Fixed for this system. Exists for WMTS standard compliance. |
+| `{zoom}` | Zoom level (0–15). Integer directory name. |
+| `{row}` | Tile row index. Integer directory name. |
+| `{col}.png` | Tile column index as filename, with `.png` extension. |
+
+### 11.3 WMTS URL Mapping
+
+The directory structure maps directly to the WMTS RESTful URL:
+
+```
+GET /wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{col}.png
+```
+
+The GIS Server resolves a tile request by constructing the filesystem path `{base-dir}/{layer}/ETRS-TM35FIN/{zoom}/{row}/{col}.png` and streaming the file. Missing files result in HTTP 204 No Content (empty tile).
+
+### 11.4 Tile Image Format
+
+| Property | Value |
+|----------|-------|
+| Format | PNG |
+| Dimensions | 256 × 256 pixels |
+| Color mode | RGBA (RGB with alpha channel) |
+| Partial coverage | Transparent pixels (alpha = 0) where no source data exists |
+
+RGBA is used instead of indexed color to support alpha transparency for partial-coverage edge tiles and to simplify compositing when multiple source images contribute to the same tile.
+
+### 11.5 Layer Discovery
+
+The GIS Server discovers available layers at startup by listing subdirectories of `{base-dir}/`. Each subdirectory name is registered as an available tile layer and exposed in the WMTS GetCapabilities response. No configuration file is needed — the filesystem is the source of truth for available layers.
+
+### 11.6 Storage Estimates
+
+For a typical municipal dispatch area (~50 km × 50 km) at zoom level 14 (0.5 m/pixel):
+
+| Metric | Value |
+|--------|-------|
+| Tiles at level 14 | ~150,000 |
+| Average tile size | 10–50 KB (map imagery compresses well as PNG) |
+| Total storage at level 14 | ~2–5 GB |
+| All zoom levels combined | ~3–7 GB |
+
+Well within modern filesystem and disk capacity.
+
+---
+
+## 12. Raster Tile Import Strategy
+
+The importer reads source PNG + world file pairs, determines the matching WMTS zoom level, calculates which tiles are covered, extracts each 256 × 256 tile region from the source image, and writes it to the tile directory.
+
+### 12.1 Import Pipeline
+
+**Step 1 — Parse world file:**
+
+Read the 6-line `.pgw` file and extract:
+- `pixel_width` (line 1): pixel size in meters
+- `pixel_height` (line 4): pixel size in meters (negative for north-up)
+- `ul_center_x` (line 5): easting of center of upper-left pixel
+- `ul_center_y` (line 6): northing of center of upper-left pixel
+
+Compute the upper-left corner (edge of first pixel):
+```
+ul_x = ul_center_x − pixel_width / 2
+ul_y = ul_center_y − pixel_height / 2     (pixel_height is negative, so this adds)
+```
+
+Validations:
+- Rotation coefficients (lines 2 and 3) must be 0.0. Non-zero rotation is not supported.
+- `pixel_width` must equal `abs(pixel_height)` (square pixels).
+- Source bounds must fall within EPSG:3067 coverage area (easting 43,547.79 to 764,796.72; northing 6,522,236.87 to 7,795,461.19).
+
+Files that fail validation are logged as errors and skipped.
+
+**Step 2 — Read source image:**
+
+Load the PNG using `javax.imageio.ImageIO.read()`. If the image is indexed color (palette PNG, `BufferedImage.TYPE_BYTE_INDEXED`), convert to `BufferedImage.TYPE_INT_ARGB`:
+
+```java
+BufferedImage source = ImageIO.read(pngFile);
+if (source.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
+    BufferedImage converted = new BufferedImage(
+        source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g = converted.createGraphics();
+    g.drawImage(source, 0, 0, null);
+    g.dispose();
+    source = converted;
+}
+```
+
+ARGB conversion is needed because output tiles require an alpha channel for partial coverage, and `Graphics2D` compositing operates reliably on ARGB images. The conversion happens once per source image.
+
+**Step 3 — Determine zoom level:**
+
+Match the pixel size to the tile matrix set:
+
+```java
+int zoomLevel = (int) Math.round(Math.log(8192.0 / pixelWidth) / Math.log(2));
+double expectedPixelSize = 8192.0 / Math.pow(2, zoomLevel);
+if (Math.abs(pixelWidth - expectedPixelSize) > 0.001) {
+    // Pixel size does not match any zoom level — log error and skip
+}
+```
+
+For the sample data (0.5 m/pixel): `log2(8192 / 0.5) = log2(16384) = 14`.
+
+**Step 4 — Calculate overlapping tiles:**
+
+```
+tile_span = pixel_width × 256
+
+col_min = floor((ul_x − origin_x) / tile_span)
+col_max = floor((lr_x − origin_x) / tile_span)
+row_min = floor((origin_y − ul_y) / tile_span)
+row_max = floor((origin_y − lr_y) / tile_span)
+```
+
+Where `lr_x = ul_x + image_width × pixel_width` and `lr_y = ul_y − image_height × abs(pixel_height)`.
+
+The last column/row is calculated from the lower-right corner of the last pixel, not from the center. Careful handling of the boundary prevents off-by-one errors.
+
+**Step 5 — Extract and write tiles:**
+
+For each tile `(row, col)` in the range `[row_min..row_max] × [col_min..col_max]`:
+
+1. Compute the tile's geographic bounds using the inverse formula from section 10.3.
+
+2. Compute the corresponding pixel region in the source image:
+   ```
+   src_x = (tile_west − ul_x) / pixel_width
+   src_y = (ul_y − tile_north) / abs(pixel_height)
+   ```
+
+3. Create a 256 × 256 ARGB `BufferedImage` initialized to fully transparent (all zeros).
+
+4. Draw the relevant portion of the source image onto the tile, clamping to source image bounds:
+   ```java
+   int srcX = (int) Math.round(src_x);
+   int srcY = (int) Math.round(src_y);
+   int clipX = Math.max(0, srcX);
+   int clipY = Math.max(0, srcY);
+   int clipW = Math.min(source.getWidth(), srcX + 256) - clipX;
+   int clipH = Math.min(source.getHeight(), srcY + 256) - clipY;
+   if (clipW > 0 && clipH > 0) {
+       int destX = clipX - srcX;
+       int destY = clipY - srcY;
+       g.drawImage(source,
+           destX, destY, destX + clipW, destY + clipH,
+           clipX, clipY, clipX + clipW, clipY + clipH,
+           null);
+   }
+   ```
+
+5. If the tile is fully transparent (no source pixels covered this tile), skip writing it.
+
+6. Write the tile PNG to the filesystem:
+   ```java
+   Path tilePath = tileDir
+       .resolve(layer)
+       .resolve("ETRS-TM35FIN")
+       .resolve(String.valueOf(zoomLevel))
+       .resolve(String.valueOf(row))
+       .resolve(col + ".png");
+   Files.createDirectories(tilePath.getParent());
+   ImageIO.write(tile, "PNG", tilePath.toFile());
+   ```
+
+### 12.2 Compositing Multiple Source Images
+
+When multiple source images cover the same geographic area (common at map sheet boundaries), a tile may receive data from more than one source file. The importer handles this by compositing:
+
+1. Before writing, check if the tile file already exists on disk.
+2. If it exists, read the existing tile, draw the new tile content on top using `AlphaComposite.SRC_OVER`:
+
+```java
+if (Files.exists(tilePath)) {
+    BufferedImage existing = ImageIO.read(tilePath.toFile());
+    Graphics2D g = existing.createGraphics();
+    g.setComposite(AlphaComposite.SRC_OVER);
+    g.drawImage(newTile, 0, 0, null);
+    g.dispose();
+    tile = existing;
+}
+```
+
+This compositing is order-independent for non-overlapping source images (different source images cover different pixels in the same tile — common at sheet boundaries). For truly overlapping source images (same pixel covered by multiple sources), the last import wins for those pixels.
+
+**Note:** The importer is not idempotent for tiles — running the same import twice layers data on itself. Use `--truncate` for a clean rebuild.
+
+### 12.3 No Overview Generation
+
+The importer generates tiles only at the zoom level matching the source pixel size. It does **not** generate overview tiles at lower zoom levels by downsampling.
+
+Rationale:
+- NLS provides pre-rendered images at multiple scales. Each scale has purpose-designed cartographic rendering (different label placement, feature generalization, line widths). Downsampling from a higher-detail scale produces inferior results compared to importing the NLS product at the target scale.
+- For zoom levels between NLS-provided scales, the GIS Server performs runtime resampling (section 13).
+- This keeps the importer simple: one source pixel size maps to exactly one zoom level.
+
+To populate multiple zoom levels, the administrator imports separate NLS product sets at different scales. Each import invocation targets the zoom level matching that product's pixel size.
+
+### 12.4 Image Processing Library
+
+The importer uses `javax.imageio.ImageIO` and `java.awt.image.BufferedImage` from the Java standard library for all raster tile operations. Geotools raster support (`GridCoverage2D`, etc.) is not used.
+
+Rationale:
+- Per the Maintainability NFR, the system prefers standard libraries over third-party dependencies.
+- Tile extraction is geometrically simple: read sub-rectangles of a source image and write them as separate PNGs. No reprojection is needed (source data and tile matrix set are both EPSG:3067). No band math, resampling, or other complex raster operations are needed at import time.
+- `javax.imageio` handles PNG reading and writing. `BufferedImage` and `Graphics2D` handle sub-image extraction and alpha compositing. Both are part of the Java standard library.
+
+### 12.5 Import Logging
+
+Each source file import is logged to stdout with:
+- Source filename
+- Detected zoom level and pixel size
+- Geographic bounds (EPSG:3067)
+- Tile range (columns and rows)
+- Number of tiles written, composited, and skipped (empty)
+- Duration
+
+Tile imports are not logged to the `gis.import_log` database table (that table tracks GML/JSON imports). Tile import progress is stdout-only.
+
+---
+
+## 13. GIS Server Tile Serving
+
+This section describes how the GIS Server uses the tile directory for WMTS responses, including runtime resampling for zoom levels without pre-rendered tiles. The full WMTS endpoint API design is out of scope for this document.
+
+### 13.1 Direct File Serving
+
+For a WMTS tile request at a zoom level that has pre-rendered tiles:
+
+1. Construct the filesystem path: `{base-dir}/{layer}/ETRS-TM35FIN/{z}/{row}/{col}.png`
+2. If the file exists, stream it as `image/png` with appropriate cache headers.
+3. If the file does not exist, return HTTP 204 No Content.
+
+This handles the common case and trivially meets the Performance NFR (< 1 second) — it is a filesystem read of a small file (10–50 KB). The OS page cache ensures frequently accessed tiles are served from memory.
+
+### 13.2 Runtime Resampling
+
+When a tile is requested at a zoom level for which no pre-rendered tiles exist, the GIS Server resamples from the nearest available **coarser** (lower zoom number, smaller scale) level that has tile data. NLS provides purpose-rendered map images at specific scales with appropriate cartographic generalization for each. A tile upsampled from a coarser NLS product preserves the visual style intended for that scale range, rather than producing a downsampled version of a finer product whose labels and features are too dense for the requested scale.
+
+For example, if pre-rendered tiles exist at levels 8, 10, 12, and 14:
+- A request at level 9 is **upsampled** from level 8.
+- A request at level 11 is **upsampled** from level 10.
+- A request at level 13 is **upsampled** from level 12.
+- A request at level 15 is **upsampled** from level 14.
+
+**Upsampling process** (e.g., level 8 → level 9):
+
+1. One tile at level 9 covers the same area as one **quarter** of a tile at level 8 (each zoom level doubles the resolution).
+2. Determine which level-8 tile contains the requested level-9 tile's geographic area.
+3. Read the level-8 tile from the filesystem.
+4. Extract the relevant 128 × 128 pixel quadrant.
+5. Scale up to 256 × 256 pixels using bilinear interpolation (`RenderingHints.VALUE_INTERPOLATION_BILINEAR`).
+6. Serve the result.
+
+For a gap of `n` levels (e.g., level 8 → level 10, n = 2):
+- The requested tile corresponds to a `256 / 2^n` × `256 / 2^n` pixel region in the source tile (e.g., 64 × 64 for n = 2).
+- That region is scaled up to 256 × 256.
+
+### 13.3 Resampling Limits
+
+- **Maximum resampling depth**: 3 levels (source region as small as 32 × 32 pixels scaled to 256 × 256). Beyond this, quality degrades to the point where the map is not usably readable.
+- If no source data is available within 3 levels, return HTTP 204 No Content (empty tile).
+
+### 13.4 Resampled Tile Cache
+
+To avoid repeatedly resampling the same tile:
+
+- Resampled tiles are cached in an **in-memory LRU cache** (e.g., `LinkedHashMap` with access-order eviction).
+- Cache key: `(layer, zoom, row, col)`.
+- Default cache size: ~1,000 tiles (~50 MB at ~50 KB per tile). Configurable.
+- Cache is invalidated when the tile directory is modified (e.g., after a new import run).
+
+The cache avoids writing resampled tiles to the filesystem, keeping the tile directory as the single source of truth for pre-rendered tiles only.
+
+### 13.5 Layer Discovery
+
+At startup, the GIS Server scans `{base-dir}/` for subdirectories. Each subdirectory name becomes an available tile layer. For each layer, the server scans `{layer}/ETRS-TM35FIN/` for zoom level subdirectories to determine which zoom levels have pre-rendered tiles. This information is used in the WMTS GetCapabilities response and for resampling source level selection.
