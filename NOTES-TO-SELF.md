@@ -1,12 +1,17 @@
 # NOTES-TO-SELF (written by humans, not AI)
 
+# 2026-02-09
+
+* Asked Claude to generate the Flyway migration and jOOQ classes for GIS Server and CLI importer
+  * [ ] Review the code
+
 # 2026-02-08
 
 * Claude prepared a lengthy design for GIS data import. Next is to start implementing it in steps.
 * Generated the tile image importer. 
   * [ ] Review the code
 * Then:
-  * [ ] GIS Server database schema + flyway
+  * [x] GIS Server database schema + flyway
   * [ ] Terrain data importer
   * [ ] Design security model for GIS Server
   * [ ] Implement secure tile endpoint for GIS server

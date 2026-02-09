@@ -14,6 +14,7 @@
 
     <modules>
         <module>shared/java-common</module>
+        <module>shared/gis-database</module>
         <module>servers/cad-server</module>
         <module>servers/gis-server</module>
         <module>tools/gis-data-importer</module>
@@ -85,12 +86,22 @@
                 <version>${flyway.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
 
             <!-- GIS -->
+            <dependency>
+                <groupId>net.pkhapps.idispatchx</groupId>
+                <artifactId>gis-database</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
                 <artifactId>gt-main</artifactId>

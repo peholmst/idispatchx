@@ -126,6 +126,14 @@ Shared code used by CAD Server, GIS Server, and GIS Data Importer.
 
 - **Package:** `net.pkhapps.idispatchx.common`
 
+### GIS Database
+
+**Location:** `shared/gis-database/`
+
+Shared Flyway migrations and jOOQ generated code for the GIS database (`gis` schema). Used by GIS Server and GIS Data Importer.
+
+- **Package:** `net.pkhapps.idispatchx.gis.database`
+
 
 ## Deployment
 
