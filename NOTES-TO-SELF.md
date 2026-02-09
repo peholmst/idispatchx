@@ -1,5 +1,18 @@
 # NOTES-TO-SELF (written by humans, not AI)
 
+# 2026-02-08
+
+* Claude prepared a lengthy design for GIS data import. Next is to start implementing it in steps.
+* Generated the tile image importer. 
+  * [ ] Review the code
+* Then:
+  * [ ] GIS Server database schema + flyway
+  * [ ] Terrain data importer
+  * [ ] Design security model for GIS Server
+  * [ ] Implement secure tile endpoint for GIS server
+  * [ ] Design geocoding REST API for GIS server
+  * [ ] Implement geocoding REST endpoint for GIS server
+
 # 2026-02-07
 
 * Claude came up with a nice design for location entry. Now I have to wait until my weekly quota resets.
