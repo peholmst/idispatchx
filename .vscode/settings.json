@@ -20,5 +20,6 @@
         "WMTS",
         "callsign",
         "callsigns"
-    ]
+    ],
+    "java.compile.nullAnalysis.mode": "disabled"
 }
