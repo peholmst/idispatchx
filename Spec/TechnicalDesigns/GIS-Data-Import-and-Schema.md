@@ -456,7 +456,7 @@ CREATE TABLE gis.named_place (
     name               VARCHAR(200)                NOT NULL,
     language           VARCHAR(3)                  NOT NULL,
     place_class        INT                         NOT NULL,
-    kartanimi_id       BIGINT,
+    karttanimi_id       BIGINT,
     municipality_code  VARCHAR(3),
     location           GEOMETRY(POINT, 4326)       NOT NULL,
     imported_at        TIMESTAMPTZ                 NOT NULL DEFAULT NOW()
@@ -464,12 +464,12 @@ CREATE TABLE gis.named_place (
 
 CREATE INDEX idx_named_place_location       ON gis.named_place USING GIST (location);
 CREATE INDEX idx_named_place_name           ON gis.named_place USING GIN  (name gin_trgm_ops);
-CREATE INDEX idx_named_place_kartanimi_id   ON gis.named_place (kartanimi_id);
+CREATE INDEX idx_named_place_karttanimi_id   ON gis.named_place (karttanimi_id);
 CREATE INDEX idx_named_place_municipality   ON gis.named_place (municipality_code);
 ```
 
 **Design notes**:
-- Multiple rows may share the same `kartanimi_id` — these are the same place in different languages. The GIS Server groups by `kartanimi_id` when building multilingual geocoding results.
+- Multiple rows may share the same `karttanimi_id` — these are the same place in different languages. The GIS Server groups by `karttanimi_id` when building multilingual geocoding results.
 - `municipality_code` is resolved during import by checking which `gis.municipality` boundary polygon contains the place's point geometry (`ST_Contains`).
 - `language` stores the ISO 639 code from the `teksti@kieli` attribute (e.g., "fin", "swe", "sme").
 - Map rendering attributes (`suunta`, `dx`, `dy`, `ladontatunnus`, `versaalitieto`) are not stored — they have no geocoding value.
@@ -672,7 +672,7 @@ Simple Java records holding the extracted data before database insertion:
 
 **OsoitepisteFeature** (from GML): `gid`, `alkupvm`, `loppupvm`, `numero`, `nameFi`, `nameSv`, `nameSmn`, `nameSms`, `nameSme`, `kuntatunnus`, `pointEasting`, `pointNorthing`
 
-**PaikannimiFeature** (from GML): `gid`, `alkupvm`, `loppupvm`, `teksti`, `kieli`, `kohdeluokka`, `kartanimiId`, `pointEasting`, `pointNorthing`
+**PaikannimiFeature** (from GML): `gid`, `alkupvm`, `loppupvm`, `teksti`, `kieli`, `kohdeluokka`, `karttanimiId`, `pointEasting`, `pointNorthing`
 
 ### 4.4 GML Geometry Parsing
 
@@ -839,7 +839,7 @@ This produces an approximate coordinate along the road centerline. The dispatche
 When the dispatcher enters a place name (e.g., "Gulskär"):
 
 ```sql
-SELECT np.kartanimi_id, np.name, np.language, np.place_class,
+SELECT np.karttanimi_id, np.name, np.language, np.place_class,
        np.municipality_code,
        m.name_fi AS municipality_name_fi, m.name_sv AS municipality_name_sv,
        ST_Y(np.location) AS latitude, ST_X(np.location) AS longitude
@@ -850,7 +850,7 @@ ORDER BY similarity(np.name, :query) DESC
 LIMIT 20;
 ```
 
-The GIS Server groups results by `kartanimi_id` to merge multilingual name variants into a single result.
+The GIS Server groups results by `karttanimi_id` to merge multilingual name variants into a single result.
 
 ### 7.5 Road Intersection Search
 
