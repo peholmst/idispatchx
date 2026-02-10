@@ -70,7 +70,7 @@ CREATE TABLE gis.named_place (
     name               VARCHAR(200)                        NOT NULL,
     language           VARCHAR(3)                          NOT NULL,
     place_class        INT                                 NOT NULL,
-    kartanimi_id       BIGINT,
+    karttanimi_id       BIGINT,
     municipality_code  VARCHAR(3),
     location           GEOMETRY(POINT, 4326)               NOT NULL,
     imported_at        TIMESTAMPTZ                         NOT NULL DEFAULT NOW()
@@ -78,7 +78,7 @@ CREATE TABLE gis.named_place (
 
 CREATE INDEX idx_named_place_location     ON gis.named_place USING GIST (location);
 CREATE INDEX idx_named_place_name         ON gis.named_place USING GIN  (name gin_trgm_ops);
-CREATE INDEX idx_named_place_kartanimi_id ON gis.named_place (kartanimi_id);
+CREATE INDEX idx_named_place_karttanimi_id ON gis.named_place (karttanimi_id);
 CREATE INDEX idx_named_place_municipality ON gis.named_place (municipality_code);
 
 -- Import audit log
