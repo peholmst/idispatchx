@@ -106,7 +106,6 @@ Each specification directory has a README with a file index table. When you add,
 
 ## General Rules for AI Agents
 
-* **Always ignore `NOTES-TO-SELF.md`.** This file contains informal notes for human developers and is not relevant to AI agents.
 * Specifications are authoritative. Do not invent functionality, behavior, or requirements.
 * Do not infer missing behavior, data, or rules.
 * If behavior is unclear or unspecified, ask for clarification instead of making assumptions.
@@ -117,8 +116,3 @@ Each specification directory has a README with a file index table. When you add,
 * Degraded modes described in the NFRs are intentional and must not be “fixed” by adding hidden dependencies, automation, or shortcuts.
 * Do not increase precision or completeness of data beyond what is explicitly provided.
 
-## Git and Repository Constraints
-
-* You are sandboxed without direct access to the remote repository.
-* Never attempt to push, pull, or modify Git configuration.
-* Assume the current branch is up to date with the origin.
