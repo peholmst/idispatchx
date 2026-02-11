@@ -116,8 +116,3 @@ Each specification directory has a README with a file index table. When you add,
 * Degraded modes described in the NFRs are intentional and must not be “fixed” by adding hidden dependencies, automation, or shortcuts.
 * Do not increase precision or completeness of data beyond what is explicitly provided.
 
-## Git and Repository Constraints
-
-* You are sandboxed without direct access to the remote repository.
-* Never attempt to push, pull, or modify Git configuration.
-* Assume the current branch is up to date with the origin.
