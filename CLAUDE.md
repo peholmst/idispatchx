@@ -106,7 +106,6 @@ Each specification directory has a README with a file index table. When you add,
 
 ## General Rules for AI Agents
 
-* **Always ignore `NOTES-TO-SELF.md`.** This file contains informal notes for human developers and is not relevant to AI agents.
 * Specifications are authoritative. Do not invent functionality, behavior, or requirements.
 * Do not infer missing behavior, data, or rules.
 * If behavior is unclear or unspecified, ask for clarification instead of making assumptions.
