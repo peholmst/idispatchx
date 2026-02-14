@@ -82,6 +82,8 @@ public final class NlsGmlParser {
         KuntaFeature feature;
         try {
             feature = parseKunta(reader);
+        } catch (XMLStreamException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Failed to parse Kunta feature, skipping: {}", e.getMessage());
             return;
@@ -93,6 +95,8 @@ public final class NlsGmlParser {
         TieviivaFeature feature;
         try {
             feature = parseTieviiva(reader);
+        } catch (XMLStreamException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Failed to parse Tieviiva feature, skipping: {}", e.getMessage());
             return;
@@ -104,6 +108,8 @@ public final class NlsGmlParser {
         OsoitepisteFeature feature;
         try {
             feature = parseOsoitepiste(reader);
+        } catch (XMLStreamException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Failed to parse Osoitepiste feature, skipping: {}", e.getMessage());
             return;
@@ -115,6 +121,8 @@ public final class NlsGmlParser {
         PaikannimiFeature feature;
         try {
             feature = parsePaikannimi(reader);
+        } catch (XMLStreamException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Failed to parse Paikannimi feature, skipping: {}", e.getMessage());
             return;

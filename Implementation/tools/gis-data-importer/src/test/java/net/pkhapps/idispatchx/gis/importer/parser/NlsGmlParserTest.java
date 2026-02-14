@@ -570,7 +570,7 @@ class NlsGmlParserTest {
 
     @Test
     void parse_sampleDataFile_correctFeatureCounts() throws Exception {
-        var sampleFile = Path.of("../../SampleData/L3311R.xml");
+        var sampleFile = Path.of("../../../SampleData/L3311R.xml");
         if (!Files.exists(sampleFile)) {
             // Skip if sample data not available (e.g., in CI)
             return;
@@ -589,7 +589,7 @@ class NlsGmlParserTest {
 
     @Test
     void parse_sampleDataFile_spotCheckKunta() throws Exception {
-        var sampleFile = Path.of("../../SampleData/L3311R.xml");
+        var sampleFile = Path.of("../../../SampleData/L3311R.xml");
         if (!Files.exists(sampleFile)) {
             return;
         }
@@ -608,7 +608,7 @@ class NlsGmlParserTest {
 
     @Test
     void parse_sampleDataFile_spotCheckOsoitepiste() throws Exception {
-        var sampleFile = Path.of("../../SampleData/L3311R.xml");
+        var sampleFile = Path.of("../../../SampleData/L3311R.xml");
         if (!Files.exists(sampleFile)) {
             return;
         }
