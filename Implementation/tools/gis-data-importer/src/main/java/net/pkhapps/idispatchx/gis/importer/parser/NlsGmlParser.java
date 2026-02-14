@@ -78,36 +78,48 @@ public final class NlsGmlParser {
         }
     }
 
-    private static void tryParseKunta(XMLStreamReader reader, FeatureVisitor visitor) {
+    private static void tryParseKunta(XMLStreamReader reader, FeatureVisitor visitor) throws XMLStreamException {
+        KuntaFeature feature;
         try {
-            visitor.onKunta(parseKunta(reader));
+            feature = parseKunta(reader);
         } catch (Exception e) {
             log.warn("Failed to parse Kunta feature, skipping: {}", e.getMessage());
+            return;
         }
+        visitor.onKunta(feature);
     }
 
-    private static void tryParseTieviiva(XMLStreamReader reader, FeatureVisitor visitor) {
+    private static void tryParseTieviiva(XMLStreamReader reader, FeatureVisitor visitor) throws XMLStreamException {
+        TieviivaFeature feature;
         try {
-            visitor.onTieviiva(parseTieviiva(reader));
+            feature = parseTieviiva(reader);
         } catch (Exception e) {
             log.warn("Failed to parse Tieviiva feature, skipping: {}", e.getMessage());
+            return;
         }
+        visitor.onTieviiva(feature);
     }
 
-    private static void tryParseOsoitepiste(XMLStreamReader reader, FeatureVisitor visitor) {
+    private static void tryParseOsoitepiste(XMLStreamReader reader, FeatureVisitor visitor) throws XMLStreamException {
+        OsoitepisteFeature feature;
         try {
-            visitor.onOsoitepiste(parseOsoitepiste(reader));
+            feature = parseOsoitepiste(reader);
         } catch (Exception e) {
             log.warn("Failed to parse Osoitepiste feature, skipping: {}", e.getMessage());
+            return;
         }
+        visitor.onOsoitepiste(feature);
     }
 
-    private static void tryParsePaikannimi(XMLStreamReader reader, FeatureVisitor visitor) {
+    private static void tryParsePaikannimi(XMLStreamReader reader, FeatureVisitor visitor) throws XMLStreamException {
+        PaikannimiFeature feature;
         try {
-            visitor.onPaikannimi(parsePaikannimi(reader));
+            feature = parsePaikannimi(reader);
         } catch (Exception e) {
             log.warn("Failed to parse Paikannimi feature, skipping: {}", e.getMessage());
+            return;
         }
+        visitor.onPaikannimi(feature);
     }
 
     private static KuntaFeature parseKunta(XMLStreamReader reader) throws XMLStreamException {
@@ -124,7 +136,7 @@ public final class NlsGmlParser {
                     case "alkupvm" -> alkupvm = LocalDate.parse(readElementText(reader));
                     case "loppupvm" -> loppupvm = LocalDate.parse(readElementText(reader));
                     case "kuntatunnus" -> kuntatunnus = readElementText(reader);
-                    case "Alue" -> polygonCoordinates = parsePosList(reader);
+                    case "Alue" -> polygonCoordinates = parsePosList(reader, "Alue");
                     default -> { /* skip */ }
                 }
             } else if (event == XMLStreamConstants.END_ELEMENT && "Kunta".equals(reader.getLocalName())) {
@@ -182,7 +194,7 @@ public final class NlsGmlParser {
                     case "minOsoitenumeroOikea" -> minAddressRight = zeroToNull(Integer.parseInt(readElementText(reader)));
                     case "maxOsoitenumeroOikea" -> maxAddressRight = zeroToNull(Integer.parseInt(readElementText(reader)));
                     case "kuntatunnus" -> kuntatunnus = readElementText(reader);
-                    case "Murtoviiva" -> lineCoordinates = parsePosList(reader);
+                    case "Murtoviiva" -> lineCoordinates = parsePosList(reader, "Murtoviiva");
                     default -> { /* skip */ }
                 }
             } else if (event == XMLStreamConstants.END_ELEMENT && "Tieviiva".equals(reader.getLocalName())) {
@@ -302,10 +314,11 @@ public final class NlsGmlParser {
     }
 
     /**
-     * Parses a {@code <gml:posList>} element within the current element and returns coordinate pairs.
+     * Parses a {@code <gml:posList>} element within the given enclosing element and returns coordinate pairs.
      * Uses the {@code srsDimension} attribute to determine stride (2 or 3). Elevation is dropped.
+     * Stops scanning when the end of {@code enclosingElement} is reached.
      */
-    private static double[][] parsePosList(XMLStreamReader reader) throws XMLStreamException {
+    private static double[][] parsePosList(XMLStreamReader reader, String enclosingElement) throws XMLStreamException {
         while (reader.hasNext()) {
             int event = reader.next();
             if (event == XMLStreamConstants.START_ELEMENT && "posList".equals(reader.getLocalName())) {
@@ -324,9 +337,11 @@ public final class NlsGmlParser {
                     coordinates[i][1] = Double.parseDouble(parts[offset + 1]);
                 }
                 return coordinates;
+            } else if (event == XMLStreamConstants.END_ELEMENT && enclosingElement.equals(reader.getLocalName())) {
+                break;
             }
         }
-        throw new IllegalStateException("No gml:posList found");
+        throw new IllegalStateException("No gml:posList found inside " + enclosingElement);
     }
 
     /**

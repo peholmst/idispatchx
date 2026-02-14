@@ -511,6 +511,29 @@ class NlsGmlParserTest {
         assertEquals("Valid", visitor.paikannimet.getFirst().teksti());
     }
 
+    @Test
+    void parse_visitorException_propagates() {
+        var xml = """
+                <paikannimet>
+                    <Paikannimi gid="1" dimension="2">
+                        <alkupvm>2016-05-04</alkupvm>
+                        <teksti kieli="fin">Test</teksti>
+                        <sijainti><Piste><gml:pos srsDimension="2">100.0 200.0</gml:pos></Piste></sijainti>
+                        <kohdeluokka>35010</kohdeluokka>
+                    </Paikannimi>
+                </paikannimet>
+                """;
+        var failingVisitor = new CollectingVisitor() {
+            @Override
+            public void onPaikannimi(PaikannimiFeature feature) {
+                throw new RuntimeException("DB write failed");
+            }
+        };
+        var ex = assertThrows(RuntimeException.class,
+                () -> NlsGmlParser.parse(gmlStream(xml), failingVisitor));
+        assertEquals("DB write failed", ex.getMessage());
+    }
+
     // === Empty document ===
 
     @Test
