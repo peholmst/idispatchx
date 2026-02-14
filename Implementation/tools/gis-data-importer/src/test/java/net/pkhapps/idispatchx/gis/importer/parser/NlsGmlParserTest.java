@@ -534,6 +534,46 @@ class NlsGmlParserTest {
         assertEquals("DB write failed", ex.getMessage());
     }
 
+    @Test
+    void parse_malformedPosList_skipsFeature() throws XMLStreamException {
+        var xml = """
+                <kunnat>
+                    <Kunta gid="1" dimension="3">
+                        <alkupvm>2009-01-01</alkupvm>
+                        <sijainti>
+                            <Alue>
+                                <gml:exterior>
+                                    <gml:LinearRing>
+                                        <gml:posList srsDimension="3">100.0 200.0 5.0 300.0 400.0</gml:posList>
+                                    </gml:LinearRing>
+                                </gml:exterior>
+                            </Alue>
+                        </sijainti>
+                        <kuntatunnus>001</kuntatunnus>
+                    </Kunta>
+                    <Kunta gid="2" dimension="2">
+                        <alkupvm>2009-01-01</alkupvm>
+                        <sijainti>
+                            <Alue>
+                                <gml:exterior>
+                                    <gml:LinearRing>
+                                        <gml:posList srsDimension="2">100.0 200.0 300.0 400.0 100.0 200.0</gml:posList>
+                                    </gml:LinearRing>
+                                </gml:exterior>
+                            </Alue>
+                        </sijainti>
+                        <kuntatunnus>002</kuntatunnus>
+                    </Kunta>
+                </kunnat>
+                """;
+        var visitor = new CollectingVisitor();
+        NlsGmlParser.parse(gmlStream(xml), visitor);
+
+        // First Kunta has 5 values for srsDimension=3 (not divisible), should be skipped
+        assertEquals(1, visitor.kunnat.size());
+        assertEquals("002", visitor.kunnat.getFirst().kuntatunnus());
+    }
+
     // === Empty document ===
 
     @Test

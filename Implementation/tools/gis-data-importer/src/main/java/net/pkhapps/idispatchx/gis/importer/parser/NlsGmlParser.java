@@ -337,6 +337,10 @@ public final class NlsGmlParser {
                 }
                 var text = readElementText(reader);
                 var parts = text.trim().split("\\s+");
+                if (parts.length % srsDimension != 0) {
+                    throw new IllegalStateException(
+                            "posList value count " + parts.length + " is not divisible by srsDimension " + srsDimension);
+                }
                 int numCoords = parts.length / srsDimension;
                 var coordinates = new double[numCoords][2];
                 for (int i = 0; i < numCoords; i++) {
