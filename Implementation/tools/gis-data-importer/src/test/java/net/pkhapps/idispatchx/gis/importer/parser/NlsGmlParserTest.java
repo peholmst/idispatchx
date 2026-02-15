@@ -4,6 +4,7 @@ import net.pkhapps.idispatchx.gis.importer.parser.model.KuntaFeature;
 import net.pkhapps.idispatchx.gis.importer.parser.model.OsoitepisteFeature;
 import net.pkhapps.idispatchx.gis.importer.parser.model.PaikannimiFeature;
 import net.pkhapps.idispatchx.gis.importer.parser.model.TieviivaFeature;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.stream.XMLStreamException;
@@ -21,6 +22,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NlsGmlParserTest {
+
+    private static final Path SAMPLE_DATA_FILE = Path.of("../../../SampleData/L3311R.xml");
 
     // === Helper classes ===
 
@@ -610,14 +613,11 @@ class NlsGmlParserTest {
 
     @Test
     void parse_sampleDataFile_correctFeatureCounts() throws Exception {
-        var sampleFile = Path.of("../../../SampleData/L3311R.xml");
-        if (!Files.exists(sampleFile)) {
-            // Skip if sample data not available (e.g., in CI)
-            return;
-        }
+        Assumptions.assumeTrue(Files.exists(SAMPLE_DATA_FILE),
+                "Sample data file not found: " + SAMPLE_DATA_FILE.toAbsolutePath() + " — skipping integration test");
 
         var visitor = new CollectingVisitor();
-        try (var input = new FileInputStream(sampleFile.toFile())) {
+        try (var input = new FileInputStream(SAMPLE_DATA_FILE.toFile())) {
             NlsGmlParser.parse(input, visitor);
         }
 
@@ -629,13 +629,11 @@ class NlsGmlParserTest {
 
     @Test
     void parse_sampleDataFile_spotCheckKunta() throws Exception {
-        var sampleFile = Path.of("../../../SampleData/L3311R.xml");
-        if (!Files.exists(sampleFile)) {
-            return;
-        }
+        Assumptions.assumeTrue(Files.exists(SAMPLE_DATA_FILE),
+                "Sample data file not found: " + SAMPLE_DATA_FILE.toAbsolutePath() + " — skipping integration test");
 
         var visitor = new CollectingVisitor();
-        try (var input = new FileInputStream(sampleFile.toFile())) {
+        try (var input = new FileInputStream(SAMPLE_DATA_FILE.toFile())) {
             NlsGmlParser.parse(input, visitor);
         }
 
@@ -648,13 +646,11 @@ class NlsGmlParserTest {
 
     @Test
     void parse_sampleDataFile_spotCheckOsoitepiste() throws Exception {
-        var sampleFile = Path.of("../../../SampleData/L3311R.xml");
-        if (!Files.exists(sampleFile)) {
-            return;
-        }
+        Assumptions.assumeTrue(Files.exists(SAMPLE_DATA_FILE),
+                "Sample data file not found: " + SAMPLE_DATA_FILE.toAbsolutePath() + " — skipping integration test");
 
         var visitor = new CollectingVisitor();
-        try (var input = new FileInputStream(sampleFile.toFile())) {
+        try (var input = new FileInputStream(SAMPLE_DATA_FILE.toFile())) {
             NlsGmlParser.parse(input, visitor);
         }
 
