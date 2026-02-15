@@ -21,54 +21,56 @@ public final class RoadSegmentImporter {
     private static final Logger LOG = LoggerFactory.getLogger(RoadSegmentImporter.class);
     private static final int BATCH_SIZE = 1000;
 
-    private final DSLContext dsl;
     private final CoordinateTransformer transformer;
     private final List<TieviivaFeature> batch = new ArrayList<>(BATCH_SIZE);
     private int totalCount;
 
     public RoadSegmentImporter(DSLContext dsl, CoordinateTransformer transformer) {
-        this.dsl = dsl;
         this.transformer = transformer;
     }
 
     /**
-     * Adds a feature to the batch. Flushes when batch size is reached.
+     * Adds a feature to the batch. Does not perform any database operations.
+     * Call {@link #flush(DSLContext)} to write accumulated features.
      */
     public void upsert(TieviivaFeature feature) {
         batch.add(feature);
-        if (batch.size() >= BATCH_SIZE) {
-            flush();
-        }
     }
 
     /**
      * Deletes a road segment by its GML gid.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void delete(long gid) {
-        dsl.deleteFrom(ROAD_SEGMENT)
+    public void delete(DSLContext tx, long gid) {
+        tx.deleteFrom(ROAD_SEGMENT)
                 .where(ROAD_SEGMENT.ID.eq(gid))
                 .execute();
     }
 
     /**
      * Truncates the road_segment table for full import mode.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void truncate() {
-        dsl.truncate(ROAD_SEGMENT).execute();
+    public void truncate(DSLContext tx) {
+        tx.truncate(ROAD_SEGMENT).execute();
         LOG.info("Truncated road_segment table");
     }
 
     /**
      * Flushes any remaining features in the batch to the database.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void flush() {
+    public void flush(DSLContext tx) {
         if (batch.isEmpty()) return;
 
         for (var feature : batch) {
             var coords = transformer.transformLineString(feature.lineCoordinates());
             var lineWkt = buildLineStringWkt(coords);
 
-            dsl.execute("""
+            tx.execute("""
                             INSERT INTO gis.road_segment (id, road_class, surface_type, administrative_class, one_way, name_fi, name_sv, name_smn, name_sms, name_sme, min_address_left, max_address_left, min_address_right, max_address_right, municipality_code, geometry, imported_at)
                             VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, ST_SetSRID(ST_GeomFromText({15}), 4326), NOW())
                             ON CONFLICT (id) DO UPDATE SET
@@ -116,6 +118,13 @@ public final class RoadSegmentImporter {
      */
     public int totalCount() {
         return totalCount;
+    }
+
+    /**
+     * Returns the current batch size (for triggering flushes externally).
+     */
+    public int batchSize() {
+        return batch.size();
     }
 
     private static String buildLineStringWkt(double[][] coords) {

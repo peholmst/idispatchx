@@ -21,54 +21,56 @@ public final class AddressPointImporter {
     private static final Logger LOG = LoggerFactory.getLogger(AddressPointImporter.class);
     private static final int BATCH_SIZE = 1000;
 
-    private final DSLContext dsl;
     private final CoordinateTransformer transformer;
     private final List<OsoitepisteFeature> batch = new ArrayList<>(BATCH_SIZE);
     private int totalCount;
 
     public AddressPointImporter(DSLContext dsl, CoordinateTransformer transformer) {
-        this.dsl = dsl;
         this.transformer = transformer;
     }
 
     /**
-     * Adds a feature to the batch. Flushes when batch size is reached.
+     * Adds a feature to the batch. Does not perform any database operations.
+     * Call {@link #flush(DSLContext)} to write accumulated features.
      */
     public void upsert(OsoitepisteFeature feature) {
         batch.add(feature);
-        if (batch.size() >= BATCH_SIZE) {
-            flush();
-        }
     }
 
     /**
      * Deletes an address point by its GML gid.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void delete(long gid) {
-        dsl.deleteFrom(ADDRESS_POINT)
+    public void delete(DSLContext tx, long gid) {
+        tx.deleteFrom(ADDRESS_POINT)
                 .where(ADDRESS_POINT.ID.eq(gid))
                 .execute();
     }
 
     /**
      * Truncates the address_point table for full import mode.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void truncate() {
-        dsl.truncate(ADDRESS_POINT).execute();
+    public void truncate(DSLContext tx) {
+        tx.truncate(ADDRESS_POINT).execute();
         LOG.info("Truncated address_point table");
     }
 
     /**
      * Flushes any remaining features in the batch to the database.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void flush() {
+    public void flush(DSLContext tx) {
         if (batch.isEmpty()) return;
 
         for (var feature : batch) {
             var point = transformer.transformPoint(feature.pointEasting(), feature.pointNorthing());
             var pointWkt = "POINT(" + point[1] + " " + point[0] + ")";
 
-            dsl.execute("""
+            tx.execute("""
                             INSERT INTO gis.address_point (id, number, name_fi, name_sv, name_smn, name_sms, name_sme, municipality_code, location, imported_at)
                             VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, ST_SetSRID(ST_GeomFromText({8}), 4326), NOW())
                             ON CONFLICT (id) DO UPDATE SET
@@ -102,5 +104,12 @@ public final class AddressPointImporter {
      */
     public int totalCount() {
         return totalCount;
+    }
+
+    /**
+     * Returns the current batch size (for triggering flushes externally).
+     */
+    public int batchSize() {
+        return batch.size();
     }
 }

@@ -22,47 +22,49 @@ public final class NamedPlaceImporter {
     private static final Logger LOG = LoggerFactory.getLogger(NamedPlaceImporter.class);
     private static final int BATCH_SIZE = 1000;
 
-    private final DSLContext dsl;
     private final CoordinateTransformer transformer;
     private final List<PaikannimiFeature> batch = new ArrayList<>(BATCH_SIZE);
     private int totalCount;
 
     public NamedPlaceImporter(DSLContext dsl, CoordinateTransformer transformer) {
-        this.dsl = dsl;
         this.transformer = transformer;
     }
 
     /**
-     * Adds a feature to the batch. Flushes when batch size is reached.
+     * Adds a feature to the batch. Does not perform any database operations.
+     * Call {@link #flush(DSLContext)} to write accumulated features.
      */
     public void upsert(PaikannimiFeature feature) {
         batch.add(feature);
-        if (batch.size() >= BATCH_SIZE) {
-            flush();
-        }
     }
 
     /**
      * Deletes a named place by its GML gid.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void delete(long gid) {
-        dsl.deleteFrom(NAMED_PLACE)
+    public void delete(DSLContext tx, long gid) {
+        tx.deleteFrom(NAMED_PLACE)
                 .where(NAMED_PLACE.ID.eq(gid))
                 .execute();
     }
 
     /**
      * Truncates the named_place table for full import mode.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void truncate() {
-        dsl.truncate(NAMED_PLACE).execute();
+    public void truncate(DSLContext tx) {
+        tx.truncate(NAMED_PLACE).execute();
         LOG.info("Truncated named_place table");
     }
 
     /**
      * Flushes any remaining features in the batch to the database.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void flush() {
+    public void flush(DSLContext tx) {
         if (batch.isEmpty()) return;
 
         for (var feature : batch) {
@@ -70,7 +72,7 @@ public final class NamedPlaceImporter {
             var pointWkt = "POINT(" + point[1] + " " + point[0] + ")";
 
             // Resolve municipality via point-in-polygon
-            var municipalityCode = dsl.fetchOne("""
+            var municipalityCode = tx.fetchOne("""
                             SELECT municipality_code
                             FROM gis.municipality
                             WHERE ST_Contains(boundary, ST_SetSRID(ST_GeomFromText({0}), 4326))
@@ -79,7 +81,7 @@ public final class NamedPlaceImporter {
                     DSL.val(pointWkt));
             String resolvedCode = municipalityCode != null ? municipalityCode.get(0, String.class) : null;
 
-            dsl.execute("""
+            tx.execute("""
                             INSERT INTO gis.named_place (id, name, language, place_class, karttanimi_id, municipality_code, location, imported_at)
                             VALUES ({0}, {1}, {2}, {3}, {4}, {5}, ST_SetSRID(ST_GeomFromText({6}), 4326), NOW())
                             ON CONFLICT (id) DO UPDATE SET
@@ -109,5 +111,12 @@ public final class NamedPlaceImporter {
      */
     public int totalCount() {
         return totalCount;
+    }
+
+    /**
+     * Returns the current batch size (for triggering flushes externally).
+     */
+    public int batchSize() {
+        return batch.size();
     }
 }

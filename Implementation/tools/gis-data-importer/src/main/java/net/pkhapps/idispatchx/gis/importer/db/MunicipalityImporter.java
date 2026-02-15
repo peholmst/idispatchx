@@ -60,16 +60,20 @@ public final class MunicipalityImporter {
     /**
      * Imports a municipality boundary polygon from a GML Kunta feature.
      * Merges with existing boundary using ST_Union for multi-sheet support.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void importBoundary(KuntaFeature feature) {
+    public void importBoundary(DSLContext tx, KuntaFeature feature) {
         var coords = transformer.transformPolygon(feature.polygonCoordinates());
         var wkt = buildPolygonWkt(coords);
 
-        dsl.execute("""
+        tx.execute("""
                         INSERT INTO gis.municipality (municipality_code, boundary, imported_at)
                         VALUES ({0}, ST_Multi(ST_GeomFromText({1}, 4326)), NOW())
                         ON CONFLICT (municipality_code) DO UPDATE SET
-                            boundary = ST_Multi(ST_Union(gis.municipality.boundary, EXCLUDED.boundary)),
+                            boundary = ST_Multi(COALESCE(
+                                ST_Union(gis.municipality.boundary, EXCLUDED.boundary),
+                                EXCLUDED.boundary)),
                             imported_at = NOW()
                         """,
                 DSL.val(feature.kuntatunnus()),
@@ -78,18 +82,22 @@ public final class MunicipalityImporter {
 
     /**
      * Deletes a municipality by its municipality code (for Kunta features with loppupvm).
+     *
+     * @param tx the transactional DSLContext
      */
-    public void deleteByCode(String municipalityCode) {
-        dsl.deleteFrom(MUNICIPALITY)
+    public void deleteByCode(DSLContext tx, String municipalityCode) {
+        tx.deleteFrom(MUNICIPALITY)
                 .where(MUNICIPALITY.MUNICIPALITY_CODE.eq(municipalityCode))
                 .execute();
     }
 
     /**
      * Resets all municipality boundaries to NULL for full import mode.
+     *
+     * @param tx the transactional DSLContext
      */
-    public void truncateBoundaries() {
-        dsl.update(MUNICIPALITY)
+    public void truncateBoundaries(DSLContext tx) {
+        tx.update(MUNICIPALITY)
                 .setNull(MUNICIPALITY.BOUNDARY)
                 .execute();
         LOG.info("Reset all municipality boundaries to NULL");

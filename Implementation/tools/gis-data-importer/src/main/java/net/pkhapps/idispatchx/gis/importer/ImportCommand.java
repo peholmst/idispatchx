@@ -14,7 +14,6 @@ import net.pkhapps.idispatchx.gis.importer.parser.model.PaikannimiFeature;
 import net.pkhapps.idispatchx.gis.importer.parser.model.TieviivaFeature;
 import net.pkhapps.idispatchx.gis.importer.transform.CoordinateTransformer;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +38,7 @@ import static net.pkhapps.idispatchx.gis.database.jooq.tables.ImportLog.IMPORT_L
 public final class ImportCommand {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImportCommand.class);
+    private static final int BATCH_SIZE = 1000;
 
     private final DSLContext dsl;
     private final boolean truncate;
@@ -68,27 +68,47 @@ public final class ImportCommand {
         try (var input = new FileInputStream(jsonFile.toFile())) {
             var entries = MunicipalityJsonParser.parse(input);
             int count = municipalityImporter.importNames(entries);
-            logImport(jsonFile.getFileName().toString(), "municipality_names", count, startedAt);
+            logImport(dsl, jsonFile.getFileName().toString(), "municipality_names", count, startedAt);
         }
     }
 
     /**
      * Passes 2 and 3: Import GML features from all provided files.
+     * The entire operation is wrapped in a transaction so that a failure
+     * rolls back all changes, preventing inconsistent state after truncation.
      */
     public void importGmlFiles(List<Path> gmlFiles) throws Exception {
+        try {
+            dsl.transaction(txConfig -> {
+                var tx = txConfig.dsl();
+                try {
+                    doImportGmlFiles(tx, gmlFiles);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof Exception cause) {
+                throw cause;
+            }
+            throw e;
+        }
+    }
+
+    private void doImportGmlFiles(DSLContext tx, List<Path> gmlFiles) throws Exception {
         if (truncate) {
             LOG.info("Truncate mode: resetting tables before import");
             if (featureFilter.contains(FeatureType.KUNTA)) {
-                municipalityImporter.truncateBoundaries();
+                municipalityImporter.truncateBoundaries(tx);
             }
             if (featureFilter.contains(FeatureType.OSOITEPISTE)) {
-                addressPointImporter.truncate();
+                addressPointImporter.truncate(tx);
             }
             if (featureFilter.contains(FeatureType.TIEVIIVA)) {
-                roadSegmentImporter.truncate();
+                roadSegmentImporter.truncate(tx);
             }
             if (featureFilter.contains(FeatureType.PAIKANNIMI)) {
-                namedPlaceImporter.truncate();
+                namedPlaceImporter.truncate(tx);
             }
         }
 
@@ -103,9 +123,9 @@ public final class ImportCommand {
                         @Override
                         public void onKunta(KuntaFeature feature) {
                             if (feature.loppupvm() != null) {
-                                municipalityImporter.deleteByCode(feature.kuntatunnus());
+                                municipalityImporter.deleteByCode(tx, feature.kuntatunnus());
                             } else {
-                                municipalityImporter.importBoundary(feature);
+                                municipalityImporter.importBoundary(tx, feature);
                             }
                             counter[0]++;
                         }
@@ -123,7 +143,7 @@ public final class ImportCommand {
                         }
                     }, EnumSet.of(FeatureType.KUNTA));
                 }
-                logImport(file.getFileName().toString(), "kunta", counter[0], startedAt);
+                logImport(tx, file.getFileName().toString(), "kunta", counter[0], startedAt);
             }
         }
 
@@ -144,9 +164,12 @@ public final class ImportCommand {
                         @Override
                         public void onTieviiva(TieviivaFeature feature) {
                             if (feature.loppupvm() != null) {
-                                roadSegmentImporter.delete(feature.gid());
+                                roadSegmentImporter.delete(tx, feature.gid());
                             } else {
                                 roadSegmentImporter.upsert(feature);
+                                if (roadSegmentImporter.batchSize() >= BATCH_SIZE) {
+                                    roadSegmentImporter.flush(tx);
+                                }
                             }
                             counters[0]++;
                         }
@@ -154,9 +177,12 @@ public final class ImportCommand {
                         @Override
                         public void onOsoitepiste(OsoitepisteFeature feature) {
                             if (feature.loppupvm() != null) {
-                                addressPointImporter.delete(feature.gid());
+                                addressPointImporter.delete(tx, feature.gid());
                             } else {
                                 addressPointImporter.upsert(feature);
+                                if (addressPointImporter.batchSize() >= BATCH_SIZE) {
+                                    addressPointImporter.flush(tx);
+                                }
                             }
                             counters[1]++;
                         }
@@ -164,9 +190,12 @@ public final class ImportCommand {
                         @Override
                         public void onPaikannimi(PaikannimiFeature feature) {
                             if (feature.loppupvm() != null) {
-                                namedPlaceImporter.delete(feature.gid());
+                                namedPlaceImporter.delete(tx, feature.gid());
                             } else {
                                 namedPlaceImporter.upsert(feature);
+                                if (namedPlaceImporter.batchSize() >= BATCH_SIZE) {
+                                    namedPlaceImporter.flush(tx);
+                                }
                             }
                             counters[2]++;
                         }
@@ -174,14 +203,14 @@ public final class ImportCommand {
                 }
 
                 // Flush remaining batches
-                roadSegmentImporter.flush();
-                addressPointImporter.flush();
-                namedPlaceImporter.flush();
+                roadSegmentImporter.flush(tx);
+                addressPointImporter.flush(tx);
+                namedPlaceImporter.flush(tx);
 
                 var fileName = file.getFileName().toString();
-                if (counters[0] > 0) logImport(fileName, "tieviiva", counters[0], startedAt);
-                if (counters[1] > 0) logImport(fileName, "osoitepiste", counters[1], startedAt);
-                if (counters[2] > 0) logImport(fileName, "paikannimi", counters[2], startedAt);
+                if (counters[0] > 0) logImport(tx, fileName, "tieviiva", counters[0], startedAt);
+                if (counters[1] > 0) logImport(tx, fileName, "osoitepiste", counters[1], startedAt);
+                if (counters[2] > 0) logImport(tx, fileName, "paikannimi", counters[2], startedAt);
             }
         }
 
@@ -189,8 +218,8 @@ public final class ImportCommand {
                 roadSegmentImporter.totalCount(), addressPointImporter.totalCount(), namedPlaceImporter.totalCount());
     }
 
-    private void logImport(String filename, String featureType, int recordCount, OffsetDateTime startedAt) {
-        dsl.insertInto(IMPORT_LOG)
+    private void logImport(DSLContext tx, String filename, String featureType, int recordCount, OffsetDateTime startedAt) {
+        tx.insertInto(IMPORT_LOG)
                 .set(IMPORT_LOG.FILENAME, filename)
                 .set(IMPORT_LOG.FEATURE_TYPE, featureType)
                 .set(IMPORT_LOG.RECORD_COUNT, recordCount)
