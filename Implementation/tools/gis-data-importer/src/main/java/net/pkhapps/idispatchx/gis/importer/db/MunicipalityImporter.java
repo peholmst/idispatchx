@@ -4,13 +4,16 @@ import net.pkhapps.idispatchx.gis.importer.parser.model.KuntaFeature;
 import net.pkhapps.idispatchx.gis.importer.parser.model.MunicipalityEntry;
 import net.pkhapps.idispatchx.gis.importer.transform.CoordinateTransformer;
 import org.jooq.DSLContext;
+import org.jooq.Geometry;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 import static net.pkhapps.idispatchx.gis.database.jooq.tables.Municipality.MUNICIPALITY;
+import static net.pkhapps.idispatchx.gis.importer.db.PostGisDsl.*;
 
 /**
  * Imports municipality names from JSON and boundary polygons from GML Kunta features
@@ -65,19 +68,22 @@ public final class MunicipalityImporter {
      */
     public void importBoundary(DSLContext tx, KuntaFeature feature) {
         var coords = transformer.transformPolygon(feature.polygonCoordinates());
-        var wkt = buildPolygonWkt(coords);
+        var wkt = polygonWkt(coords);
+        var geom = stMulti(stGeomFromText(wkt, 4326));
 
-        tx.execute("""
-                        INSERT INTO gis.municipality (municipality_code, boundary, imported_at)
-                        VALUES ({0}, ST_Multi(ST_GeomFromText({1}, 4326)), NOW())
-                        ON CONFLICT (municipality_code) DO UPDATE SET
-                            boundary = ST_Multi(COALESCE(
-                                ST_Union(gis.municipality.boundary, EXCLUDED.boundary),
-                                EXCLUDED.boundary)),
-                            imported_at = NOW()
-                        """,
-                DSL.val(feature.kuntatunnus()),
-                DSL.val(wkt));
+        // Reference the EXCLUDED row's boundary for the ST_Union merge
+        var excludedBoundary = DSL.field(DSL.name("excluded", "boundary"), SQLDataType.GEOMETRY);
+
+        tx.insertInto(MUNICIPALITY)
+                .set(MUNICIPALITY.MUNICIPALITY_CODE, feature.kuntatunnus())
+                .set(MUNICIPALITY.BOUNDARY, geom)
+                .onConflict(MUNICIPALITY.MUNICIPALITY_CODE)
+                .doUpdate()
+                .set(MUNICIPALITY.BOUNDARY,
+                        stMulti(DSL.coalesce(
+                                stUnion(MUNICIPALITY.BOUNDARY, excludedBoundary),
+                                excludedBoundary)))
+                .execute();
     }
 
     /**
@@ -101,16 +107,5 @@ public final class MunicipalityImporter {
                 .setNull(MUNICIPALITY.BOUNDARY)
                 .execute();
         LOG.info("Reset all municipality boundaries to NULL");
-    }
-
-    private static String buildPolygonWkt(double[][] coords) {
-        var sb = new StringBuilder("POLYGON((");
-        for (int i = 0; i < coords.length; i++) {
-            if (i > 0) sb.append(", ");
-            // WKT uses longitude latitude order
-            sb.append(coords[i][1]).append(' ').append(coords[i][0]);
-        }
-        sb.append("))");
-        return sb.toString();
     }
 }

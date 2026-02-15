@@ -3,7 +3,6 @@ package net.pkhapps.idispatchx.gis.importer.db;
 import net.pkhapps.idispatchx.gis.importer.parser.model.OsoitepisteFeature;
 import net.pkhapps.idispatchx.gis.importer.transform.CoordinateTransformer;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static net.pkhapps.idispatchx.gis.database.jooq.tables.AddressPoint.ADDRESS_POINT;
+import static net.pkhapps.idispatchx.gis.importer.db.PostGisDsl.*;
 
 /**
  * Imports Osoitepiste (address point) features into the {@code gis.address_point} table.
@@ -68,31 +68,29 @@ public final class AddressPointImporter {
 
         for (var feature : batch) {
             var point = transformer.transformPoint(feature.pointEasting(), feature.pointNorthing());
-            var pointWkt = "POINT(" + point[1] + " " + point[0] + ")";
+            var location = stGeomFromText(pointWkt(point[0], point[1]), 4326);
 
-            tx.execute("""
-                            INSERT INTO gis.address_point (id, number, name_fi, name_sv, name_smn, name_sms, name_sme, municipality_code, location, imported_at)
-                            VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, ST_SetSRID(ST_GeomFromText({8}), 4326), NOW())
-                            ON CONFLICT (id) DO UPDATE SET
-                                number = EXCLUDED.number,
-                                name_fi = EXCLUDED.name_fi,
-                                name_sv = EXCLUDED.name_sv,
-                                name_smn = EXCLUDED.name_smn,
-                                name_sms = EXCLUDED.name_sms,
-                                name_sme = EXCLUDED.name_sme,
-                                municipality_code = EXCLUDED.municipality_code,
-                                location = EXCLUDED.location,
-                                imported_at = EXCLUDED.imported_at
-                            """,
-                    DSL.val(feature.gid()),
-                    DSL.val(feature.numero()),
-                    DSL.val(feature.nameFi()),
-                    DSL.val(feature.nameSv()),
-                    DSL.val(feature.nameSmn()),
-                    DSL.val(feature.nameSms()),
-                    DSL.val(feature.nameSme()),
-                    DSL.val(feature.kuntatunnus()),
-                    DSL.val(pointWkt));
+            tx.insertInto(ADDRESS_POINT)
+                    .set(ADDRESS_POINT.ID, feature.gid())
+                    .set(ADDRESS_POINT.NUMBER, feature.numero())
+                    .set(ADDRESS_POINT.NAME_FI, feature.nameFi())
+                    .set(ADDRESS_POINT.NAME_SV, feature.nameSv())
+                    .set(ADDRESS_POINT.NAME_SMN, feature.nameSmn())
+                    .set(ADDRESS_POINT.NAME_SMS, feature.nameSms())
+                    .set(ADDRESS_POINT.NAME_SME, feature.nameSme())
+                    .set(ADDRESS_POINT.MUNICIPALITY_CODE, feature.kuntatunnus())
+                    .set(ADDRESS_POINT.LOCATION, location)
+                    .onConflict(ADDRESS_POINT.ID)
+                    .doUpdate()
+                    .set(ADDRESS_POINT.NUMBER, feature.numero())
+                    .set(ADDRESS_POINT.NAME_FI, feature.nameFi())
+                    .set(ADDRESS_POINT.NAME_SV, feature.nameSv())
+                    .set(ADDRESS_POINT.NAME_SMN, feature.nameSmn())
+                    .set(ADDRESS_POINT.NAME_SMS, feature.nameSms())
+                    .set(ADDRESS_POINT.NAME_SME, feature.nameSme())
+                    .set(ADDRESS_POINT.MUNICIPALITY_CODE, feature.kuntatunnus())
+                    .set(ADDRESS_POINT.LOCATION, location)
+                    .execute();
         }
 
         totalCount += batch.size();

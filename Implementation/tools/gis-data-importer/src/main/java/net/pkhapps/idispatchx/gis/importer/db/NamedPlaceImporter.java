@@ -3,14 +3,15 @@ package net.pkhapps.idispatchx.gis.importer.db;
 import net.pkhapps.idispatchx.gis.importer.parser.model.PaikannimiFeature;
 import net.pkhapps.idispatchx.gis.importer.transform.CoordinateTransformer;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.pkhapps.idispatchx.gis.database.jooq.tables.Municipality.MUNICIPALITY;
 import static net.pkhapps.idispatchx.gis.database.jooq.tables.NamedPlace.NAMED_PLACE;
+import static net.pkhapps.idispatchx.gis.importer.db.PostGisDsl.*;
 
 /**
  * Imports Paikannimi (place name) features into the {@code gis.named_place} table.
@@ -69,37 +70,32 @@ public final class NamedPlaceImporter {
 
         for (var feature : batch) {
             var point = transformer.transformPoint(feature.pointEasting(), feature.pointNorthing());
-            var pointWkt = "POINT(" + point[1] + " " + point[0] + ")";
+            var location = stGeomFromText(pointWkt(point[0], point[1]), 4326);
 
             // Resolve municipality via point-in-polygon
-            var municipalityCode = tx.fetchOne("""
-                            SELECT municipality_code
-                            FROM gis.municipality
-                            WHERE ST_Contains(boundary, ST_SetSRID(ST_GeomFromText({0}), 4326))
-                            LIMIT 1
-                            """,
-                    DSL.val(pointWkt));
-            String resolvedCode = municipalityCode != null ? municipalityCode.get(0, String.class) : null;
+            var resolvedCode = tx.select(MUNICIPALITY.MUNICIPALITY_CODE)
+                    .from(MUNICIPALITY)
+                    .where(stContains(MUNICIPALITY.BOUNDARY, location))
+                    .limit(1)
+                    .fetchOne(MUNICIPALITY.MUNICIPALITY_CODE);
 
-            tx.execute("""
-                            INSERT INTO gis.named_place (id, name, language, place_class, karttanimi_id, municipality_code, location, imported_at)
-                            VALUES ({0}, {1}, {2}, {3}, {4}, {5}, ST_SetSRID(ST_GeomFromText({6}), 4326), NOW())
-                            ON CONFLICT (id) DO UPDATE SET
-                                name = EXCLUDED.name,
-                                language = EXCLUDED.language,
-                                place_class = EXCLUDED.place_class,
-                                karttanimi_id = EXCLUDED.karttanimi_id,
-                                municipality_code = EXCLUDED.municipality_code,
-                                location = EXCLUDED.location,
-                                imported_at = EXCLUDED.imported_at
-                            """,
-                    DSL.val(feature.gid()),
-                    DSL.val(feature.teksti()),
-                    DSL.val(feature.kieli()),
-                    DSL.val(feature.kohdeluokka()),
-                    DSL.val(feature.karttanimiId()),
-                    DSL.val(resolvedCode),
-                    DSL.val(pointWkt));
+            tx.insertInto(NAMED_PLACE)
+                    .set(NAMED_PLACE.ID, feature.gid())
+                    .set(NAMED_PLACE.NAME, feature.teksti())
+                    .set(NAMED_PLACE.LANGUAGE, feature.kieli())
+                    .set(NAMED_PLACE.PLACE_CLASS, feature.kohdeluokka())
+                    .set(NAMED_PLACE.KARTTANIMI_ID, feature.karttanimiId())
+                    .set(NAMED_PLACE.MUNICIPALITY_CODE, resolvedCode)
+                    .set(NAMED_PLACE.LOCATION, location)
+                    .onConflict(NAMED_PLACE.ID)
+                    .doUpdate()
+                    .set(NAMED_PLACE.NAME, feature.teksti())
+                    .set(NAMED_PLACE.LANGUAGE, feature.kieli())
+                    .set(NAMED_PLACE.PLACE_CLASS, feature.kohdeluokka())
+                    .set(NAMED_PLACE.KARTTANIMI_ID, feature.karttanimiId())
+                    .set(NAMED_PLACE.MUNICIPALITY_CODE, resolvedCode)
+                    .set(NAMED_PLACE.LOCATION, location)
+                    .execute();
         }
 
         totalCount += batch.size();
