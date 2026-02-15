@@ -42,7 +42,7 @@ The document contains 140+ feature type collections. Only four are relevant to g
 | `<kunnat>` | `<Kunta>` | Polygon (Alue) | Municipality boundaries |
 | `<tieviivat>` | `<Tieviiva>` | LineString (Murtoviiva) | Road segments with names and address ranges |
 | `<osoitepisteet>` | `<Osoitepiste>` | Point (Piste) | Address points with house numbers |
-| `<paikannnimet>` | `<Paikannimi>` | Point (Piste) | Named places (islands, villages, landmarks) |
+| `<paikannimet>` | `<Paikannimi>` | Point (Piste) | Named places (islands, villages, landmarks) |
 
 ### 1.2 Common Feature Attributes
 
