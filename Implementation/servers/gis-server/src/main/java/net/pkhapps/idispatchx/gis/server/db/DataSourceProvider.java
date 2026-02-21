@@ -99,7 +99,7 @@ public final class DataSourceProvider implements AutoCloseable {
      * @param url the JDBC URL to sanitize
      * @return a sanitized URL safe for logging
      */
-    private static String sanitizeJdbcUrl(String url) {
+    static String sanitizeJdbcUrl(String url) {
         if (url == null) {
             return "null";
         }
