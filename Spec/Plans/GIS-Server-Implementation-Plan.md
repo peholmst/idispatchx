@@ -20,7 +20,7 @@ This document contains the implementation plan for the GIS Server. It is organiz
 |-------|-------------|-------|--------|
 | 0 | Prerequisites | 2 | Done |
 | 1 | Foundation & Infrastructure | 5 | Done |
-| 2 | Authentication & Security | 5 | Not Started |
+| 2 | Authentication & Security | 5 | Done |
 | 3 | Model & Repository Layer | 5 | Not Started |
 | 4 | WMTS Tile Service | 6 | Not Started |
 | 5 | Geocoding Service | 8 | Not Started |
@@ -232,24 +232,26 @@ JWT validation, JWKS handling, role-based authorization, and back channel logout
 
 ### Task 2.1: Implement JWKS Client
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Fetch and cache JWKS from the OIDC provider.
 
 **Shared Module Package:** `net.pkhapps.idispatchx.common.auth`
 
-**Shared Module Files to Create:**
+**Shared Module Files Created:**
 - `JwksClient.java` - Fetches and caches JWKS
+- `JwksKeyProvider.java` - Interface for key providers
+- `JwksException.java` - Exception for JWKS operations
 
 **Acceptance Criteria:**
-- [ ] Fetches JWKS from configured URL on startup
-- [ ] Caches JWKS with configurable TTL
-- [ ] Refreshes JWKS when key not found (key rotation support)
-- [ ] Handles network errors gracefully
-- [ ] Uses Nimbus JOSE + JWT library
-- [ ] Shared module classes are in `java-common`
-- [ ] Unit tests with mocked HTTP responses
+- [x] Fetches JWKS from configured URL on startup
+- [x] Caches JWKS with configurable TTL
+- [x] Refreshes JWKS when key not found (key rotation support)
+- [x] Handles network errors gracefully
+- [x] Uses Nimbus JOSE + JWT library
+- [x] Shared module classes are in `java-common`
+- [x] Unit tests with mocked HTTP responses
 
 **Dependencies:** Task 1.1 (for OidcConfig)
 
@@ -257,16 +259,17 @@ Fetch and cache JWKS from the OIDC provider.
 
 ### Task 2.2: Implement Token Validator
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Validate JWT tokens against JWKS.
 
 **Shared Module Package:** `net.pkhapps.idispatchx.common.auth`
 
-**Shared Module Files to Create:**
+**Shared Module Files Created:**
 - `TokenValidator.java` - JWT signature and claims validation
 - `TokenClaims.java` - Parsed token claims record
+- `TokenValidationException.java` - Validation error with error codes
 
 **Validation Steps:**
 1. Verify JWT signature against JWKS
@@ -276,12 +279,12 @@ Validate JWT tokens against JWKS.
 5. Validate required role is present
 
 **Acceptance Criteria:**
-- [ ] Validates JWT signature using JWKS
-- [ ] Rejects expired tokens
-- [ ] Rejects tokens from wrong issuer
-- [ ] Extracts user identifier and roles
-- [ ] Returns clear validation error messages
-- [ ] Unit tests cover all validation scenarios
+- [x] Validates JWT signature using JWKS
+- [x] Rejects expired tokens
+- [x] Rejects tokens from wrong issuer
+- [x] Extracts user identifier and roles
+- [x] Returns clear validation error messages
+- [x] Unit tests cover all validation scenarios
 
 **Dependencies:** Task 2.1
 
@@ -289,23 +292,24 @@ Validate JWT tokens against JWKS.
 
 ### Task 2.3: Implement JWT Authentication Handler
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Javalin before-handler that validates JWT on protected endpoints. Uses the shared TokenValidator.
 
 **GIS Server Package:** `net.pkhapps.idispatchx.gis.server.auth`
 
-**GIS Server Files to Create:**
+**GIS Server Files Created:**
 - `JwtAuthHandler.java` - Javalin before-handler (uses shared TokenValidator)
+- `AuthContext.java` - Utility for accessing claims from Javalin context
 
 **Acceptance Criteria:**
-- [ ] Extracts Bearer token from Authorization header
-- [ ] Returns 401 if Authorization header missing
-- [ ] Returns 401 if token is invalid or expired
-- [ ] Stores validated claims in Javalin context for downstream handlers
-- [ ] Does not apply to health check endpoint
-- [ ] Unit tests verify authentication logic
+- [x] Extracts Bearer token from Authorization header
+- [x] Returns 401 if Authorization header missing
+- [x] Returns 401 if token is invalid or expired
+- [x] Stores validated claims in Javalin context for downstream handlers
+- [x] Does not apply to health check endpoint
+- [x] Unit tests verify authentication logic
 
 **Dependencies:** Task 2.2, Task 1.3
 
@@ -313,27 +317,27 @@ Javalin before-handler that validates JWT on protected endpoints. Uses the share
 
 ### Task 2.4: Implement Role Authorization
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Verify user has required role (`Dispatcher` or `Observer`) for GIS Server access.
 
 **Shared Module Package:** `net.pkhapps.idispatchx.common.auth`
 
-**Shared Module Files to Create:**
+**Shared Module Files Created:**
 - `Role.java` - Enum of system roles (Dispatcher, Observer, Admin, Station, Unit)
 
 **GIS Server Package:** `net.pkhapps.idispatchx.gis.server.auth`
 
-**GIS Server Files to Create:**
+**GIS Server Files Created:**
 - `RoleAuthHandler.java` - Javalin handler that checks role claims
 
 **Acceptance Criteria:**
-- [ ] Allows access if user has `Dispatcher` role
-- [ ] Allows access if user has `Observer` role
-- [ ] Returns 403 Forbidden if user lacks required role
-- [ ] Error response follows standard format
-- [ ] Unit tests cover role validation
+- [x] Allows access if user has `Dispatcher` role
+- [x] Allows access if user has `Observer` role
+- [x] Returns 403 Forbidden if user lacks required role
+- [x] Error response follows standard format
+- [x] Unit tests cover role validation
 
 **Dependencies:** Task 2.3
 
@@ -341,29 +345,29 @@ Verify user has required role (`Dispatcher` or `Observer`) for GIS Server access
 
 ### Task 2.5: Implement Back Channel Logout Handler
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Handle OIDC back channel logout events to invalidate sessions.
 
 **Shared Module Package:** `net.pkhapps.idispatchx.common.auth`
 
-**Shared Module Files to Create:**
+**Shared Module Files Created:**
 - `SessionStore.java` - In-memory session tracking (thread-safe)
 - `LogoutTokenValidator.java` - Validates OIDC logout tokens
 
 **GIS Server Package:** `net.pkhapps.idispatchx.gis.server.auth`
 
-**GIS Server Files to Create:**
+**GIS Server Files Created:**
 - `BackChannelLogoutHandler.java` - Javalin endpoint handler for logout events
 
 **Acceptance Criteria:**
-- [ ] Receives logout token from OIDC provider
-- [ ] Validates logout token signature
-- [ ] Extracts `sid` (session ID) claim
-- [ ] Invalidates session in SessionStore
-- [ ] Subsequent requests with invalidated session return 401
-- [ ] Unit tests verify logout flow
+- [x] Receives logout token from OIDC provider
+- [x] Validates logout token signature
+- [x] Extracts `sid` (session ID) claim
+- [x] Invalidates session in SessionStore
+- [x] Subsequent requests with invalidated session return 401
+- [x] Unit tests verify logout flow
 
 **Dependencies:** Task 2.2
 
