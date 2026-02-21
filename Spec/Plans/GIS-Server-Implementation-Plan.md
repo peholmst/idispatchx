@@ -910,7 +910,7 @@ Health check endpoint and centralized error handling.
 **Status:** Not Started
 
 **Description:**
-Health check endpoint for infrastructure monitoring.
+Health check endpoint for infrastructure monitoring. This is an internal endpoint not exposed through the public reverse proxy (per Security NFR).
 
 **Package:** `net.pkhapps.idispatchx.gis.server.api.health`
 
@@ -918,7 +918,7 @@ Health check endpoint for infrastructure monitoring.
 - `HealthController.java`
 
 **Endpoint:**
-- `GET /health` (no authentication required)
+- `GET /health` (no authentication required - internal only, not exposed via reverse proxy)
 
 **Health Checks:**
 1. Database connectivity (execute simple query)
@@ -1091,24 +1091,23 @@ End-to-end integration tests for all API endpoints.
 
 ---
 
-### Task 7.4: Generate OpenAPI Specification
+### Task 7.4: Create OpenAPI Specification
 
 **Status:** Not Started
 
 **Description:**
-Create OpenAPI 3.0 specification for the geocoding API.
+Create OpenAPI 3.0 specification for the geocoding API. The specification is maintained as a static file in the repository for documentation purposes. It is not served at runtime since the only client (Dispatcher Client) is in the same repository.
 
 **Files to Create:**
 - `src/main/resources/openapi/gis-api-v1.yaml` - OpenAPI specification
-- Controller code to serve OpenAPI at `/api/v1/openapi.yaml`
 
 **Acceptance Criteria:**
 - [ ] OpenAPI 3.0 specification covers geocoding endpoint
 - [ ] All request parameters documented
 - [ ] All response schemas documented
 - [ ] Error responses documented
-- [ ] Served at `/api/v1/openapi.yaml` without authentication
-- [ ] Validates against OpenAPI specification
+- [ ] Specification validates against OpenAPI 3.0 schema
+- [ ] Specification is accessible in the repository for reference
 
 **Dependencies:** Task 5.8
 
