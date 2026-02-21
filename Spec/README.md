@@ -54,6 +54,21 @@ Technical design documents for specific components.
 * Must comply with all higher-level specifications (NFRs, C4, Domain, Use Cases)
 * Serve as reference during implementation and code review
 
+### `UXDesigns/`
+User experience design documents.
+
+* Define interaction patterns and visual guidelines for client applications
+* Inform frontend implementation decisions
+* Must align with domain concepts and use case flows
+
+### `Plans/`
+Implementation plans for major components.
+
+* Contain task breakdowns with dependencies and success criteria
+* Used by AI agents and developers to implement features systematically
+* Reference technical designs and specifications
+* Track implementation status
+
 ## Authority and Precedence
 
 In case of conflicts between specifications, the following order of precedence applies:
