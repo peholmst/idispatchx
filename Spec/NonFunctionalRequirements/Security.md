@@ -29,6 +29,7 @@ In other words, it is assumed that:
 * Revoked or expired credentials must prevent further access.
 * Authentication must not rely on client-side secrets for public clients.
 * GIS Data Importer does not require authentication. It is executed manually by administrators in a controlled environment with direct access to GIS FS and GIS DB.
+* Internal infrastructure endpoints (health checks, metrics) do not require authentication but must not be exposed through the public reverse proxy. The reverse proxy must only expose the `/api` and `/wmts` paths.
 
 
 ## Authorization

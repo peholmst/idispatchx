@@ -699,13 +699,12 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ## 11. OpenAPI Specification
 
-An OpenAPI 3.0 specification will be generated for the geocoding API (`/api/v1/geocode/*`). The WMTS endpoint is not included in OpenAPI as it follows the OGC WMTS standard.
+An OpenAPI 3.0 specification is maintained for the geocoding API (`/api/v1/geocode/*`). The WMTS endpoint is not included in OpenAPI as it follows the OGC WMTS standard.
 
-The OpenAPI specification will be available at:
+The OpenAPI specification is stored in the repository at:
 
 ```
-GET /api/v1/openapi.json
-GET /api/v1/openapi.yaml
+Implementation/servers/gis-server/src/main/resources/openapi/gis-api-v1.yaml
 ```
 
-This endpoint does not require authentication to enable API documentation tools.
+The specification is not served at runtime. Since the only client (Dispatcher Client) is in the same repository, a runtime endpoint is unnecessary and would require either authentication (adding complexity) or create an unauthenticated endpoint (violating security requirements).
