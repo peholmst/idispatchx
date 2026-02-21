@@ -25,7 +25,7 @@ public final class RoadSegmentImporter {
     private final List<TieviivaFeature> batch = new ArrayList<>(BATCH_SIZE);
     private int totalCount;
 
-    public RoadSegmentImporter(DSLContext dsl, CoordinateTransformer transformer) {
+    public RoadSegmentImporter(CoordinateTransformer transformer) {
         this.transformer = transformer;
     }
 

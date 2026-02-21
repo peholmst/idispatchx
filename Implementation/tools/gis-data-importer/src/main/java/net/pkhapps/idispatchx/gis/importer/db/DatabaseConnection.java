@@ -8,8 +8,6 @@ import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-
 /**
  * Manages the PostgreSQL database connection for the GIS Data Importer.
  * Runs Flyway migrations on connect to ensure the schema is current,
@@ -19,15 +17,13 @@ public final class DatabaseConnection implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseConnection.class);
 
-    private final DataSource dataSource;
     private final DSLContext dsl;
 
     public DatabaseConnection(String dbUrl, String dbUser, String dbPassword) {
-        var ds = new PGSimpleDataSource();
-        ds.setUrl(dbUrl);
-        ds.setUser(dbUser);
-        ds.setPassword(dbPassword);
-        this.dataSource = ds;
+        var dataSource = new PGSimpleDataSource();
+        dataSource.setUrl(dbUrl);
+        dataSource.setUser(dbUser);
+        dataSource.setPassword(dbPassword);
 
         LOG.info("Running Flyway migrations on {}", dbUrl);
         Flyway.configure()

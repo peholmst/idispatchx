@@ -7,6 +7,8 @@ import net.pkhapps.idispatchx.gis.importer.parser.model.MunicipalityEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -66,7 +68,7 @@ public final class MunicipalityJsonParser {
         }
     }
 
-    private static MunicipalityEntry parseCodeEntry(JsonParser parser) throws IOException {
+    private static @Nullable MunicipalityEntry parseCodeEntry(JsonParser parser) throws IOException {
         String codeValue = null;
         String status = null;
         String nameFi = null;

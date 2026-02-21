@@ -25,7 +25,7 @@ public final class AddressPointImporter {
     private final List<OsoitepisteFeature> batch = new ArrayList<>(BATCH_SIZE);
     private int totalCount;
 
-    public AddressPointImporter(DSLContext dsl, CoordinateTransformer transformer) {
+    public AddressPointImporter(CoordinateTransformer transformer) {
         this.transformer = transformer;
     }
 

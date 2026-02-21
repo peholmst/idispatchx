@@ -72,19 +72,6 @@ class GisDataImporterIntegrationTest {
     }
 
     @Test
-    void coordinateTransform_sampleOsoitepiste_approximateLocation() throws Exception {
-        Assumptions.assumeTrue(Files.exists(SAMPLE_GML),
-                "Sample GML not found: " + SAMPLE_GML.toAbsolutePath());
-
-        var transformer = new CoordinateTransformer();
-        // Kuggö address point from sample data
-        var result = transformer.transformPoint(231221.828, 6677931.943);
-        // Should be in the Turku archipelago area: roughly lat ~60.1, lon ~22.2
-        assertEquals(60.1, result[0], 0.2, "Latitude should be near 60.1");
-        assertEquals(22.2, result[1], 0.2, "Longitude should be near 22.2");
-    }
-
-    @Test
     void municipalityJson_sampleFile_spotCheckEntries() throws Exception {
         Assumptions.assumeTrue(Files.exists(SAMPLE_JSON),
                 "Sample JSON not found: " + SAMPLE_JSON.toAbsolutePath());

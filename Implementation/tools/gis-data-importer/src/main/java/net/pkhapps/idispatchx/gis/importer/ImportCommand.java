@@ -54,9 +54,9 @@ public final class ImportCommand {
         this.truncate = truncate;
         this.featureFilter = featureFilter;
         this.municipalityImporter = new MunicipalityImporter(dsl, transformer);
-        this.addressPointImporter = new AddressPointImporter(dsl, transformer);
-        this.roadSegmentImporter = new RoadSegmentImporter(dsl, transformer);
-        this.namedPlaceImporter = new NamedPlaceImporter(dsl, transformer);
+        this.addressPointImporter = new AddressPointImporter(transformer);
+        this.roadSegmentImporter = new RoadSegmentImporter(transformer);
+        this.namedPlaceImporter = new NamedPlaceImporter(transformer);
     }
 
     /**
@@ -129,18 +129,6 @@ public final class ImportCommand {
                             }
                             counter[0]++;
                         }
-
-                        @Override
-                        public void onTieviiva(TieviivaFeature feature) {
-                        }
-
-                        @Override
-                        public void onOsoitepiste(OsoitepisteFeature feature) {
-                        }
-
-                        @Override
-                        public void onPaikannimi(PaikannimiFeature feature) {
-                        }
                     }, EnumSet.of(FeatureType.KUNTA));
                 }
                 logImport(tx, file.getFileName().toString(), "kunta", counter[0], startedAt);
@@ -157,10 +145,6 @@ public final class ImportCommand {
                 var counters = new int[3]; // [tieviiva, osoitepiste, paikannimi]
                 try (var input = new FileInputStream(file.toFile())) {
                     NlsGmlParser.parse(input, new FeatureVisitor() {
-                        @Override
-                        public void onKunta(KuntaFeature feature) {
-                        }
-
                         @Override
                         public void onTieviiva(TieviivaFeature feature) {
                             if (feature.loppupvm() != null) {

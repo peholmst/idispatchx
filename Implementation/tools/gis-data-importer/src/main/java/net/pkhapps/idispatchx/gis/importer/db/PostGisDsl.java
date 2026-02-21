@@ -25,13 +25,6 @@ final class PostGisDsl {
     }
 
     /**
-     * {@code ST_SetSRID(geom, srid)} — sets the SRID on an existing geometry.
-     */
-    static Field<Geometry> stSetSrid(Field<Geometry> geom, int srid) {
-        return DSL.function("ST_SetSRID", SQLDataType.GEOMETRY, geom, DSL.val(srid));
-    }
-
-    /**
      * {@code ST_Multi(geom)} — wraps a geometry as a MULTI type.
      */
     static Field<Geometry> stMulti(Field<Geometry> geom) {

@@ -27,7 +27,7 @@ public final class NamedPlaceImporter {
     private final List<PaikannimiFeature> batch = new ArrayList<>(BATCH_SIZE);
     private int totalCount;
 
-    public NamedPlaceImporter(DSLContext dsl, CoordinateTransformer transformer) {
+    public NamedPlaceImporter(CoordinateTransformer transformer) {
         this.transformer = transformer;
     }
 

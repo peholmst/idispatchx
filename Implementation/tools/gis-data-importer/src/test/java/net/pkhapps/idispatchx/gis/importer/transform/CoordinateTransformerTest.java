@@ -25,6 +25,15 @@ class CoordinateTransformerTest {
     }
 
     @Test
+    void transformPoint_sampleDataCoordinate_approximateLocation() {
+        // From sample data: Kuggö address point
+        var result = transformer.transformPoint(231221.828, 6677931.943);
+        // Should be in the Turku archipelago area: roughly lat ~60.1, lon ~22.2
+        assertEquals(60.1, result[0], 0.2, "Latitude should be near 60.1");
+        assertEquals(22.2, result[1], 0.2, "Longitude should be near 22.2");
+    }
+
+    @Test
     void transformLineString_twoPoints_transformsBoth() {
         var coords = new double[][]{
                 {232056.555, 6678000.000},
