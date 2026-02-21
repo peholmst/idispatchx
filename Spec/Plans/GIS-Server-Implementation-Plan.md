@@ -18,7 +18,7 @@ This document contains the implementation plan for the GIS Server. It is organiz
 
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
-| 0 | Prerequisites | 2 | Not Started |
+| 0 | Prerequisites | 2 | Done |
 | 1 | Foundation & Infrastructure | 5 | Not Started |
 | 2 | Authentication & Security | 5 | Not Started |
 | 3 | Model & Repository Layer | 5 | Not Started |
@@ -36,14 +36,14 @@ Tasks that must be completed before GIS Server implementation begins.
 
 ### Task 0.1: Update C4 Containers Specification
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Add HikariCP to the GIS Server tech stack in `Spec/C4/Containers.md`.
 
 **Acceptance Criteria:**
-- [ ] HikariCP added to GIS Server tech stack list
-- [ ] Consistent with other server containers
+- [x] HikariCP added to GIS Server tech stack list
+- [x] Consistent with other server containers
 
 **Dependencies:** None
 
@@ -51,15 +51,15 @@ Add HikariCP to the GIS Server tech stack in `Spec/C4/Containers.md`.
 
 ### Task 0.2: Verify gis-database Module
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Verify that the `shared/gis-database` module is complete with all necessary jOOQ generated classes and Flyway migrations.
 
 **Acceptance Criteria:**
-- [ ] Flyway migration `V1__create_gis_schema.sql` creates all required tables
-- [ ] jOOQ generated classes exist for all GIS tables
-- [ ] Module compiles successfully
+- [x] Flyway migration `V1__create_gis_schema.sql` creates all required tables
+- [x] jOOQ generated classes exist for all GIS tables
+- [x] Module compiles successfully
 
 **Dependencies:** None
 

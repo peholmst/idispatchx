@@ -206,6 +206,7 @@ GIS Server provides dispatchers with map data and geocoding services.
 * JSON support: *Jackson*
 * JWT support: *Nimbus JOSE + JWT*
 * GIS features: *Geotools*
+* RDBMS connection pool: *HikariCP*
 * RDBMS access: *jOOQ*
 * RDBMS schema management: *Flyway*
 * Build system and dependency management: *Maven*
