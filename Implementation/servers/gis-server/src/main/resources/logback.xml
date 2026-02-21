@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Logback configuration for iDispatchX GIS Server
+
+    Environment Variables:
+    - LOG_LEVEL: Override root log level (default: INFO)
+    - LOG_LEVEL_APP: Override application log level (default: DEBUG)
+
+    Security Note (per Security NFR):
+    - NO PII (personally identifiable information) must be logged
+    - Use parameterized logging (slf4j placeholders) to prevent injection
+    - Avoid logging raw request bodies or headers that might contain tokens/credentials
+-->
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- Console Appender for development and production -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Application packages -->
+    <logger name="net.pkhapps.idispatchx" level="${LOG_LEVEL_APP:-DEBUG}" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Javalin framework -->
+    <logger name="io.javalin" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- jOOQ - WARN to avoid noisy SQL logging -->
+    <logger name="org.jooq" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- HikariCP connection pool -->
+    <logger name="com.zaxxer.hikari" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Flyway migrations -->
+    <logger name="org.flywaydb" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- GeoTools -->
+    <logger name="org.geotools" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Eclipse Jetty (used by Javalin) -->
+    <logger name="org.eclipse.jetty" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+</configuration>

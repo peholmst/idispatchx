@@ -19,7 +19,7 @@ This document contains the implementation plan for the GIS Server. It is organiz
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
 | 0 | Prerequisites | 2 | Done |
-| 1 | Foundation & Infrastructure | 5 | Not Started |
+| 1 | Foundation & Infrastructure | 5 | Done |
 | 2 | Authentication & Security | 5 | Not Started |
 | 3 | Model & Repository Layer | 5 | Not Started |
 | 4 | WMTS Tile Service | 6 | Not Started |
@@ -71,7 +71,7 @@ Core application setup including configuration, database connectivity, and Javal
 
 ### Task 1.1: Create Configuration System
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Implement a configuration system that supports:
@@ -110,14 +110,14 @@ The generic configuration loading infrastructure belongs in the shared module fo
 | OIDC JWKS URL | `GIS_OIDC_JWKS_URL` | JWKS endpoint (defaults to well-known) |
 
 **Acceptance Criteria:**
-- [ ] Configuration loads from environment variables
-- [ ] Configuration loads from properties file when env vars not set
-- [ ] File-based secrets are supported (read password from file)
-- [ ] Missing required configuration throws clear error message
-- [ ] Secrets are not logged
-- [ ] Shared classes are in `java-common` module
-- [ ] GIS-specific classes are in `gis-server` module
-- [ ] Unit tests cover configuration loading logic
+- [x] Configuration loads from environment variables
+- [x] Configuration loads from properties file when env vars not set
+- [x] File-based secrets are supported (read password from file)
+- [x] Missing required configuration throws clear error message
+- [x] Secrets are not logged
+- [x] Shared classes are in `java-common` module
+- [x] GIS-specific classes are in `gis-server` module
+- [x] Unit tests cover configuration loading logic
 
 **Dependencies:** None
 
@@ -127,7 +127,7 @@ The generic configuration loading infrastructure belongs in the shared module fo
 
 **Note:** The DataSourceProvider may also be a candidate for the shared module if CAD Server uses the same pattern. For now, implement in GIS Server; refactor to shared if needed when implementing CAD Server.
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Implement database connection management using HikariCP connection pool.
@@ -142,12 +142,12 @@ Implement database connection management using HikariCP connection pool.
 - Add HikariCP dependency
 
 **Acceptance Criteria:**
-- [ ] HikariCP connection pool is configured with sensible defaults
-- [ ] Pool size is configurable via environment variable
-- [ ] Connection validation query uses PostGIS function
-- [ ] jOOQ DSLContext is properly configured for PostgreSQL
-- [ ] Connection pool shuts down cleanly on application stop
-- [ ] Unit tests verify configuration
+- [x] HikariCP connection pool is configured with sensible defaults
+- [x] Pool size is configurable via environment variable
+- [x] Connection validation query uses PostGIS function
+- [x] jOOQ DSLContext is properly configured for PostgreSQL
+- [x] Connection pool shuts down cleanly on application stop
+- [x] Unit tests verify configuration
 
 **Dependencies:** Task 1.1
 
@@ -155,7 +155,7 @@ Implement database connection management using HikariCP connection pool.
 
 ### Task 1.3: Set Up Javalin Server
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Initialize Javalin HTTP server with base configuration.
@@ -167,12 +167,12 @@ Initialize Javalin HTTP server with base configuration.
 - `GisServer.java` - Server initialization and lifecycle
 
 **Acceptance Criteria:**
-- [ ] Javalin server starts on configured port
-- [ ] Server logs startup message with port number
-- [ ] Graceful shutdown on SIGTERM
-- [ ] Jackson configured for JSON serialization
-- [ ] SLF4J/Logback logging configured
-- [ ] Server can be started from command line
+- [x] Javalin server starts on configured port
+- [x] Server logs startup message with port number
+- [x] Graceful shutdown on SIGTERM
+- [x] Jackson configured for JSON serialization
+- [x] SLF4J/Logback logging configured
+- [x] Server can be started from command line
 
 **Dependencies:** Task 1.1
 
@@ -180,7 +180,7 @@ Initialize Javalin HTTP server with base configuration.
 
 ### Task 1.4: Implement Flyway Migration on Startup
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Run Flyway migrations on server startup to ensure database schema is current.
@@ -191,10 +191,10 @@ Run Flyway migrations on server startup to ensure database schema is current.
 - `FlywayMigrator.java` - Runs Flyway migrations
 
 **Acceptance Criteria:**
-- [ ] Flyway runs migrations from `gis-database` module on startup
-- [ ] Migration failures prevent server startup
-- [ ] Migration status is logged
-- [ ] Existing data is preserved during migrations
+- [x] Flyway runs migrations from `gis-database` module on startup
+- [x] Migration failures prevent server startup
+- [x] Migration status is logged
+- [x] Existing data is preserved during migrations
 
 **Dependencies:** Task 1.2
 
@@ -202,7 +202,7 @@ Run Flyway migrations on server startup to ensure database schema is current.
 
 ### Task 1.5: Create Logback Configuration
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Configure Logback for structured logging.
@@ -211,11 +211,11 @@ Configure Logback for structured logging.
 - `src/main/resources/logback.xml`
 
 **Acceptance Criteria:**
-- [ ] Console appender for local development
-- [ ] JSON format option for production (configurable)
-- [ ] Appropriate log levels for different packages
-- [ ] No PII in log output (per Security NFR)
-- [ ] Request logging for audit trail
+- [x] Console appender for local development
+- [x] JSON format option for production (configurable)
+- [x] Appropriate log levels for different packages
+- [x] No PII in log output (per Security NFR)
+- [x] Request logging for audit trail
 
 **Dependencies:** None
 
