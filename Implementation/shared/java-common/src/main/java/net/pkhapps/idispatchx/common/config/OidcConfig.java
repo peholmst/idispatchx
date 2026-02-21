@@ -84,7 +84,17 @@ public record OidcConfig(
         }
 
         private URI deriveJwksUrl(URI issuer) {
-            // Standard OIDC well-known endpoint
+            // Derive JWKS URL from OIDC discovery endpoint
+            // Standard OIDC providers publish their JWKS location in the discovery document
+            // at {issuer}/.well-known/openid-configuration
+            // Common JWKS paths vary by provider:
+            // - Standard: {issuer}/.well-known/jwks.json
+            // - Keycloak: {issuer}/protocol/openid-connect/certs
+            // - Auth0: {issuer}/.well-known/jwks.json
+            //
+            // For simplicity, we use the standard path here. If a provider uses a different
+            // path, the GIS_OIDC_JWKS_URL environment variable should be set explicitly.
+            // A future enhancement could fetch the discovery document and extract jwks_uri.
             var issuerStr = issuer.toString();
             if (!issuerStr.endsWith("/")) {
                 issuerStr = issuerStr + "/";

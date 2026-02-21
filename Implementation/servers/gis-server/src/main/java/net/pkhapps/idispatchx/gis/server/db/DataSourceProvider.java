@@ -66,7 +66,7 @@ public final class DataSourceProvider implements AutoCloseable {
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
-        log.info("Initializing HikariCP connection pool for {}", config.url());
+        log.info("Initializing HikariCP connection pool for {}", sanitizeJdbcUrl(config.url()));
         this.dataSource = new HikariDataSource(hikariConfig);
         log.info("HikariCP connection pool initialized with {} connections", config.poolSize());
     }
@@ -90,5 +90,32 @@ public final class DataSourceProvider implements AutoCloseable {
             dataSource.close();
             log.info("HikariCP connection pool shut down");
         }
+    }
+
+    /**
+     * Sanitizes a JDBC URL for logging by removing potential credentials.
+     * JDBC URLs can contain passwords in query parameters (e.g., ?password=secret).
+     *
+     * @param url the JDBC URL to sanitize
+     * @return a sanitized URL safe for logging
+     */
+    private static String sanitizeJdbcUrl(String url) {
+        if (url == null) {
+            return "null";
+        }
+        // Remove query parameters which may contain credentials
+        var queryIndex = url.indexOf('?');
+        if (queryIndex > 0) {
+            return url.substring(0, queryIndex) + "?[REDACTED]";
+        }
+        // Also handle credentials in userinfo portion (jdbc:postgresql://user:pass@host/db)
+        var atIndex = url.indexOf('@');
+        if (atIndex > 0) {
+            var protocolEnd = url.indexOf("://");
+            if (protocolEnd > 0 && protocolEnd < atIndex) {
+                return url.substring(0, protocolEnd + 3) + "[REDACTED]@" + url.substring(atIndex + 1);
+            }
+        }
+        return url;
     }
 }

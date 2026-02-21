@@ -29,8 +29,8 @@ public final class Main {
         log.info("Starting iDispatchX GIS Server...");
 
         try {
-            // Load configuration
-            var configLoader = ConfigLoader.create();
+            // Load configuration from classpath (application.properties) with env var overrides
+            var configLoader = ConfigLoader.fromClasspath("application.properties");
             var config = GisServerConfig.load(configLoader);
 
             // Create and start server
