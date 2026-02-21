@@ -105,8 +105,8 @@ public final class JwksClient implements JwksKeyProvider {
             log.debug("Key {} not found in cache, refreshing JWKS", keyId);
         }
 
-        // Refresh and try again
-        jwkSet = refreshJwkSet();
+        // Force refresh to handle key rotation (bypass TTL check)
+        jwkSet = forceRefreshJwkSet();
         return jwkSet.getKeyByKeyId(keyId);
     }
 
@@ -126,7 +126,7 @@ public final class JwksClient implements JwksKeyProvider {
     }
 
     /**
-     * Refreshes the JWKS from the server.
+     * Refreshes the JWKS from the server if cache is expired.
      */
     private JWKSet refreshJwkSet() {
         lock.writeLock().lock();
@@ -136,15 +136,35 @@ public final class JwksClient implements JwksKeyProvider {
                 return cachedJwkSet;
             }
 
-            log.debug("Fetching JWKS from {}", jwksUri);
-            var jwkSet = fetchJwkSet();
-            cachedJwkSet = jwkSet;
-            cacheExpiry = Instant.now().plus(cacheTtl);
-            log.debug("JWKS cached with {} keys, expires at {}", jwkSet.getKeys().size(), cacheExpiry);
-            return jwkSet;
+            return doRefresh();
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Forces a refresh of the JWKS from the server, bypassing TTL check.
+     * Used when a key ID is not found to handle key rotation.
+     */
+    private JWKSet forceRefreshJwkSet() {
+        lock.writeLock().lock();
+        try {
+            return doRefresh();
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Fetches JWKS and updates cache. Must be called while holding write lock.
+     */
+    private JWKSet doRefresh() {
+        log.debug("Fetching JWKS from {}", jwksUri);
+        var jwkSet = fetchJwkSet();
+        cachedJwkSet = jwkSet;
+        cacheExpiry = Instant.now().plus(cacheTtl);
+        log.debug("JWKS cached with {} keys, expires at {}", jwkSet.getKeys().size(), cacheExpiry);
+        return jwkSet;
     }
 
     /**

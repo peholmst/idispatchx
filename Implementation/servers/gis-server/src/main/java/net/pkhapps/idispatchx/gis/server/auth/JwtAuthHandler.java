@@ -5,9 +5,11 @@ import io.javalin.http.Handler;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.UnauthorizedResponse;
 import net.pkhapps.idispatchx.common.auth.JwksException;
+import net.pkhapps.idispatchx.common.auth.SessionStore;
 import net.pkhapps.idispatchx.common.auth.TokenValidationException;
 import net.pkhapps.idispatchx.common.auth.TokenValidator;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +26,7 @@ import java.util.Objects;
  * <p>
  * Usage:
  * <pre>
- * app.before("/api/*", new JwtAuthHandler(tokenValidator));
+ * app.before("/api/*", new JwtAuthHandler(tokenValidator, sessionStore));
  * </pre>
  */
 public final class JwtAuthHandler implements Handler {
@@ -35,14 +37,26 @@ public final class JwtAuthHandler implements Handler {
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
     private final TokenValidator tokenValidator;
+    private final @Nullable SessionStore sessionStore;
 
     /**
-     * Creates a new JWT authentication handler.
+     * Creates a new JWT authentication handler without session revocation checking.
      *
      * @param tokenValidator the token validator for validating JWTs
      */
     public JwtAuthHandler(TokenValidator tokenValidator) {
+        this(tokenValidator, null);
+    }
+
+    /**
+     * Creates a new JWT authentication handler with session revocation checking.
+     *
+     * @param tokenValidator the token validator for validating JWTs
+     * @param sessionStore   the session store for checking revoked sessions (may be null)
+     */
+    public JwtAuthHandler(TokenValidator tokenValidator, @Nullable SessionStore sessionStore) {
         this.tokenValidator = Objects.requireNonNull(tokenValidator, "tokenValidator must not be null");
+        this.sessionStore = sessionStore;
     }
 
     @Override
@@ -68,6 +82,16 @@ public final class JwtAuthHandler implements Handler {
 
         try {
             var claims = tokenValidator.validate(token);
+
+            // Check if session has been revoked via back-channel logout
+            if (sessionStore != null && claims.sessionId() != null) {
+                if (sessionStore.isRevoked(claims.sessionId())) {
+                    log.debug("Session {} has been revoked for subject: {}",
+                            claims.sessionId(), claims.subject());
+                    throw new UnauthorizedResponse("Session has been revoked");
+                }
+            }
+
             AuthContext.setClaims(ctx, claims);
             log.debug("Authenticated request for subject: {}", claims.subject());
         } catch (TokenValidationException e) {
