@@ -52,3 +52,4 @@ Each technical design should include:
 |------|-------------|
 | [CAD-Server-Domain-Core.md](CAD-Server-Domain-Core.md) | Domain core design for CAD Server with in-memory state, thread-safety, and WAL integration |
 | [GIS-Data-Import-and-Schema.md](GIS-Data-Import-and-Schema.md) | PostGIS database schema and NLS GML data importer design for GIS Server geocoding |
+| [GIS-Server-REST-API.md](GIS-Server-REST-API.md) | REST API design for GIS Server WMTS tiles and geocoding endpoints |
