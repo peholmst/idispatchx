@@ -8,7 +8,6 @@ import net.pkhapps.idispatchx.common.auth.JwksException;
 import net.pkhapps.idispatchx.common.auth.LogoutTokenValidator;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
 import net.pkhapps.idispatchx.common.auth.TokenValidationException;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +60,7 @@ public final class BackChannelLogoutHandler implements Handler {
     }
 
     @Override
-    public void handle(@NotNull Context ctx) throws Exception {
+    public void handle(Context ctx) throws Exception {
         var logoutToken = ctx.formParam(LOGOUT_TOKEN_PARAM);
 
         if (logoutToken == null || logoutToken.isBlank()) {

@@ -8,7 +8,6 @@ import net.pkhapps.idispatchx.common.auth.JwksException;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
 import net.pkhapps.idispatchx.common.auth.TokenValidationException;
 import net.pkhapps.idispatchx.common.auth.TokenValidator;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +59,7 @@ public final class JwtAuthHandler implements Handler {
     }
 
     @Override
-    public void handle(@NotNull Context ctx) throws Exception {
+    public void handle(Context ctx) throws Exception {
         var authHeader = ctx.header(AUTHORIZATION_HEADER);
 
         if (authHeader == null || authHeader.isBlank()) {

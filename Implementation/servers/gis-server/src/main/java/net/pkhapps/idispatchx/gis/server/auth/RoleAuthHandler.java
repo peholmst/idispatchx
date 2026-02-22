@@ -5,11 +5,9 @@ import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.UnauthorizedResponse;
 import net.pkhapps.idispatchx.common.auth.Role;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 
@@ -68,14 +66,14 @@ public final class RoleAuthHandler implements Handler {
      * @return the role authorization handler
      */
     public static RoleAuthHandler requireAnyRole(Role... roles) {
-        if (roles == null || roles.length == 0) {
+        if (roles.length == 0) {
             throw new IllegalArgumentException("At least one role must be specified");
         }
         return new RoleAuthHandler(Set.of(roles));
     }
 
     @Override
-    public void handle(@NotNull Context ctx) throws Exception {
+    public void handle(Context ctx) throws Exception {
         var claims = AuthContext.getClaims(ctx);
 
         if (claims == null) {
