@@ -10,42 +10,29 @@ import java.util.Objects;
  * <p>
  * Contains the search results along with metadata about the query.
  *
- * @param results     the list of location results (may be empty, never null)
- * @param query       the original search query string
- * @param resultCount the number of results returned
+ * @param results the list of location results (may be empty, never null)
+ * @param query   the original search query string
  */
 public record SearchResponse(
         List<LocationResult> results,
-        String query,
-        int resultCount
+        String query
 ) {
 
     /**
      * Compact constructor that validates all fields.
      *
-     * @param results     the list of location results
-     * @param query       the original search query
-     * @param resultCount the number of results
-     * @throws NullPointerException     if results or query is null
-     * @throws IllegalArgumentException if resultCount does not match results size or is negative
+     * @param results the list of location results
+     * @param query   the original search query
+     * @throws NullPointerException if results or query is null
      */
     public SearchResponse {
         Objects.requireNonNull(results, "results must not be null");
         Objects.requireNonNull(query, "query must not be null");
-        if (resultCount < 0) {
-            throw new IllegalArgumentException("resultCount must not be negative");
-        }
-        if (resultCount != results.size()) {
-            throw new IllegalArgumentException(
-                    "resultCount must match results size: expected " + results.size() + ", got " + resultCount);
-        }
         results = List.copyOf(results);
     }
 
     /**
      * Creates a SearchResponse from a list of results and the original query.
-     * <p>
-     * The resultCount is automatically set to the size of the results list.
      *
      * @param results the list of location results
      * @param query   the original search query
@@ -53,7 +40,7 @@ public record SearchResponse(
      * @throws NullPointerException if results or query is null
      */
     public static SearchResponse of(List<LocationResult> results, String query) {
-        return new SearchResponse(results, query, results.size());
+        return new SearchResponse(results, query);
     }
 
     /**
@@ -64,7 +51,7 @@ public record SearchResponse(
      * @throws NullPointerException if query is null
      */
     public static SearchResponse empty(String query) {
-        return new SearchResponse(List.of(), query, 0);
+        return new SearchResponse(List.of(), query);
     }
 
     /**

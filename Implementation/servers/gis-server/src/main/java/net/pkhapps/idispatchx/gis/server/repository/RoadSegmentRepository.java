@@ -1,14 +1,12 @@
 package net.pkhapps.idispatchx.gis.server.repository;
 
 import net.pkhapps.idispatchx.common.domain.model.Coordinates;
-import net.pkhapps.idispatchx.common.domain.model.Language;
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.Municipality;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.Record;
 import org.jooq.impl.DSL;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -17,9 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -43,11 +39,6 @@ import static net.pkhapps.idispatchx.gis.database.jooq.Tables.ROAD_SEGMENT;
 public final class RoadSegmentRepository {
 
     private static final Logger log = LoggerFactory.getLogger(RoadSegmentRepository.class);
-
-    /**
-     * Default similarity threshold for pg_trgm fuzzy matching.
-     */
-    private static final double DEFAULT_SIMILARITY_THRESHOLD = 0.3;
 
     /**
      * Maximum decimal places for coordinate precision (from NFR).
@@ -144,7 +135,7 @@ public final class RoadSegmentRepository {
 
         List<RoadSegmentSearchResult> searchResults = new ArrayList<>();
         for (var record : results) {
-            var roadName = buildMultilingualName(
+            var roadName = MultilingualName.ofFinnishFields(
                     record.get(ROAD_SEGMENT.NAME_FI),
                     record.get(ROAD_SEGMENT.NAME_SV),
                     record.get(ROAD_SEGMENT.NAME_SMN),
@@ -333,7 +324,7 @@ public final class RoadSegmentRepository {
         double roundedLat = roundToDecimalPlaces(latitude, COORDINATE_DECIMAL_PLACES);
         double roundedLon = roundToDecimalPlaces(longitude, COORDINATE_DECIMAL_PLACES);
 
-        var streetName = buildMultilingualName(
+        var streetName = MultilingualName.ofFinnishFields(
                 record.get(ROAD_SEGMENT.NAME_FI),
                 record.get(ROAD_SEGMENT.NAME_SV),
                 record.get(ROAD_SEGMENT.NAME_SMN),
@@ -482,7 +473,7 @@ public final class RoadSegmentRepository {
 
         List<IntersectionSearchResult> searchResults = new ArrayList<>();
         for (var record : results) {
-            var roadA = buildMultilingualName(
+            var roadA = MultilingualName.ofFinnishFields(
                     record.get("rs1_name_fi", String.class),
                     record.get("rs1_name_sv", String.class),
                     record.get("rs1_name_smn", String.class),
@@ -490,7 +481,7 @@ public final class RoadSegmentRepository {
                     record.get("rs1_name_sme", String.class)
             );
 
-            var roadB = buildMultilingualName(
+            var roadB = MultilingualName.ofFinnishFields(
                     record.get("rs2_name_fi", String.class),
                     record.get("rs2_name_sv", String.class),
                     record.get("rs2_name_smn", String.class),
@@ -535,43 +526,13 @@ public final class RoadSegmentRepository {
     }
 
     /**
-     * Builds a MultilingualName from the language-specific name fields.
-     */
-    private MultilingualName buildMultilingualName(@Nullable String nameFi, @Nullable String nameSv,
-                                                    @Nullable String nameSmn, @Nullable String nameSms,
-                                                    @Nullable String nameSme) {
-        Map<Language, String> values = new HashMap<>();
-
-        if (nameFi != null && !nameFi.isBlank()) {
-            values.put(Language.of("fi"), nameFi);
-        }
-        if (nameSv != null && !nameSv.isBlank()) {
-            values.put(Language.of("sv"), nameSv);
-        }
-        if (nameSmn != null && !nameSmn.isBlank()) {
-            values.put(Language.of("smn"), nameSmn);
-        }
-        if (nameSms != null && !nameSms.isBlank()) {
-            values.put(Language.of("sms"), nameSms);
-        }
-        if (nameSme != null && !nameSme.isBlank()) {
-            values.put(Language.of("sme"), nameSme);
-        }
-
-        if (values.isEmpty()) {
-            return MultilingualName.empty();
-        }
-        return MultilingualName.of(values);
-    }
-
-    /**
      * Builds a Municipality from the code and name fields.
      */
     private @Nullable Municipality buildMunicipality(@Nullable String code,
                                                       @Nullable String nameFi, @Nullable String nameSv,
                                                       @Nullable String nameSmn, @Nullable String nameSms,
                                                       @Nullable String nameSme) {
-        var name = buildMultilingualName(nameFi, nameSv, nameSmn, nameSms, nameSme);
+        var name = MultilingualName.ofFinnishFields(nameFi, nameSv, nameSmn, nameSms, nameSme);
         if (name.isEmpty()) {
             return null;
         }

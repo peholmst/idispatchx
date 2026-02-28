@@ -153,9 +153,8 @@ class SearchRequestTest {
 
     @Test
     void of_invalidMunicipalityCode_throwsIllegalArgumentException() {
-        var exception = assertThrows(IllegalArgumentException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> SearchRequest.of("test query", "20", "12"));
-        assertTrue(exception.getMessage().contains("3 digits"));
     }
 
     @ParameterizedTest

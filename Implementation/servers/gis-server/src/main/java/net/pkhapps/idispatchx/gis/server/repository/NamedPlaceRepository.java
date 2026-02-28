@@ -120,6 +120,10 @@ public final class NamedPlaceRepository {
         Field<Double> mpLat = DSL.field(DSL.name("mp", "lat"), Double.class);
         Field<Double> mpScore = DSL.field(DSL.name("mp", "score"), Double.class);
 
+        // DISTINCT ON (karttanimi_id, language) requires those expressions to lead the ORDER BY.
+        // Ordering by (karttanimi_id, language, score DESC) picks the highest-scoring row per
+        // (karttanimi_id, language) pair. Overall ordering by score is applied in Java after grouping.
+        // Cap SQL rows at limit * 5 (max 5 languages per place) to avoid fetching unbounded results.
         var records = dsl.with(matchedPlaces)
                 .select(
                         mpKarttanimiId,
@@ -141,14 +145,15 @@ public final class NamedPlaceRepository {
                 .join(NAMED_PLACE).on(NAMED_PLACE.KARTTANIMI_ID.eq(mpKarttanimiId))
                 .leftJoin(m).on(m.MUNICIPALITY_CODE.eq(mpMunicipalityCode))
                 .orderBy(
-                        mpScore.desc(),
                         mpKarttanimiId,
-                        NAMED_PLACE.LANGUAGE
+                        NAMED_PLACE.LANGUAGE,
+                        mpScore.desc()
                 )
+                .limit(limit * 5)
                 .fetch();
 
-        // Group records by karttanimi_id to merge multilingual entries
-        // Use LinkedHashMap to preserve order by score
+        // Group records by karttanimi_id to merge multilingual entries.
+        // Use LinkedHashMap to preserve insertion order (sorted by score in Java below).
         Map<Long, NamedPlaceBuilder> builders = new LinkedHashMap<>();
         int placesFound = 0;
 
@@ -161,7 +166,6 @@ public final class NamedPlaceRepository {
             var builder = builders.get(karttanimiId);
             if (builder == null) {
                 if (placesFound >= limit) {
-                    // Already have enough unique places, skip remaining records
                     continue;
                 }
                 builder = new NamedPlaceBuilder(karttanimiId);
@@ -188,40 +192,37 @@ public final class NamedPlaceRepository {
             }
         }
 
-        // Build the results
+        // Build results, sorted by similarity score descending, skipping places with missing coordinates
         List<NamedPlaceSearchResult> results = new ArrayList<>(builders.size());
-        for (var builder : builders.values()) {
-            results.add(builder.build());
-        }
+        builders.values().stream()
+                .sorted((a, b) -> Double.compare(
+                        b.similarityScore != null ? b.similarityScore : 0.0,
+                        a.similarityScore != null ? a.similarityScore : 0.0))
+                .forEach(builder -> {
+                    var result = builder.build();
+                    if (result != null) {
+                        results.add(result);
+                    }
+                });
 
         log.debug("Found {} named places matching '{}'", results.size(), query);
         return results;
     }
 
-    private Municipality mapMunicipality(Record record, String municipalityCode,
-                                          net.pkhapps.idispatchx.gis.database.jooq.tables.Municipality m) {
+    private @Nullable Municipality mapMunicipality(Record record, String municipalityCode,
+                                                    net.pkhapps.idispatchx.gis.database.jooq.tables.Municipality m) {
         var code = MunicipalityCode.of(municipalityCode);
-
-        var nameValues = new HashMap<Language, String>();
-        addNameIfPresent(nameValues, Language.of("fi"), record.get(m.NAME_FI));
-        addNameIfPresent(nameValues, Language.of("sv"), record.get(m.NAME_SV));
-        addNameIfPresent(nameValues, Language.of("smn"), record.get(m.NAME_SMN));
-        addNameIfPresent(nameValues, Language.of("sms"), record.get(m.NAME_SMS));
-        addNameIfPresent(nameValues, Language.of("sme"), record.get(m.NAME_SME));
-
-        if (nameValues.isEmpty()) {
-            // No municipality name found, return null
+        var name = MultilingualName.ofFinnishFields(
+                record.get(m.NAME_FI),
+                record.get(m.NAME_SV),
+                record.get(m.NAME_SMN),
+                record.get(m.NAME_SMS),
+                record.get(m.NAME_SME)
+        );
+        if (name.isEmpty()) {
             return null;
         }
-
-        var name = MultilingualName.of(nameValues);
         return Municipality.of(code, name);
-    }
-
-    private void addNameIfPresent(Map<Language, String> nameValues, Language language, String value) {
-        if (value != null && !value.isBlank()) {
-            nameValues.put(language, value);
-        }
     }
 
     /**
@@ -240,12 +241,15 @@ public final class NamedPlaceRepository {
             this.karttanimiId = karttanimiId;
         }
 
-        NamedPlaceSearchResult build() {
+        /**
+         * Builds the result, or returns null if coordinates are missing.
+         */
+        @Nullable NamedPlaceSearchResult build() {
+            if (latitude == null || longitude == null) {
+                return null;
+            }
             var multilingualName = names.isEmpty() ? MultilingualName.empty() : MultilingualName.of(names);
-            var coordinates = Coordinates.Epsg4326.of(
-                    latitude != null ? latitude : 0.0,
-                    longitude != null ? longitude : 0.0
-            );
+            var coordinates = Coordinates.Epsg4326.of(latitude, longitude);
 
             return new NamedPlaceSearchResult(
                     karttanimiId,

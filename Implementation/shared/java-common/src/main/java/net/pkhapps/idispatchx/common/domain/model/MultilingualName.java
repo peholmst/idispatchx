@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -112,6 +113,32 @@ public record MultilingualName(Map<Language, String> values) {
      */
     public static MultilingualName withUnspecifiedLanguage(String value) {
         return new MultilingualName(Map.of(Language.unspecified(), value));
+    }
+
+    /**
+     * Builds a MultilingualName from the standard Finnish GIS language fields (fi, sv, smn, sms, sme).
+     * <p>
+     * Null or blank values are excluded from the result. Returns an empty MultilingualName
+     * if all values are null or blank. This factory method is intended for building names
+     * from Finnish GIS database records that store names in the five national languages.
+     *
+     * @param fi  the Finnish name, may be null
+     * @param sv  the Swedish name, may be null
+     * @param smn the Inari Sami name, may be null
+     * @param sms the Skolt Sami name, may be null
+     * @param sme the Northern Sami name, may be null
+     * @return the MultilingualName with all non-blank values
+     */
+    public static MultilingualName ofFinnishFields(@Nullable String fi, @Nullable String sv,
+                                                   @Nullable String smn, @Nullable String sms,
+                                                   @Nullable String sme) {
+        var values = new HashMap<Language, String>();
+        if (fi != null && !fi.isBlank()) values.put(Language.of("fi"), fi);
+        if (sv != null && !sv.isBlank()) values.put(Language.of("sv"), sv);
+        if (smn != null && !smn.isBlank()) values.put(Language.of("smn"), smn);
+        if (sms != null && !sms.isBlank()) values.put(Language.of("sms"), sms);
+        if (sme != null && !sme.isBlank()) values.put(Language.of("sme"), sme);
+        return of(values);
     }
 
     /**

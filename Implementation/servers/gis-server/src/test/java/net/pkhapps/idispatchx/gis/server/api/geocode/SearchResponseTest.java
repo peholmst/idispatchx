@@ -41,24 +41,22 @@ class SearchResponseTest {
                         AddressSource.ADDRESS_POINT
                 )
         );
-        var response = new SearchResponse(results, "Mannerheim", 1);
+        var response = new SearchResponse(results, "Mannerheim");
 
         assertEquals(1, response.results().size());
         assertEquals("Mannerheim", response.query());
-        assertEquals(1, response.resultCount());
     }
 
     @Test
     void constructor_withEmptyResults_createsInstance() {
-        var response = new SearchResponse(List.of(), "test query", 0);
+        var response = new SearchResponse(List.of(), "test query");
 
         assertTrue(response.results().isEmpty());
         assertEquals("test query", response.query());
-        assertEquals(0, response.resultCount());
     }
 
     @Test
-    void of_calculatesResultCount() {
+    void of_createsResponse() {
         var results = List.<LocationResult>of(
                 new PlaceResult(
                         MultilingualName.of(FINNISH, "Kallio"),
@@ -69,7 +67,8 @@ class SearchResponseTest {
         );
         var response = SearchResponse.of(results, "Kallio");
 
-        assertEquals(1, response.resultCount());
+        assertEquals(1, response.results().size());
+        assertEquals("Kallio", response.query());
     }
 
     @Test
@@ -78,7 +77,6 @@ class SearchResponseTest {
 
         assertTrue(response.results().isEmpty());
         assertEquals("test", response.query());
-        assertEquals(0, response.resultCount());
     }
 
     // === Validation Tests ===
@@ -86,30 +84,13 @@ class SearchResponseTest {
     @Test
     void constructor_nullResults_throwsNullPointerException() {
         assertThrows(NullPointerException.class,
-                () -> new SearchResponse(null, "query", 0));
+                () -> new SearchResponse(null, "query"));
     }
 
     @Test
     void constructor_nullQuery_throwsNullPointerException() {
         assertThrows(NullPointerException.class,
-                () -> new SearchResponse(List.of(), null, 0));
-    }
-
-    @Test
-    void constructor_negativeResultCount_throwsIllegalArgumentException() {
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> new SearchResponse(List.of(), "query", -1));
-        assertTrue(exception.getMessage().contains("negative"));
-    }
-
-    @Test
-    void constructor_mismatchedResultCount_throwsIllegalArgumentException() {
-        var results = List.<LocationResult>of(
-                new PlaceResult(MultilingualName.of(FINNISH, "Test"), 1, HELSINKI, COORDS)
-        );
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> new SearchResponse(results, "query", 5));
-        assertTrue(exception.getMessage().contains("match"));
+                () -> new SearchResponse(List.of(), null));
     }
 
     // === Immutability Tests ===
@@ -119,7 +100,7 @@ class SearchResponseTest {
         var mutableList = new ArrayList<LocationResult>();
         mutableList.add(new PlaceResult(MultilingualName.of(FINNISH, "Test"), 1, HELSINKI, COORDS));
 
-        var response = new SearchResponse(mutableList, "query", 1);
+        var response = new SearchResponse(mutableList, "query");
 
         // Modify original list
         mutableList.clear();
@@ -163,8 +144,8 @@ class SearchResponseTest {
         var results = List.<LocationResult>of(
                 new PlaceResult(MultilingualName.of(FINNISH, "Test"), 1, HELSINKI, COORDS)
         );
-        var r1 = new SearchResponse(results, "query", 1);
-        var r2 = new SearchResponse(results, "query", 1);
+        var r1 = new SearchResponse(results, "query");
+        var r2 = new SearchResponse(results, "query");
         assertEquals(r1, r2);
     }
 
@@ -197,7 +178,7 @@ class SearchResponseTest {
 
         assertTrue(json.contains("\"results\":[]"));
         assertTrue(json.contains("\"query\":\"test query\""));
-        assertTrue(json.contains("\"resultCount\":0"));
+        assertFalse(json.contains("\"resultCount\""));
     }
 
     @Test
@@ -219,19 +200,17 @@ class SearchResponseTest {
         assertTrue(json.contains("\"type\":\"address\""));
         assertTrue(json.contains("\"results\":["));
         assertTrue(json.contains("\"query\":\"Mannerheimintie 1\""));
-        assertTrue(json.contains("\"resultCount\":1"));
     }
 
     @Test
     void jackson_deserializeEmptyResponse_correctObject() throws JsonProcessingException {
         var json = """
-                {"results":[],"query":"test","resultCount":0}
+                {"results":[],"query":"test"}
                 """;
         var response = objectMapper.readValue(json, SearchResponse.class);
 
         assertTrue(response.results().isEmpty());
         assertEquals("test", response.query());
-        assertEquals(0, response.resultCount());
     }
 
     @Test

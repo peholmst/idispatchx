@@ -1,7 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.repository;
 
 import net.pkhapps.idispatchx.common.domain.model.Coordinates;
-import net.pkhapps.idispatchx.common.domain.model.Language;
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.Municipality;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
@@ -14,7 +13,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,11 +30,11 @@ public final class AddressPointRepository {
 
     private static final Logger log = LoggerFactory.getLogger(AddressPointRepository.class);
 
-    private static final Language FINNISH = Language.of("fi");
-    private static final Language SWEDISH = Language.of("sv");
-    private static final Language INARI_SAMI = Language.of("smn");
-    private static final Language SKOLT_SAMI = Language.of("sms");
-    private static final Language NORTHERN_SAMI = Language.of("sme");
+    private static final Field<String> MUNICIPALITY_NAME_FI = MUNICIPALITY.NAME_FI.as("m_name_fi");
+    private static final Field<String> MUNICIPALITY_NAME_SV = MUNICIPALITY.NAME_SV.as("m_name_sv");
+    private static final Field<String> MUNICIPALITY_NAME_SMN = MUNICIPALITY.NAME_SMN.as("m_name_smn");
+    private static final Field<String> MUNICIPALITY_NAME_SMS = MUNICIPALITY.NAME_SMS.as("m_name_sms");
+    private static final Field<String> MUNICIPALITY_NAME_SME = MUNICIPALITY.NAME_SME.as("m_name_sme");
 
     private final DSLContext dsl;
 
@@ -77,13 +75,6 @@ public final class AddressPointRepository {
         log.debug("Searching for addresses with query='{}', limit={}, municipality={}",
                 query, limit, municipality);
 
-        // Define aliased fields for municipality name columns to avoid ambiguity
-        var municipalityNameFi = MUNICIPALITY.NAME_FI.as("m_name_fi");
-        var municipalityNameSv = MUNICIPALITY.NAME_SV.as("m_name_sv");
-        var municipalityNameSmn = MUNICIPALITY.NAME_SMN.as("m_name_smn");
-        var municipalityNameSms = MUNICIPALITY.NAME_SMS.as("m_name_sms");
-        var municipalityNameSme = MUNICIPALITY.NAME_SME.as("m_name_sme");
-
         // pg_trgm similarity function for ranking
         Field<Double> similarityFi = similarity(ADDRESS_POINT.NAME_FI, query);
         Field<Double> similaritySv = similarity(ADDRESS_POINT.NAME_SV, query);
@@ -115,11 +106,11 @@ public final class AddressPointRepository {
                         ADDRESS_POINT.NAME_SMS,
                         ADDRESS_POINT.NAME_SME,
                         ADDRESS_POINT.MUNICIPALITY_CODE,
-                        municipalityNameFi,
-                        municipalityNameSv,
-                        municipalityNameSmn,
-                        municipalityNameSms,
-                        municipalityNameSme,
+                        MUNICIPALITY_NAME_FI,
+                        MUNICIPALITY_NAME_SV,
+                        MUNICIPALITY_NAME_SMN,
+                        MUNICIPALITY_NAME_SMS,
+                        MUNICIPALITY_NAME_SME,
                         latitude,
                         longitude,
                         maxSimilarity
@@ -161,7 +152,7 @@ public final class AddressPointRepository {
         var number = record.get(ADDRESS_POINT.NUMBER);
 
         // Build multilingual street name
-        var streetName = buildMultilingualName(
+        var streetName = MultilingualName.ofFinnishFields(
                 record.get(ADDRESS_POINT.NAME_FI),
                 record.get(ADDRESS_POINT.NAME_SV),
                 record.get(ADDRESS_POINT.NAME_SMN),
@@ -173,7 +164,7 @@ public final class AddressPointRepository {
         Municipality municipality = null;
         var municipalityCode = record.get(ADDRESS_POINT.MUNICIPALITY_CODE);
         if (municipalityCode != null) {
-            var municipalityName = buildMultilingualName(
+            var municipalityName = MultilingualName.ofFinnishFields(
                     record.get("m_name_fi", String.class),
                     record.get("m_name_sv", String.class),
                     record.get("m_name_smn", String.class),
@@ -197,32 +188,5 @@ public final class AddressPointRepository {
         }
 
         return new AddressSearchResult(id, number, streetName, municipality, coordinates, similarityScore);
-    }
-
-    /**
-     * Builds a MultilingualName from the given language-specific values.
-     * Null or blank values are excluded.
-     */
-    private MultilingualName buildMultilingualName(
-            @Nullable String fi,
-            @Nullable String sv,
-            @Nullable String smn,
-            @Nullable String sms,
-            @Nullable String sme) {
-
-        var values = new HashMap<Language, String>();
-        addIfNotBlank(values, FINNISH, fi);
-        addIfNotBlank(values, SWEDISH, sv);
-        addIfNotBlank(values, INARI_SAMI, smn);
-        addIfNotBlank(values, SKOLT_SAMI, sms);
-        addIfNotBlank(values, NORTHERN_SAMI, sme);
-
-        return MultilingualName.of(values);
-    }
-
-    private void addIfNotBlank(HashMap<Language, String> map, Language language, @Nullable String value) {
-        if (value != null && !value.isBlank()) {
-            map.put(language, value);
-        }
     }
 }

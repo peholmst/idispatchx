@@ -5,7 +5,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 /**
  * Request DTO for geocoding search operations.
@@ -54,8 +53,6 @@ public record SearchRequest(
      * Default value for the limit parameter.
      */
     public static final int DEFAULT_LIMIT = 20;
-
-    private static final Pattern MUNICIPALITY_CODE_PATTERN = Pattern.compile("^[0-9]{3}$");
 
     /**
      * Compact constructor that validates all parameters.
@@ -107,9 +104,6 @@ public record SearchRequest(
 
         MunicipalityCode municipalityCode = null;
         if (municipality != null && !municipality.isBlank()) {
-            if (!MUNICIPALITY_CODE_PATTERN.matcher(municipality).matches()) {
-                throw new IllegalArgumentException("municipality code must be exactly 3 digits");
-            }
             municipalityCode = MunicipalityCode.of(municipality);
         }
 
