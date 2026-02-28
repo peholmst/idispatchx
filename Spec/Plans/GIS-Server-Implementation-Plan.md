@@ -22,7 +22,7 @@ This document contains the implementation plan for the GIS Server. It is organiz
 | 1 | Foundation & Infrastructure | 5 | Done |
 | 2 | Authentication & Security | 5 | Done |
 | 3 | Model & Repository Layer | 5 | Done |
-| 4 | WMTS Tile Service | 6 | Not Started |
+| 4 | WMTS Tile Service | 6 | Done |
 | 5 | Geocoding Service | 8 | Not Started |
 | 6 | Health & Error Handling | 3 | Not Started |
 | 7 | Testing & Documentation | 4 | Not Started |
@@ -531,7 +531,7 @@ WMTS REST endpoint for serving map tiles.
 
 ### Task 4.1: Implement Layer Discovery
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Scan tile directory to discover available layers and their zoom levels.
@@ -542,11 +542,11 @@ Scan tile directory to discover available layers and their zoom levels.
 - `LayerDiscovery.java` - Filesystem scanning
 
 **Acceptance Criteria:**
-- [ ] Scans `{base-dir}/` for layer subdirectories
-- [ ] For each layer, scans `{layer}/ETRS-TM35FIN/` for zoom level directories
-- [ ] Returns list of TileLayer objects with available zoom levels
-- [ ] Logs discovered layers at startup
-- [ ] Unit tests with temp directory structure
+- [x] Scans `{base-dir}/` for layer subdirectories
+- [x] For each layer, scans `{layer}/ETRS-TM35FIN/` for zoom level directories
+- [x] Returns list of TileLayer objects with available zoom levels
+- [x] Logs discovered layers at startup
+- [x] Unit tests with temp directory structure
 
 **Dependencies:** Task 1.1
 
@@ -554,7 +554,7 @@ Scan tile directory to discover available layers and their zoom levels.
 
 ### Task 4.2: Implement Tile Service
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Core service for retrieving tiles from filesystem.
@@ -565,12 +565,12 @@ Core service for retrieving tiles from filesystem.
 - `TileService.java` - Tile retrieval orchestration
 
 **Acceptance Criteria:**
-- [ ] Constructs file path from layer/zoom/row/col
-- [ ] Returns tile bytes if file exists
-- [ ] Returns empty Optional if file does not exist
-- [ ] Validates tile coordinates before lookup
-- [ ] Returns appropriate result for runtime resampling delegation
-- [ ] Unit tests verify path construction and file reading
+- [x] Constructs file path from layer/zoom/row/col
+- [x] Returns tile bytes if file exists
+- [x] Returns empty Optional if file does not exist
+- [x] Validates tile coordinates before lookup
+- [x] Returns appropriate result for runtime resampling delegation
+- [x] Unit tests verify path construction and file reading
 
 **Dependencies:** Task 4.1, Task 3.2
 
@@ -578,7 +578,7 @@ Core service for retrieving tiles from filesystem.
 
 ### Task 4.3: Implement Tile Resampler
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Resample tiles at runtime for zoom levels without pre-rendered tiles.
@@ -595,12 +595,12 @@ Resample tiles at runtime for zoom levels without pre-rendered tiles.
 4. Scale up to 256x256 using bilinear interpolation
 
 **Acceptance Criteria:**
-- [ ] Upsamples from coarser levels (not downsamples from finer)
-- [ ] Uses java.awt.image.BufferedImage and Graphics2D
-- [ ] Applies bilinear interpolation (RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-- [ ] Maximum resampling depth of 3 levels
-- [ ] Returns empty if no source data within 3 levels
-- [ ] Unit tests verify resampling produces correct dimensions
+- [x] Upsamples from coarser levels (not downsamples from finer)
+- [x] Uses java.awt.image.BufferedImage and Graphics2D
+- [x] Applies bilinear interpolation (RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+- [x] Maximum resampling depth of 3 levels
+- [x] Returns empty if no source data within 3 levels
+- [x] Unit tests verify resampling produces correct dimensions
 
 **Dependencies:** Task 4.1
 
@@ -608,7 +608,7 @@ Resample tiles at runtime for zoom levels without pre-rendered tiles.
 
 ### Task 4.4: Implement Tile Cache
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 LRU cache for resampled tiles.
@@ -619,12 +619,12 @@ LRU cache for resampled tiles.
 - `TileCache.java` - LRU cache for resampled tiles
 
 **Acceptance Criteria:**
-- [ ] Cache key is (layer, zoom, row, col) tuple
-- [ ] Configurable maximum size (default 1000 tiles)
-- [ ] LRU eviction when cache is full
-- [ ] Thread-safe for concurrent access
-- [ ] Provides cache statistics (hits, misses)
-- [ ] Unit tests verify eviction behavior
+- [x] Cache key is (layer, zoom, row, col) tuple
+- [x] Configurable maximum size (default 1000 tiles)
+- [x] LRU eviction when cache is full
+- [x] Thread-safe for concurrent access
+- [x] Provides cache statistics (hits, misses)
+- [x] Unit tests verify eviction behavior
 
 **Dependencies:** None
 
@@ -632,7 +632,7 @@ LRU cache for resampled tiles.
 
 ### Task 4.5: Implement GetCapabilities Generator
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Generate WMTS Capabilities XML document.
@@ -649,11 +649,11 @@ Generate WMTS Capabilities XML document.
 - Includes ResourceURL templates
 
 **Acceptance Criteria:**
-- [ ] Generates valid OGC WMTS 1.0.0 Capabilities XML
-- [ ] Includes all discovered layers from LayerDiscovery
-- [ ] Defines complete ETRS-TM35FIN tile matrix set (levels 0-15)
-- [ ] ResourceURL template matches actual endpoint pattern
-- [ ] Unit tests verify XML structure
+- [x] Generates valid OGC WMTS 1.0.0 Capabilities XML
+- [x] Includes all discovered layers from LayerDiscovery
+- [x] Defines complete ETRS-TM35FIN tile matrix set (levels 0-15)
+- [x] ResourceURL template matches actual endpoint pattern
+- [x] Unit tests verify XML structure
 
 **Dependencies:** Task 4.1
 
@@ -661,7 +661,7 @@ Generate WMTS Capabilities XML document.
 
 ### Task 4.6: Implement WMTS Controller
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Javalin endpoints for WMTS operations.
@@ -676,15 +676,15 @@ Javalin endpoints for WMTS operations.
 - `GET /wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{col}.png` - GetTile
 
 **Acceptance Criteria:**
-- [ ] GetCapabilities returns XML with Content-Type application/xml
-- [ ] GetTile returns PNG with Content-Type image/png
-- [ ] Returns 204 No Content for missing tiles
-- [ ] Returns 404 Not Found for unknown layers
-- [ ] Returns 400 Bad Request for invalid zoom/row/col
-- [ ] Sets Cache-Control headers (24h for pre-rendered, 1h for resampled)
-- [ ] Supports conditional requests (ETag, If-None-Match)
-- [ ] Metrics/logging for tile requests
-- [ ] Integration tests verify endpoints
+- [x] GetCapabilities returns XML with Content-Type application/xml
+- [x] GetTile returns PNG with Content-Type image/png
+- [x] Returns 204 No Content for missing tiles
+- [x] Returns 404 Not Found for unknown layers
+- [x] Returns 400 Bad Request for invalid zoom/row/col
+- [x] Sets Cache-Control headers (24h for pre-rendered, 1h for resampled)
+- [x] Supports conditional requests (ETag, If-None-Match)
+- [x] Metrics/logging for tile requests
+- [x] Integration tests verify endpoints
 
 **Dependencies:** Task 4.2, Task 4.3, Task 4.4, Task 4.5, Task 2.4
 
