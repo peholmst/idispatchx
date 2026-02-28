@@ -22,6 +22,7 @@ import java.util.Objects;
  *   <li>{@code GIS_DB_POOL_SIZE} - Connection pool size (default: 10)</li>
  *   <li>{@code GIS_OIDC_ISSUER} - OIDC provider issuer URL (required)</li>
  *   <li>{@code GIS_OIDC_JWKS_URL} - JWKS endpoint (defaults to well-known)</li>
+ *   <li>{@code GIS_OIDC_CLIENT_ID} - OIDC client ID (required)</li>
  * </ul>
  *
  * @param port           the HTTP server port
@@ -51,6 +52,7 @@ public record GisServerConfig(
     private static final String ENV_DB_POOL_SIZE = "GIS_DB_POOL_SIZE";
     private static final String ENV_OIDC_ISSUER = "GIS_OIDC_ISSUER";
     private static final String ENV_OIDC_JWKS_URL = "GIS_OIDC_JWKS_URL";
+    private static final String ENV_OIDC_CLIENT_ID = "GIS_OIDC_CLIENT_ID";
 
     /**
      * Creates a GIS server configuration with validation.
@@ -103,7 +105,8 @@ public record GisServerConfig(
 
         var oidcConfig = OidcConfig.builder(
                 ENV_OIDC_ISSUER,
-                ENV_OIDC_JWKS_URL
+                ENV_OIDC_JWKS_URL,
+                ENV_OIDC_CLIENT_ID
         ).load(loader);
 
         return new GisServerConfig(port, tileDir, dbConfig, oidcConfig);
