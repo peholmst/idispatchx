@@ -143,6 +143,26 @@ class TileResamplerTest {
         assertEquals(256, img.getHeight());
     }
 
+    @Test
+    void malformedSourceTile_tooSmall_returnsNull() throws IOException {
+        // Create a source tile that is 64x64 instead of 256x256
+        var img = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+        var g = img.createGraphics();
+        g.setColor(Color.RED);
+        g.fillRect(0, 0, 64, 64);
+        g.dispose();
+        var path = tileDir.resolve("terrain").resolve("ETRS-TM35FIN").resolve("10").resolve("50").resolve("100.png");
+        Files.createDirectories(path.getParent());
+        ImageIO.write(img, "PNG", path.toFile());
+
+        var layer = new TileLayer("terrain", Set.of(10));
+        var resampler = new TileResampler(tileDir);
+
+        // diff=1, so regionSize=128 — extracting 128x128 from a 64x64 image will fail
+        var result = resampler.resample(layer, 11, 100, 200);
+        assertNull(result);
+    }
+
     // ==================== helpers ====================
 
     private void createSolidTile(String layer, int zoom, int row, int col, Color color) throws IOException {

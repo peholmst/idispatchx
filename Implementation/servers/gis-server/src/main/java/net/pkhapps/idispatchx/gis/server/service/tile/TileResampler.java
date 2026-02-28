@@ -99,7 +99,14 @@ public final class TileResampler {
         }
 
         // Extract sub-region and scale up to 256x256
-        var subImage = sourceImage.getSubimage(xStart, yStart, regionSize, regionSize);
+        // Guard against source tiles that are not 256×256 (corrupt or wrong size)
+        BufferedImage subImage;
+        try {
+            subImage = sourceImage.getSubimage(xStart, yStart, regionSize, regionSize);
+        } catch (java.awt.image.RasterFormatException e) {
+            log.warn("Source tile has unexpected dimensions (expected 256×256): {}", sourcePath);
+            return null;
+        }
         var outputImage = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
         var g2d = outputImage.createGraphics();
         try {
