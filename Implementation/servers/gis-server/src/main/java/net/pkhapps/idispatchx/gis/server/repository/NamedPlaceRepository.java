@@ -123,7 +123,12 @@ public final class NamedPlaceRepository {
         // DISTINCT ON (karttanimi_id, language) requires those expressions to lead the ORDER BY.
         // Ordering by (karttanimi_id, language, score DESC) picks the highest-scoring row per
         // (karttanimi_id, language) pair. Overall ordering by score is applied in Java after grouping.
-        // Cap SQL rows at limit * 5 (max 5 languages per place) to avoid fetching unbounded results.
+        //
+        // The SQL limit is set to limit * 5 because the query returns one row per language per place,
+        // and Finnish GIS data has at most 5 languages (fi, sv, smn, sms, sme). This caps the number
+        // of rows fetched to avoid unbounded result sets for broad queries. A more precise approach
+        // would select the top N distinct karttanimi_id values in a separate CTE first, but limit * 5
+        // is a conservative upper bound that keeps the query simple.
         var records = dsl.with(matchedPlaces)
                 .select(
                         mpKarttanimiId,
