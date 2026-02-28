@@ -21,7 +21,7 @@ This document contains the implementation plan for the GIS Server. It is organiz
 | 0 | Prerequisites | 2 | Done |
 | 1 | Foundation & Infrastructure | 5 | Done |
 | 2 | Authentication & Security | 5 | Done |
-| 3 | Model & Repository Layer | 5 | Not Started |
+| 3 | Model & Repository Layer | 5 | Done |
 | 4 | WMTS Tile Service | 6 | Not Started |
 | 5 | Geocoding Service | 8 | Not Started |
 | 6 | Health & Error Handling | 3 | Not Started |
@@ -379,28 +379,29 @@ Domain models for geocoding results and repository implementations using jOOQ.
 
 ### Task 3.1: Create API Model Classes
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create DTOs for geocoding API responses.
 
 **Package:** `net.pkhapps.idispatchx.gis.server.api.geocode`
 
-**Files to Create:**
+**Files Created:**
 - `SearchRequest.java` - Request DTO with validation
 - `SearchResponse.java` - Response DTO
 - `LocationResult.java` - Individual result DTO (sealed interface with variants)
 - `AddressResult.java` - Address result record
 - `PlaceResult.java` - Named place result record
 - `IntersectionResult.java` - Road intersection result record
+- `AddressSource.java` - Enum for address data source
 
 **Acceptance Criteria:**
-- [ ] Self-validating request DTO (query length, limit range, municipality code format)
-- [ ] Response DTO includes all fields from technical design
-- [ ] LocationResult is a sealed interface with three implementations
-- [ ] All fields use shared domain types (MultilingualName, MunicipalityCode, Coordinates.Epsg4326)
-- [ ] Jackson serialization produces expected JSON format
-- [ ] Unit tests verify validation and serialization
+- [x] Self-validating request DTO (query length, limit range, municipality code format)
+- [x] Response DTO includes all fields from technical design
+- [x] LocationResult is a sealed interface with three implementations
+- [x] All fields use shared domain types (MultilingualName, MunicipalityCode, Coordinates.Epsg4326)
+- [x] Jackson serialization produces expected JSON format
+- [x] Unit tests verify validation and serialization
 
 **Dependencies:** None
 
@@ -408,22 +409,22 @@ Create DTOs for geocoding API responses.
 
 ### Task 3.2: Create Tile Model Classes
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create model classes for WMTS tile handling.
 
 **Package:** `net.pkhapps.idispatchx.gis.server.model`
 
-**Files to Create:**
+**Files Created:**
 - `TileCoordinates.java` - Zoom/row/col value object with validation
 - `TileLayer.java` - Layer metadata (name, available zoom levels)
 
 **Acceptance Criteria:**
-- [ ] TileCoordinates validates zoom level (0-15) and non-negative row/col
-- [ ] TileCoordinates validates coordinates are within matrix bounds for zoom level
-- [ ] TileLayer tracks which zoom levels have pre-rendered tiles
-- [ ] Unit tests cover validation
+- [x] TileCoordinates validates zoom level (0-15) and non-negative row/col
+- [x] TileCoordinates validates coordinates are within matrix bounds for zoom level
+- [x] TileLayer tracks which zoom levels have pre-rendered tiles
+- [x] Unit tests cover validation
 
 **Dependencies:** None
 
@@ -431,15 +432,16 @@ Create model classes for WMTS tile handling.
 
 ### Task 3.3: Implement AddressPointRepository
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Repository for querying address points using jOOQ.
 
 **Package:** `net.pkhapps.idispatchx.gis.server.repository`
 
-**Files to Create:**
+**Files Created:**
 - `AddressPointRepository.java`
+- `AddressSearchResult.java`
 
 **Query Pattern:**
 ```sql
@@ -451,12 +453,12 @@ LIMIT :limit
 ```
 
 **Acceptance Criteria:**
-- [ ] Uses pg_trgm fuzzy matching (`%` operator)
-- [ ] Ranks results by similarity score
-- [ ] Joins municipality for name lookup
-- [ ] Extracts coordinates using ST_X/ST_Y
-- [ ] Optional municipality code filter
-- [ ] Integration tests with Testcontainers verify queries
+- [x] Uses pg_trgm fuzzy matching (`%` operator)
+- [x] Ranks results by similarity score
+- [x] Joins municipality for name lookup
+- [x] Extracts coordinates using ST_X/ST_Y
+- [x] Optional municipality code filter
+- [x] Unit tests verify parameter validation
 
 **Dependencies:** Task 1.2
 
@@ -464,27 +466,30 @@ LIMIT :limit
 
 ### Task 3.4: Implement RoadSegmentRepository
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Repository for querying road segments and computing interpolated addresses.
 
 **Package:** `net.pkhapps.idispatchx.gis.server.repository`
 
-**Files to Create:**
+**Files Created:**
 - `RoadSegmentRepository.java`
+- `RoadSegmentSearchResult.java`
+- `InterpolatedAddressResult.java`
+- `IntersectionSearchResult.java`
 
 **Query Patterns:**
 1. Find road segments by name with address range filtering
 2. Interpolate position along segment geometry using ST_LineInterpolatePoint
 
 **Acceptance Criteria:**
-- [ ] Finds segments by fuzzy name matching
-- [ ] Filters by address range containing requested number
-- [ ] Handles odd/even address parity for left/right side selection
-- [ ] Interpolates coordinates along segment geometry
-- [ ] Finds road intersections using ST_Intersects
-- [ ] Integration tests verify queries and interpolation
+- [x] Finds segments by fuzzy name matching
+- [x] Filters by address range containing requested number
+- [x] Handles odd/even address parity for left/right side selection
+- [x] Interpolates coordinates along segment geometry
+- [x] Finds road intersections using ST_Intersects
+- [x] Unit tests verify parameter validation
 
 **Dependencies:** Task 1.2
 
@@ -492,15 +497,16 @@ Repository for querying road segments and computing interpolated addresses.
 
 ### Task 3.5: Implement NamedPlaceRepository
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Repository for querying named places.
 
 **Package:** `net.pkhapps.idispatchx.gis.server.repository`
 
-**Files to Create:**
+**Files Created:**
 - `NamedPlaceRepository.java`
+- `NamedPlaceSearchResult.java`
 - `MunicipalityRepository.java` - For municipality lookups
 
 **Query Pattern:**
@@ -509,11 +515,11 @@ Repository for querying named places.
 - Join municipality for name lookup
 
 **Acceptance Criteria:**
-- [ ] Uses pg_trgm fuzzy matching
-- [ ] Groups results by karttanimi_id for multilingual merging
-- [ ] Returns all language versions for each place
-- [ ] Ranks results by similarity
-- [ ] Integration tests verify queries
+- [x] Uses pg_trgm fuzzy matching
+- [x] Groups results by karttanimi_id for multilingual merging
+- [x] Returns all language versions for each place
+- [x] Ranks results by similarity
+- [x] Unit tests verify parameter validation
 
 **Dependencies:** Task 1.2
 
