@@ -27,6 +27,7 @@ class GisServerConfigTest {
         assertEquals("gisuser", config.databaseConfig().username());
         assertEquals("gispass", config.databaseConfig().password());
         assertEquals(URI.create("https://auth.example.com"), config.oidcConfig().issuer());
+        assertEquals("gis-server", config.oidcConfig().clientId());
     }
 
     @Test
@@ -71,6 +72,16 @@ class GisServerConfigTest {
     }
 
     @Test
+    void load_throwsOnMissingOidcClientId() {
+        var envVars = createRequiredEnvVars();
+        envVars.remove("GIS_OIDC_CLIENT_ID");
+
+        var loader = new ConfigLoader(new Properties(), envVars::get);
+
+        assertThrows(ConfigurationException.class, () -> GisServerConfig.load(loader));
+    }
+
+    @Test
     void invalidPort_throws() {
         assertThrows(IllegalArgumentException.class,
                 () -> new GisServerConfig(
@@ -80,7 +91,8 @@ class GisServerConfigTest {
                                 "jdbc:postgresql://localhost/gis", "user", "pass", 10),
                         new net.pkhapps.idispatchx.common.config.OidcConfig(
                                 URI.create("https://auth.example.com"),
-                                URI.create("https://auth.example.com/.well-known/jwks.json"))
+                                URI.create("https://auth.example.com/.well-known/jwks.json"),
+                                "gis-server")
                 ));
     }
 
@@ -94,7 +106,8 @@ class GisServerConfigTest {
                                 "jdbc:postgresql://localhost/gis", "user", "pass", 10),
                         new net.pkhapps.idispatchx.common.config.OidcConfig(
                                 URI.create("https://auth.example.com"),
-                                URI.create("https://auth.example.com/.well-known/jwks.json"))
+                                URI.create("https://auth.example.com/.well-known/jwks.json"),
+                                "gis-server")
                 ));
     }
 
@@ -108,7 +121,8 @@ class GisServerConfigTest {
                                 "jdbc:postgresql://localhost/gis", "user", "pass", 10),
                         new net.pkhapps.idispatchx.common.config.OidcConfig(
                                 URI.create("https://auth.example.com"),
-                                URI.create("https://auth.example.com/.well-known/jwks.json"))
+                                URI.create("https://auth.example.com/.well-known/jwks.json"),
+                                "gis-server")
                 ));
     }
 
@@ -119,6 +133,7 @@ class GisServerConfigTest {
         envVars.put("GIS_DB_USER", "gisuser");
         envVars.put("GIS_DB_PASSWORD", "gispass");
         envVars.put("GIS_OIDC_ISSUER", "https://auth.example.com");
+        envVars.put("GIS_OIDC_CLIENT_ID", "gis-server");
         return envVars;
     }
 }

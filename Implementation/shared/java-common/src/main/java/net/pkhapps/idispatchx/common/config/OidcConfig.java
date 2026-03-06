@@ -8,34 +8,42 @@ import java.util.Objects;
  * <p>
  * The JWKS URL defaults to the well-known endpoint derived from the issuer URL if not explicitly set.
  *
- * @param issuer  the OIDC provider issuer URL
- * @param jwksUrl the JWKS (JSON Web Key Set) endpoint URL
+ * @param issuer   the OIDC provider issuer URL
+ * @param jwksUrl  the JWKS (JSON Web Key Set) endpoint URL
+ * @param clientId the OIDC client ID (used for back-channel logout token audience validation)
  */
 public record OidcConfig(
         URI issuer,
-        URI jwksUrl
+        URI jwksUrl,
+        String clientId
 ) {
 
     /**
      * Creates an OIDC configuration with validation.
      *
-     * @param issuer  the OIDC provider issuer URL
-     * @param jwksUrl the JWKS endpoint URL
+     * @param issuer   the OIDC provider issuer URL
+     * @param jwksUrl  the JWKS endpoint URL
+     * @param clientId the OIDC client ID
      */
     public OidcConfig {
         Objects.requireNonNull(issuer, "issuer must not be null");
         Objects.requireNonNull(jwksUrl, "jwksUrl must not be null");
+        Objects.requireNonNull(clientId, "clientId must not be null");
+        if (clientId.isBlank()) {
+            throw new IllegalArgumentException("clientId must not be blank");
+        }
     }
 
     /**
      * Creates a builder for loading OIDC configuration from environment variables.
      *
-     * @param issuerEnvVar  environment variable for issuer URL
-     * @param jwksUrlEnvVar environment variable for JWKS URL (optional, defaults to well-known)
+     * @param issuerEnvVar    environment variable for issuer URL
+     * @param jwksUrlEnvVar   environment variable for JWKS URL (optional, defaults to well-known)
+     * @param clientIdEnvVar  environment variable for the OIDC client ID (required)
      * @return the builder
      */
-    public static Builder builder(String issuerEnvVar, String jwksUrlEnvVar) {
-        return new Builder(issuerEnvVar, jwksUrlEnvVar);
+    public static Builder builder(String issuerEnvVar, String jwksUrlEnvVar, String clientIdEnvVar) {
+        return new Builder(issuerEnvVar, jwksUrlEnvVar, clientIdEnvVar);
     }
 
     /**
@@ -45,10 +53,12 @@ public record OidcConfig(
 
         private final ConfigProperty<String> issuerProperty;
         private final String jwksUrlEnvVar;
+        private final ConfigProperty<String> clientIdProperty;
 
-        private Builder(String issuerEnvVar, String jwksUrlEnvVar) {
+        private Builder(String issuerEnvVar, String jwksUrlEnvVar, String clientIdEnvVar) {
             this.issuerProperty = ConfigProperty.requiredString(issuerEnvVar);
             this.jwksUrlEnvVar = jwksUrlEnvVar;
+            this.clientIdProperty = ConfigProperty.requiredString(clientIdEnvVar);
         }
 
         /**
@@ -72,7 +82,9 @@ public record OidcConfig(
                 jwksUrl = parseUri(jwksUrlStr, "jwksUrl");
             }
 
-            return new OidcConfig(issuer, jwksUrl);
+            var clientId = loader.get(clientIdProperty);
+
+            return new OidcConfig(issuer, jwksUrl, clientId);
         }
 
         private URI parseUri(String value, String name) {

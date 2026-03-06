@@ -15,6 +15,18 @@
     <name>iDispatchX GIS Server</name>
     <description>GIS server providing map tiles and geocoding for iDispatchX</description>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>--enable-preview -Djava.awt.headless=true</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>net.pkhapps.idispatchx</groupId>

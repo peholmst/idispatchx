@@ -4,10 +4,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import net.pkhapps.idispatchx.common.auth.JwksClient;
+import net.pkhapps.idispatchx.common.auth.LogoutTokenValidator;
+import net.pkhapps.idispatchx.common.auth.Role;
+import net.pkhapps.idispatchx.common.auth.SessionStore;
+import net.pkhapps.idispatchx.common.auth.TokenValidator;
+import net.pkhapps.idispatchx.gis.server.api.wmts.CapabilitiesGenerator;
+import net.pkhapps.idispatchx.gis.server.api.wmts.WmtsController;
+import net.pkhapps.idispatchx.gis.server.auth.BackChannelLogoutHandler;
+import net.pkhapps.idispatchx.gis.server.auth.JwtAuthHandler;
+import net.pkhapps.idispatchx.gis.server.auth.RoleAuthHandler;
 import net.pkhapps.idispatchx.gis.server.config.GisServerConfig;
 import net.pkhapps.idispatchx.gis.server.db.DataSourceProvider;
 import net.pkhapps.idispatchx.gis.server.db.FlywayMigrator;
 import net.pkhapps.idispatchx.gis.server.db.JooqContextProvider;
+import net.pkhapps.idispatchx.gis.server.service.tile.LayerDiscovery;
+import net.pkhapps.idispatchx.gis.server.service.tile.TileCache;
+import net.pkhapps.idispatchx.gis.server.service.tile.TileResampler;
+import net.pkhapps.idispatchx.gis.server.service.tile.TileService;
 import org.jooq.DSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +48,7 @@ public final class GisServer implements AutoCloseable {
     private final DataSourceProvider dataSourceProvider;
     private final JooqContextProvider jooqContextProvider;
     private final Javalin javalin;
+    private final SessionStore sessionStore;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     /**
@@ -56,6 +71,30 @@ public final class GisServer implements AutoCloseable {
 
         // Initialize Javalin
         this.javalin = createJavalin();
+
+        // Initialize auth services
+        var jwksClient = new JwksClient(config.oidcConfig().jwksUrl());
+        var tokenValidator = new TokenValidator(jwksClient, config.oidcConfig().issuer().toString());
+        this.sessionStore = new SessionStore();
+        var logoutValidator = new LogoutTokenValidator(
+                jwksClient,
+                config.oidcConfig().issuer().toString(),
+                config.oidcConfig().clientId());
+        var jwtAuth = new JwtAuthHandler(tokenValidator, sessionStore);
+        var roleAuth = RoleAuthHandler.requireAnyRole(Role.DISPATCHER, Role.OBSERVER);
+        var logoutHandler = new BackChannelLogoutHandler(logoutValidator, sessionStore);
+
+        // Initialize tile services
+        var layers = new LayerDiscovery(config.tileDirectory()).discoverLayers();
+        var tileService = new TileService(
+                config.tileDirectory(), layers,
+                new TileResampler(config.tileDirectory()),
+                new TileCache());
+        var capGen = new CapabilitiesGenerator(layers);
+
+        // Register routes
+        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
+        javalin.post("/api/v1/auth/logout", logoutHandler);
 
         log.info("GIS Server initialized");
     }
@@ -92,6 +131,7 @@ public final class GisServer implements AutoCloseable {
             log.info("Stopping GIS Server...");
             javalin.stop();
             dataSourceProvider.close();
+            sessionStore.close();
             log.info("GIS Server stopped");
         }
     }
