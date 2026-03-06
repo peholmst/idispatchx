@@ -122,14 +122,10 @@ class CapabilitiesGeneratorTest {
     }
 
     @Test
-    void xmlEscapingForSpecialCharactersInLayerName() {
-        // Layer name with XML special chars — test that it gets escaped
-        var layers = Map.of("terrain&layer", new TileLayer("terrain&layer", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
-        var xml = generator.getCapabilitiesXml();
-
-        assertTrue(xml.contains("terrain&amp;layer"), "Ampersand should be XML-escaped");
-        assertFalse(xml.contains("terrain&layer"), "Raw ampersand should not appear in XML content");
+    void layerNameWithSpecialCharacters_rejectedByValidation() {
+        // TileLayer rejects names with XML-unsafe characters at construction time
+        assertThrows(IllegalArgumentException.class,
+                () -> new TileLayer("terrain&layer", Set.of(10)));
     }
 
     @Test

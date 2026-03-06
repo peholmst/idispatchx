@@ -2,6 +2,7 @@ package net.pkhapps.idispatchx.gis.server.model;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Represents a WMTS tile layer with metadata about available zoom levels.
@@ -15,13 +16,15 @@ import java.util.Set;
  */
 public record TileLayer(String name, Set<Integer> availableZoomLevels) {
 
+    private static final Pattern VALID_NAME_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
+
     /**
      * Creates a new tile layer with validation.
      *
-     * @param name                the layer name
+     * @param name                the layer name (alphanumeric, hyphens and underscores only)
      * @param availableZoomLevels the set of zoom levels with pre-rendered tiles
      * @throws NullPointerException     if name or availableZoomLevels is null
-     * @throws IllegalArgumentException if name is blank
+     * @throws IllegalArgumentException if name is blank or contains invalid characters
      * @throws IllegalArgumentException if any zoom level is outside the valid range 0-15
      */
     public TileLayer {
@@ -30,6 +33,11 @@ public record TileLayer(String name, Set<Integer> availableZoomLevels) {
 
         if (name.isBlank()) {
             throw new IllegalArgumentException("name must not be blank");
+        }
+
+        if (!VALID_NAME_PATTERN.matcher(name).matches()) {
+            throw new IllegalArgumentException(
+                    "name must contain only alphanumeric characters, hyphens and underscores, got '" + name + "'");
         }
 
         for (var zoomLevel : availableZoomLevels) {

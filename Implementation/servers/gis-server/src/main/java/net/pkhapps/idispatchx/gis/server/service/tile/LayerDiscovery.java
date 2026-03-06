@@ -2,6 +2,7 @@ package net.pkhapps.idispatchx.gis.server.service.tile;
 
 import net.pkhapps.idispatchx.gis.server.model.TileCoordinates;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public final class LayerDiscovery {
         return Map.copyOf(result);
     }
 
-    private TileLayer discoverLayer(String layerName, Path layerDir) {
+    private @Nullable TileLayer discoverLayer(String layerName, Path layerDir) {
         var matrixSetDir = layerDir.resolve(TILE_MATRIX_SET);
         if (!Files.isDirectory(matrixSetDir)) {
             log.debug("Skipping layer directory {} - missing {} subdirectory", layerDir, TILE_MATRIX_SET);

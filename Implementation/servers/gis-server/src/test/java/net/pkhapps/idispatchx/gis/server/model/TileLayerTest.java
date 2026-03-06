@@ -54,6 +54,37 @@ class TileLayerTest {
     }
 
     @Test
+    void nameWithPathTraversal_throws() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> new TileLayer("../etc", Set.of(5)));
+
+        assertTrue(exception.getMessage().contains("alphanumeric"));
+    }
+
+    @Test
+    void nameWithSlash_throws() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> new TileLayer("foo/bar", Set.of(5)));
+
+        assertTrue(exception.getMessage().contains("alphanumeric"));
+    }
+
+    @Test
+    void nameWithDot_throws() {
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> new TileLayer("layer.name", Set.of(5)));
+
+        assertTrue(exception.getMessage().contains("alphanumeric"));
+    }
+
+    @Test
+    void nameWithHyphensAndUnderscores_valid() {
+        var layer = new TileLayer("base-layer_v2", Set.of(5));
+
+        assertEquals("base-layer_v2", layer.name());
+    }
+
+    @Test
     void zoomLevelBelowRange_throws() {
         var exception = assertThrows(IllegalArgumentException.class,
                 () -> new TileLayer("base", Set.of(-1)));
