@@ -1,9 +1,10 @@
 package net.pkhapps.idispatchx.gis.server.api.geocode;
 
 import io.javalin.Javalin;
-import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import net.pkhapps.idispatchx.common.api.ValidationException;
+import net.pkhapps.idispatchx.gis.server.api.error.GisErrorCode;
 import net.pkhapps.idispatchx.gis.server.service.geocode.DatabaseUnavailableException;
 import net.pkhapps.idispatchx.gis.server.service.geocode.GeocodeService;
 
@@ -50,11 +51,26 @@ public final class GeocodeController {
         var limitStr = ctx.queryParam("limit");
         var municipality = ctx.queryParam("municipality");
 
+        // Validate the query parameter first so it produces INVALID_QUERY (not INVALID_PARAMETER)
+        if (q == null || q.isBlank()) {
+            throw new ValidationException(GisErrorCode.INVALID_QUERY, "query is required");
+        }
+        var trimmedQuery = q.trim();
+        if (trimmedQuery.length() < SearchRequest.MIN_QUERY_LENGTH) {
+            throw new ValidationException(GisErrorCode.INVALID_QUERY,
+                    "query must be at least " + SearchRequest.MIN_QUERY_LENGTH + " characters");
+        }
+        if (trimmedQuery.length() > SearchRequest.MAX_QUERY_LENGTH) {
+            throw new ValidationException(GisErrorCode.INVALID_QUERY,
+                    "query must not exceed " + SearchRequest.MAX_QUERY_LENGTH + " characters");
+        }
+
+        // Remaining validation (limit, municipality) produces INVALID_PARAMETER
         SearchRequest request;
         try {
             request = SearchRequest.of(q, limitStr, municipality);
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new BadRequestResponse(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException(GisErrorCode.INVALID_PARAMETER, e.getMessage());
         }
 
         try {
