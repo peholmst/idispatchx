@@ -1,7 +1,9 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
+import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
 import net.pkhapps.idispatchx.gis.server.api.geocode.IntersectionResult;
+import net.pkhapps.idispatchx.gis.server.repository.IntersectionSearchResult;
 import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
 import org.jspecify.annotations.Nullable;
 
@@ -31,5 +33,26 @@ public final class IntersectionSearcher {
                                 r.coordinates()),
                         r.similarityScore()))
                 .toList();
+    }
+
+    List<ScoredResult> searchPair(String roadA, String roadB, int limit,
+                                   @Nullable MunicipalityCode municipality) {
+        return repository.searchIntersections(roadA, limit, municipality).stream()
+                .filter(r -> r.municipality() != null)
+                .filter(r -> !r.roadA().isEmpty() && !r.roadB().isEmpty())
+                .filter(r -> nameMatchesAny(r.roadA(), roadB) || nameMatchesAny(r.roadB(), roadB))
+                .map(r -> new ScoredResult(
+                        new IntersectionResult(
+                                r.roadA(),
+                                r.roadB(),
+                                r.municipality(),
+                                r.coordinates()),
+                        r.similarityScore()))
+                .toList();
+    }
+
+    private boolean nameMatchesAny(MultilingualName name, String query) {
+        return name.values().values().stream()
+                .anyMatch(v -> v.toLowerCase().contains(query.toLowerCase()));
     }
 }

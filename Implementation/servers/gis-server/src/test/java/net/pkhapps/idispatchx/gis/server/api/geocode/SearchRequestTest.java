@@ -88,6 +88,18 @@ class SearchRequestTest {
     }
 
     @Test
+    void constructor_whitespaceOnlyQuery_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new SearchRequest("   ", 20, null));
+    }
+
+    @Test
+    void constructor_queryWithSurroundingSpaces_trims() {
+        var request = new SearchRequest("  test query  ", 20, null);
+        assertEquals("test query", request.query());
+    }
+
+    @Test
     void constructor_queryExactlyMinLength_createsInstance() {
         var request = new SearchRequest("abc", 20, null);
         assertEquals("abc", request.query());

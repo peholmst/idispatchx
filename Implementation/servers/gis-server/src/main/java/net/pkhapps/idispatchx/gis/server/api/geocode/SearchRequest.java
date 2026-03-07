@@ -65,6 +65,10 @@ public record SearchRequest(
      */
     public SearchRequest {
         Objects.requireNonNull(query, "query must not be null");
+        query = query.trim();
+        if (query.isBlank()) {
+            throw new IllegalArgumentException("query must not be blank");
+        }
         if (query.length() < MIN_QUERY_LENGTH) {
             throw new IllegalArgumentException(
                     "query must be at least " + MIN_QUERY_LENGTH + " characters");

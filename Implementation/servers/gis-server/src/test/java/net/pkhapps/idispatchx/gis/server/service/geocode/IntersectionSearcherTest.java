@@ -83,4 +83,43 @@ class IntersectionSearcherTest {
         var results = searcher.search("nothing", 10, null);
         assertTrue(results.isEmpty());
     }
+
+    // ==================== searchPair ====================
+
+    @Test
+    void searchPair_matchingPair_returnsResult() {
+        var searcher = new IntersectionSearcher(repository);
+        var roadA = MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null);
+        var roadB = MultilingualName.ofFinnishFields("Aleksanterinkatu", null, null, null, null);
+        var match = new IntersectionSearchResult(roadA, roadB, MUNICIPALITY, COORDS, 0.80);
+
+        // Also include an unrelated intersection that should be filtered out
+        var roadC = MultilingualName.ofFinnishFields("Kaivokatu", null, null, null, null);
+        var unrelated = new IntersectionSearchResult(roadA, roadC, MUNICIPALITY,
+                Coordinates.Epsg4326.of(60.18, 24.94), 0.75);
+
+        when(repository.searchIntersections("Mannerheimintie", 10, null))
+                .thenReturn(List.of(match, unrelated));
+
+        var results = searcher.searchPair("Mannerheimintie", "Aleksanterinkatu", 10, null);
+
+        assertEquals(1, results.size());
+        var intersection = (IntersectionResult) results.getFirst().result();
+        assertEquals(roadA, intersection.roadA());
+        assertEquals(roadB, intersection.roadB());
+    }
+
+    @Test
+    void searchPair_noMatchForOtherRoad_returnsEmpty() {
+        var searcher = new IntersectionSearcher(repository);
+        var roadA = MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null);
+        var roadC = MultilingualName.ofFinnishFields("Kaivokatu", null, null, null, null);
+        var unrelated = new IntersectionSearchResult(roadA, roadC, MUNICIPALITY, COORDS, 0.80);
+
+        when(repository.searchIntersections("Mannerheimintie", 10, null))
+                .thenReturn(List.of(unrelated));
+
+        var results = searcher.searchPair("Mannerheimintie", "Aleksanterinkatu", 10, null);
+        assertTrue(results.isEmpty());
+    }
 }

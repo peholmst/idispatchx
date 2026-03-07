@@ -98,4 +98,50 @@ class AddressPointSearcherTest {
         var results = searcher.search("nothing", 10, null);
         assertTrue(results.isEmpty());
     }
+
+    // ==================== searchByStreetAndNumber ====================
+
+    @Test
+    void searchByStreetAndNumber_matchingNumber_returnsResult() {
+        var searcher = new AddressPointSearcher(repository);
+        var match = new AddressSearchResult(
+                1L, "5", MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null),
+                MUNICIPALITY, COORDS, 0.85);
+        var other = new AddressSearchResult(
+                2L, "7", MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null),
+                MUNICIPALITY, Coordinates.Epsg4326.of(60.18, 24.94), 0.83);
+
+        when(repository.search("Mannerheimintie", 10, null)).thenReturn(List.of(match, other));
+
+        var results = searcher.searchByStreetAndNumber("Mannerheimintie", 5, 10, null);
+
+        assertEquals(1, results.size());
+        assertEquals("5", ((AddressResult) results.getFirst().result()).number());
+    }
+
+    @Test
+    void searchByStreetAndNumber_noMatchingNumber_returnsEmpty() {
+        var searcher = new AddressPointSearcher(repository);
+        var other = new AddressSearchResult(
+                1L, "7", MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null),
+                MUNICIPALITY, COORDS, 0.85);
+
+        when(repository.search("Mannerheimintie", 10, null)).thenReturn(List.of(other));
+
+        var results = searcher.searchByStreetAndNumber("Mannerheimintie", 5, 10, null);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void searchByStreetAndNumber_nullMunicipality_filtered() {
+        var searcher = new AddressPointSearcher(repository);
+        var match = new AddressSearchResult(
+                1L, "5", MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null),
+                null, COORDS, 0.85);
+
+        when(repository.search("Mannerheimintie", 10, null)).thenReturn(List.of(match));
+
+        var results = searcher.searchByStreetAndNumber("Mannerheimintie", 5, 10, null);
+        assertTrue(results.isEmpty());
+    }
 }

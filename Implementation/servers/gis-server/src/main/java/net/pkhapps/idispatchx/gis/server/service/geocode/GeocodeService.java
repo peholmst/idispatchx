@@ -85,7 +85,8 @@ public final class GeocodeService {
             switch (parsedQuery) {
                 case ParsedQuery.AddressQuery aq -> {
                     futures.add(executor.submit(() ->
-                            addressPointSearcher.search(aq.streetName(), limit, municipality)));
+                            addressPointSearcher.searchByStreetAndNumber(
+                                    aq.streetName(), aq.number(), limit, municipality)));
                     futures.add(executor.submit(() ->
                             roadSegmentSearcher.searchAddress(aq.streetName(), aq.number(), municipality)));
                 }
@@ -97,9 +98,9 @@ public final class GeocodeService {
                 }
                 case ParsedQuery.IntersectionQuery iq -> {
                     futures.add(executor.submit(() ->
-                            intersectionSearcher.search(iq.roadA(), limit, municipality)));
+                            intersectionSearcher.searchPair(iq.roadA(), iq.roadB(), limit, municipality)));
                     futures.add(executor.submit(() ->
-                            intersectionSearcher.search(iq.roadB(), limit, municipality)));
+                            intersectionSearcher.searchPair(iq.roadB(), iq.roadA(), limit, municipality)));
                 }
                 case ParsedQuery.PlaceQuery pq -> {
                     futures.add(executor.submit(() ->

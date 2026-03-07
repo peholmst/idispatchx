@@ -35,4 +35,21 @@ public final class AddressPointSearcher {
                         r.similarityScore()))
                 .toList();
     }
+
+    List<ScoredResult> searchByStreetAndNumber(String streetName, int number, int limit,
+                                                @Nullable MunicipalityCode municipality) {
+        var numberStr = String.valueOf(number);
+        return repository.search(streetName, limit, municipality).stream()
+                .filter(r -> r.municipality() != null)
+                .filter(r -> numberStr.equals(r.number()))
+                .map(r -> new ScoredResult(
+                        new AddressResult(
+                                r.streetName(),
+                                r.number(),
+                                r.municipality(),
+                                r.coordinates(),
+                                AddressSource.ADDRESS_POINT),
+                        r.similarityScore()))
+                .toList();
+    }
 }
