@@ -9,6 +9,7 @@ import net.pkhapps.idispatchx.common.auth.LogoutTokenValidator;
 import net.pkhapps.idispatchx.common.auth.Role;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
 import net.pkhapps.idispatchx.common.auth.TokenValidator;
+import net.pkhapps.idispatchx.gis.server.api.geocode.GeocodeController;
 import net.pkhapps.idispatchx.gis.server.api.wmts.CapabilitiesGenerator;
 import net.pkhapps.idispatchx.gis.server.api.wmts.WmtsController;
 import net.pkhapps.idispatchx.gis.server.auth.BackChannelLogoutHandler;
@@ -18,6 +19,14 @@ import net.pkhapps.idispatchx.gis.server.config.GisServerConfig;
 import net.pkhapps.idispatchx.gis.server.db.DataSourceProvider;
 import net.pkhapps.idispatchx.gis.server.db.FlywayMigrator;
 import net.pkhapps.idispatchx.gis.server.db.JooqContextProvider;
+import net.pkhapps.idispatchx.gis.server.repository.AddressPointRepository;
+import net.pkhapps.idispatchx.gis.server.repository.NamedPlaceRepository;
+import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
+import net.pkhapps.idispatchx.gis.server.service.geocode.AddressPointSearcher;
+import net.pkhapps.idispatchx.gis.server.service.geocode.GeocodeService;
+import net.pkhapps.idispatchx.gis.server.service.geocode.IntersectionSearcher;
+import net.pkhapps.idispatchx.gis.server.service.geocode.NamedPlaceSearcher;
+import net.pkhapps.idispatchx.gis.server.service.geocode.RoadSegmentSearcher;
 import net.pkhapps.idispatchx.gis.server.service.tile.LayerDiscovery;
 import net.pkhapps.idispatchx.gis.server.service.tile.TileCache;
 import net.pkhapps.idispatchx.gis.server.service.tile.TileResampler;
@@ -92,8 +101,19 @@ public final class GisServer implements AutoCloseable {
                 new TileCache());
         var capGen = new CapabilitiesGenerator(layers);
 
+        // Initialize geocoding services
+        var addressPointRepo = new AddressPointRepository(jooqContextProvider.getDslContext());
+        var roadSegmentRepo = new RoadSegmentRepository(jooqContextProvider.getDslContext());
+        var namedPlaceRepo = new NamedPlaceRepository(jooqContextProvider.getDslContext());
+        var geocodeService = new GeocodeService(
+                new AddressPointSearcher(addressPointRepo),
+                new RoadSegmentSearcher(roadSegmentRepo),
+                new NamedPlaceSearcher(namedPlaceRepo),
+                new IntersectionSearcher(roadSegmentRepo));
+
         // Register routes
         new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
+        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth);
         javalin.post("/api/v1/auth/logout", logoutHandler);
 
         log.info("GIS Server initialized");
