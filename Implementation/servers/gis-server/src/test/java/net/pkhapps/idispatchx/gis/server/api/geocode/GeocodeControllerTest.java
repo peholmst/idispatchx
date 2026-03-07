@@ -1,11 +1,12 @@
 package net.pkhapps.idispatchx.gis.server.api.geocode;
 
-import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
+import net.pkhapps.idispatchx.common.api.ValidationException;
 import net.pkhapps.idispatchx.common.domain.model.Coordinates;
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.Municipality;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
+import net.pkhapps.idispatchx.gis.server.api.error.GisErrorCode;
 import net.pkhapps.idispatchx.gis.server.service.geocode.DatabaseUnavailableException;
 import net.pkhapps.idispatchx.gis.server.service.geocode.GeocodeService;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,33 +62,48 @@ class GeocodeControllerTest {
         verify(ctx).json(response);
     }
 
-    // ==================== Validation errors ====================
+    // ==================== Query validation errors → INVALID_QUERY ====================
 
     @Test
-    void handleSearch_nullQuery_throws400() {
+    void handleSearch_nullQuery_throwsValidationExceptionWithInvalidQueryCode() {
         when(ctx.queryParam("q")).thenReturn(null);
         when(ctx.queryParam("limit")).thenReturn(null);
         when(ctx.queryParam("municipality")).thenReturn(null);
 
-        assertThrows(BadRequestResponse.class, this::invokeHandleSearch);
+        var ex = assertThrows(ValidationException.class, this::invokeHandleSearch);
+        assertEquals(GisErrorCode.INVALID_QUERY, ex.getErrorCode());
     }
 
     @Test
-    void handleSearch_queryTooShort_throws400() {
+    void handleSearch_blankQuery_throwsValidationExceptionWithInvalidQueryCode() {
+        when(ctx.queryParam("q")).thenReturn("  ");
+        when(ctx.queryParam("limit")).thenReturn(null);
+        when(ctx.queryParam("municipality")).thenReturn(null);
+
+        var ex = assertThrows(ValidationException.class, this::invokeHandleSearch);
+        assertEquals(GisErrorCode.INVALID_QUERY, ex.getErrorCode());
+    }
+
+    @Test
+    void handleSearch_queryTooShort_throwsValidationExceptionWithInvalidQueryCode() {
         when(ctx.queryParam("q")).thenReturn("ab");
         when(ctx.queryParam("limit")).thenReturn(null);
         when(ctx.queryParam("municipality")).thenReturn(null);
 
-        assertThrows(BadRequestResponse.class, this::invokeHandleSearch);
+        var ex = assertThrows(ValidationException.class, this::invokeHandleSearch);
+        assertEquals(GisErrorCode.INVALID_QUERY, ex.getErrorCode());
     }
 
+    // ==================== Parameter validation errors → INVALID_PARAMETER ====================
+
     @Test
-    void handleSearch_invalidLimit_throws400() {
+    void handleSearch_invalidLimit_throwsValidationExceptionWithInvalidParameterCode() {
         when(ctx.queryParam("q")).thenReturn("Helsinki");
         when(ctx.queryParam("limit")).thenReturn("abc");
         when(ctx.queryParam("municipality")).thenReturn(null);
 
-        assertThrows(BadRequestResponse.class, this::invokeHandleSearch);
+        var ex = assertThrows(ValidationException.class, this::invokeHandleSearch);
+        assertEquals(GisErrorCode.INVALID_PARAMETER, ex.getErrorCode());
     }
 
     // ==================== Database unavailable ====================
