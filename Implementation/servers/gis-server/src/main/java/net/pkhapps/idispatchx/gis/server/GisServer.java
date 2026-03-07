@@ -9,7 +9,9 @@ import net.pkhapps.idispatchx.common.auth.LogoutTokenValidator;
 import net.pkhapps.idispatchx.common.auth.Role;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
 import net.pkhapps.idispatchx.common.auth.TokenValidator;
+import net.pkhapps.idispatchx.gis.server.api.error.GlobalExceptionHandler;
 import net.pkhapps.idispatchx.gis.server.api.geocode.GeocodeController;
+import net.pkhapps.idispatchx.gis.server.api.health.HealthController;
 import net.pkhapps.idispatchx.gis.server.api.wmts.CapabilitiesGenerator;
 import net.pkhapps.idispatchx.gis.server.api.wmts.WmtsController;
 import net.pkhapps.idispatchx.gis.server.auth.BackChannelLogoutHandler;
@@ -111,7 +113,12 @@ public final class GisServer implements AutoCloseable {
                 new NamedPlaceSearcher(namedPlaceRepo),
                 new IntersectionSearcher(roadSegmentRepo));
 
+        // Register global exception handler
+        GlobalExceptionHandler.register(javalin);
+
         // Register routes
+        new HealthController(dataSourceProvider.getDataSource(), config.tileDirectory(), layers)
+                .registerRoutes(javalin);
         new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
         new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth);
         javalin.post("/api/v1/auth/logout", logoutHandler);

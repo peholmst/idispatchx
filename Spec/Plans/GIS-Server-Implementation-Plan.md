@@ -23,8 +23,8 @@ This document contains the implementation plan for the GIS Server. It is organiz
 | 2 | Authentication & Security | 5 | Done |
 | 3 | Model & Repository Layer | 5 | Done |
 | 4 | WMTS Tile Service | 6 | Done |
-| 5 | Geocoding Service | 8 | Not Started |
-| 6 | Health & Error Handling | 3 | Not Started |
+| 5 | Geocoding Service | 8 | Done |
+| 6 | Health & Error Handling | 3 | Done |
 | 7 | Testing & Documentation | 4 | Not Started |
 | **Total** | | **38** | |
 
@@ -696,7 +696,7 @@ Geocoding REST endpoint for address, place, and intersection lookups.
 
 ### Task 5.1: Implement Query Parser
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Parse search queries to detect patterns (address with number, intersection, place name).
@@ -730,7 +730,7 @@ Parse search queries to detect patterns (address with number, intersection, plac
 
 ### Task 5.2: Implement Address Point Searcher
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Search address points for matching addresses.
@@ -754,7 +754,7 @@ Search address points for matching addresses.
 
 ### Task 5.3: Implement Road Segment Searcher
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Search road segments and interpolate addresses.
@@ -778,7 +778,7 @@ Search road segments and interpolate addresses.
 
 ### Task 5.4: Implement Named Place Searcher
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Search named places.
@@ -802,7 +802,7 @@ Search named places.
 
 ### Task 5.5: Implement Intersection Searcher
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Search for road intersections.
@@ -825,7 +825,7 @@ Search for road intersections.
 
 ### Task 5.6: Implement Result Merger
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Combine and rank results from multiple searchers.
@@ -854,7 +854,7 @@ Combine and rank results from multiple searchers.
 
 ### Task 5.7: Implement Geocode Service
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Orchestrate geocoding searches based on query type.
@@ -884,7 +884,7 @@ Orchestrate geocoding searches based on query type.
 
 ### Task 5.8: Implement Geocode Controller
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Javalin endpoint for geocoding.
@@ -917,14 +917,14 @@ Health check endpoint and centralized error handling.
 
 ### Task 6.1: Implement Health Controller
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Health check endpoint for infrastructure monitoring. This is an internal endpoint not exposed through the public reverse proxy (per Security NFR).
 
 **Package:** `net.pkhapps.idispatchx.gis.server.api.health`
 
-**Files to Create:**
+**Files Created:**
 - `HealthController.java`
 
 **Endpoint:**
@@ -936,11 +936,11 @@ Health check endpoint for infrastructure monitoring. This is an internal endpoin
 3. Discovered layers list
 
 **Acceptance Criteria:**
-- [ ] Returns 200 OK with status "UP" when all components healthy
-- [ ] Returns 503 Service Unavailable with status "DOWN" when any component unhealthy
-- [ ] Includes component-level status in response
-- [ ] Does not require authentication
-- [ ] Unit tests verify health check logic
+- [x] Returns 200 OK with status "UP" when all components healthy
+- [x] Returns 503 Service Unavailable with status "DOWN" when any component unhealthy
+- [x] Includes component-level status in response
+- [x] Does not require authentication
+- [x] Unit tests verify health check logic
 
 **Dependencies:** Task 1.2, Task 4.1
 
@@ -948,20 +948,20 @@ Health check endpoint for infrastructure monitoring. This is an internal endpoin
 
 ### Task 6.2: Implement Error Response Format
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Standardized error response DTOs. Common error codes are shared; server-specific codes remain in each server module.
 
 **Shared Module Package:** `net.pkhapps.idispatchx.common.api`
 
-**Shared Module Files to Create:**
+**Shared Module Files Created:**
 - `ErrorResponse.java` - Error response DTO (code, message, details, timestamp, path)
 - `CommonErrorCode.java` - Shared error codes (UNAUTHORIZED, FORBIDDEN, DATABASE_ERROR, INTERNAL_ERROR)
 
 **GIS Server Package:** `net.pkhapps.idispatchx.gis.server.api.error`
 
-**GIS Server Files to Create:**
+**GIS Server Files Created:**
 - `GisErrorCode.java` - GIS-specific error codes
 
 **GIS-Specific Error Codes:**
@@ -971,11 +971,11 @@ Standardized error response DTOs. Common error codes are shared; server-specific
 - LAYER_NOT_FOUND - Tile layer does not exist
 
 **Acceptance Criteria:**
-- [ ] All error codes from technical design are implemented
-- [ ] Error response includes timestamp and request path
-- [ ] Optional details field for validation errors
-- [ ] Jackson serialization produces expected format
-- [ ] Unit tests verify serialization
+- [x] All error codes from technical design are implemented
+- [x] Error response includes timestamp and request path
+- [x] Optional details field for validation errors
+- [x] Jackson serialization produces expected format
+- [x] Unit tests verify serialization
 
 **Dependencies:** None
 
@@ -983,30 +983,30 @@ Standardized error response DTOs. Common error codes are shared; server-specific
 
 ### Task 6.3: Implement Global Exception Handler
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Centralized exception handling for all endpoints. Uses shared ErrorResponse format.
 
 **Shared Module Package:** `net.pkhapps.idispatchx.common.api`
 
-**Shared Module Files to Create:**
+**Shared Module Files Created:**
 - `ValidationException.java` - Custom exception for validation errors
 
 **GIS Server Package:** `net.pkhapps.idispatchx.gis.server.api.error`
 
-**GIS Server Files to Create:**
+**GIS Server Files Created:**
 - `GlobalExceptionHandler.java` - Javalin exception handler
 
 **Acceptance Criteria:**
-- [ ] Catches ValidationException and returns 400
-- [ ] Catches authentication exceptions and returns 401
-- [ ] Catches authorization exceptions and returns 403
-- [ ] Catches database exceptions and returns 503
-- [ ] Catches unexpected exceptions and returns 500
-- [ ] Logs exceptions with appropriate levels (no PII)
-- [ ] All responses use ErrorResponse format
-- [ ] Unit tests verify exception mapping
+- [x] Catches ValidationException and returns 400
+- [x] Catches authentication exceptions and returns 401
+- [x] Catches authorization exceptions and returns 403
+- [x] Catches database exceptions and returns 503
+- [x] Catches unexpected exceptions and returns 500
+- [x] Logs exceptions with appropriate levels (no PII)
+- [x] All responses use ErrorResponse format
+- [x] Unit tests verify exception mapping
 
 **Dependencies:** Task 6.2
 
