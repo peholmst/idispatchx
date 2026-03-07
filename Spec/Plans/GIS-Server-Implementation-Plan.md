@@ -25,7 +25,7 @@ This document contains the implementation plan for the GIS Server. It is organiz
 | 4 | WMTS Tile Service | 6 | Done |
 | 5 | Geocoding Service | 8 | Done |
 | 6 | Health & Error Handling | 3 | Done |
-| 7 | Testing & Documentation | 4 | Not Started |
+| 7 | Testing & Documentation | 4 | Done |
 | **Total** | | **38** | |
 
 ---
@@ -1018,7 +1018,7 @@ Comprehensive testing and API documentation.
 
 ### Task 7.1: Set Up Testcontainers Infrastructure
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Configure Testcontainers for PostgreSQL/PostGIS integration tests.
@@ -1028,11 +1028,11 @@ Configure Testcontainers for PostgreSQL/PostGIS integration tests.
 - Test resource files for sample data
 
 **Acceptance Criteria:**
-- [ ] PostgreSQL container with PostGIS extension starts for tests
-- [ ] Flyway migrations run against test container
-- [ ] Sample test data can be loaded
-- [ ] Container is reused across test classes for speed
-- [ ] Tests work in CI environment
+- [x] PostgreSQL container with PostGIS extension starts for tests
+- [x] Flyway migrations run against test container
+- [x] Sample test data can be loaded
+- [x] Container is reused across test classes for speed
+- [x] Tests work in CI environment
 
 **Dependencies:** Task 1.2
 
@@ -1040,7 +1040,7 @@ Configure Testcontainers for PostgreSQL/PostGIS integration tests.
 
 ### Task 7.2: Write Repository Integration Tests
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Integration tests for all repository classes.
@@ -1060,10 +1060,10 @@ Integration tests for all repository classes.
 - Empty results handled correctly
 
 **Acceptance Criteria:**
-- [ ] Each repository has integration tests
-- [ ] Tests use Testcontainers
-- [ ] Tests verify actual SQL queries work
-- [ ] Tests include edge cases (no results, many results)
+- [x] Each repository has integration tests
+- [x] Tests use Testcontainers
+- [x] Tests verify actual SQL queries work
+- [x] Tests include edge cases (no results, many results)
 
 **Dependencies:** Task 7.1, Task 3.3, Task 3.4, Task 3.5
 
@@ -1071,7 +1071,7 @@ Integration tests for all repository classes.
 
 ### Task 7.3: Write API Integration Tests
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 End-to-end integration tests for all API endpoints.
@@ -1091,11 +1091,11 @@ End-to-end integration tests for all API endpoints.
 - Error responses have correct format
 
 **Acceptance Criteria:**
-- [ ] Each endpoint has integration tests
-- [ ] Tests use Testcontainers and real HTTP requests
-- [ ] Tests verify response status codes and content
-- [ ] Tests verify authentication and authorization
-- [ ] Tests include error scenarios
+- [x] Each endpoint has integration tests
+- [x] Tests use Testcontainers and real HTTP requests
+- [x] Tests verify response status codes and content
+- [x] Tests verify authentication and authorization
+- [x] Tests include error scenarios
 
 **Dependencies:** Task 7.1, Task 4.6, Task 5.8, Task 6.1
 
@@ -1103,7 +1103,7 @@ End-to-end integration tests for all API endpoints.
 
 ### Task 7.4: Create OpenAPI Specification
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create OpenAPI 3.0 specification for the geocoding API. The specification is maintained as a static file in the repository for documentation purposes. It is not served at runtime since the only client (Dispatcher Client) is in the same repository.
@@ -1112,12 +1112,12 @@ Create OpenAPI 3.0 specification for the geocoding API. The specification is mai
 - `src/main/resources/openapi/gis-api-v1.yaml` - OpenAPI specification
 
 **Acceptance Criteria:**
-- [ ] OpenAPI 3.0 specification covers geocoding endpoint
-- [ ] All request parameters documented
-- [ ] All response schemas documented
-- [ ] Error responses documented
-- [ ] Specification validates against OpenAPI 3.0 schema
-- [ ] Specification is accessible in the repository for reference
+- [x] OpenAPI 3.0 specification covers geocoding endpoint
+- [x] All request parameters documented
+- [x] All response schemas documented
+- [x] Error responses documented
+- [x] Specification validates against OpenAPI 3.0 schema
+- [x] Specification is accessible in the repository for reference
 
 **Dependencies:** Task 5.8
 
