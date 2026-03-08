@@ -48,7 +48,8 @@ class AddressPointRepositoryIntegrationTest extends IntegrationTestBase {
 
         assertFalse(results.isEmpty());
         assertTrue(results.stream()
-                .anyMatch(r -> r.streetName().anyValue().orElse("").contains("Mannerheimintie")));
+                .anyMatch(r -> r.streetName().values().values().stream()
+                        .anyMatch(v -> v.contains("Mannerheimintie"))));
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.sql.DataSource;
 
@@ -24,7 +25,8 @@ import javax.sql.DataSource;
 public abstract class IntegrationTestBase {
 
     @SuppressWarnings("resource")
-    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgis/postgis:16-3.4")
+    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
+            DockerImageName.parse("postgis/postgis:16-3.4").asCompatibleSubstituteFor("postgres"))
             .waitingFor(Wait.forListeningPort());
 
     protected static final DataSource dataSource;

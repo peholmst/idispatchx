@@ -149,8 +149,9 @@ class GeocodeControllerIntegrationTest extends ApiIntegrationTestBase {
 
         assertEquals(400, response.statusCode());
         var body = objectMapper().readTree(response.body());
-        assertNotNull(body.get("code"), "Error response should have 'code' field");
-        assertNotNull(body.get("message"), "Error response should have 'message' field");
+        assertNotNull(body.get("error"), "Error response should have 'error' field");
+        assertNotNull(body.get("error").get("code"), "Error response should have 'error.code' field");
+        assertNotNull(body.get("error").get("message"), "Error response should have 'error.message' field");
         assertNotNull(body.get("timestamp"), "Error response should have 'timestamp' field");
     }
 

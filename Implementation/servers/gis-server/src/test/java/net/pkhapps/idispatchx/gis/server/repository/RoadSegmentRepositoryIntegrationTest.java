@@ -73,7 +73,8 @@ class RoadSegmentRepositoryIntegrationTest extends IntegrationTestBase {
 
         assertFalse(results.isEmpty());
         assertTrue(results.stream()
-                .anyMatch(r -> r.roadName().anyValue().orElse("").contains("Mannerheimintie")));
+                .anyMatch(r -> r.roadName().values().values().stream()
+                        .anyMatch(v -> v.contains("Mannerheimintie"))));
     }
 
     @Test
@@ -169,9 +170,8 @@ class RoadSegmentRepositoryIntegrationTest extends IntegrationTestBase {
         var result = repository.interpolateAddress("Mannerheimintie", 5, null);
 
         assertTrue(result.isPresent());
-        var name = result.get().streetName().anyValue();
-        assertTrue(name.isPresent());
-        assertTrue(name.get().contains("Mannerheimintie"));
+        assertTrue(result.get().streetName().values().values().stream()
+                .anyMatch(v -> v.contains("Mannerheimintie")));
     }
 
     @Test

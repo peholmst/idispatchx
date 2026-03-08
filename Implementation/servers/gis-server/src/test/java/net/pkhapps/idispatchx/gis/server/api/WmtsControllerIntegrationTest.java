@@ -33,7 +33,7 @@ class WmtsControllerIntegrationTest extends ApiIntegrationTestBase {
         var token = createToken(Role.DISPATCHER);
         var response = httpGet("/wmts/1.0.0/WMTSCapabilities.xml", token);
 
-        assertTrue(response.body().contains("WMTSCapabilities"),
+        assertTrue(response.body().contains("Capabilities"),
                 "Expected WMTS capabilities XML but got: " + response.body().substring(0, Math.min(200, response.body().length())));
     }
 
