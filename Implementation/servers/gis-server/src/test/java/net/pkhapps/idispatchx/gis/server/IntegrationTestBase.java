@@ -6,7 +6,7 @@ import org.flywaydb.core.Flyway;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
 import javax.sql.DataSource;
@@ -24,9 +24,8 @@ import javax.sql.DataSource;
 public abstract class IntegrationTestBase {
 
     @SuppressWarnings("resource")
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgis/postgis:16-3.4")
-                    .waitingFor(Wait.forListeningPort());
+    private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgis/postgis:16-3.4")
+            .waitingFor(Wait.forListeningPort());
 
     protected static final DataSource dataSource;
     protected static final DSLContext dsl;
@@ -52,7 +51,8 @@ public abstract class IntegrationTestBase {
 
     /**
      * Truncates all GIS data tables in a safe order (respecting FK constraints).
-     * Call this in {@code @BeforeEach} or {@code @AfterEach} to reset state between tests.
+     * Call this in {@code @BeforeEach} or {@code @AfterEach} to reset state between
+     * tests.
      */
     protected static void truncateAllTables() {
         dsl.execute("TRUNCATE gis.named_place, gis.address_point, gis.road_segment, gis.municipality CASCADE");
