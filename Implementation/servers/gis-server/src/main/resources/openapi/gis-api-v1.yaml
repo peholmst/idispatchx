@@ -24,10 +24,10 @@ components:
       bearerFormat: JWT
 
   schemas:
-    ErrorResponse:
+    ErrorBody:
       type: object
-      description: Standard error response returned for all non-2xx responses.
-      required: [code, message, timestamp, path]
+      description: The error detail body containing the error code, message, and optional details.
+      required: [code, message]
       properties:
         code:
           type: string
@@ -38,9 +38,18 @@ components:
           description: Human-readable description of the error.
           example: "query must be at least 3 characters"
         details:
-          type: string
+          type: object
           description: Optional additional details (e.g. field-level validation failures).
           nullable: true
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      description: Standard error response returned for all non-2xx responses.
+      required: [error, timestamp, path]
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorBody"
         timestamp:
           type: string
           format: date-time
@@ -108,13 +117,13 @@ components:
     AddressResult:
       type: object
       description: A geocoded address point or interpolated road address.
-      required: [type, streetName, number, coordinates, source]
+      required: [type, name, number, coordinates, source]
       properties:
         type:
           type: string
           enum: [address]
           description: Discriminator field identifying this as an address result.
-        streetName:
+        name:
           $ref: "#/components/schemas/MultilingualName"
         number:
           type: string
@@ -271,7 +280,7 @@ paths:
                     query: "Mannerheimintie 5"
                     results:
                       - type: address
-                        streetName:
+                        name:
                           fi: "Mannerheimintie"
                           sv: "Mannerheimvägen"
                         number: "5"
@@ -339,8 +348,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: INVALID_QUERY
-                message: "query must be at least 3 characters"
+                error:
+                  code: INVALID_QUERY
+                  message: "query must be at least 3 characters"
                 timestamp: "2026-03-07T12:00:00Z"
                 path: "/api/v1/geocode/search"
         "401":
@@ -350,8 +360,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: UNAUTHORIZED
-                message: "Missing Authorization header"
+                error:
+                  code: UNAUTHORIZED
+                  message: "Missing Authorization header"
                 timestamp: "2026-03-07T12:00:00Z"
                 path: "/api/v1/geocode/search"
         "403":
@@ -361,8 +372,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
-                code: FORBIDDEN
-                message: "Insufficient permissions"
+                error:
+                  code: FORBIDDEN
+                  message: "Insufficient permissions"
                 timestamp: "2026-03-07T12:00:00Z"
                 path: "/api/v1/geocode/search"
         "503":
