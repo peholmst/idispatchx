@@ -1,11 +1,9 @@
 package net.pkhapps.idispatchx.gis.server.api.health;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
