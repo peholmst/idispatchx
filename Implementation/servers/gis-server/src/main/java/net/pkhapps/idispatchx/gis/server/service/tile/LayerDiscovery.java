@@ -29,7 +29,7 @@ import java.util.Objects;
  * <p>
  * Directories that do not match the expected naming convention are silently skipped.
  */
-public final class LayerDiscovery {
+final class LayerDiscovery {
 
     private static final Logger log = LoggerFactory.getLogger(LayerDiscovery.class);
 

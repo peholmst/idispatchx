@@ -1,4 +1,4 @@
-package net.pkhapps.idispatchx.gis.server.api.geocode;
+package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import net.pkhapps.idispatchx.common.domain.model.Coordinates;

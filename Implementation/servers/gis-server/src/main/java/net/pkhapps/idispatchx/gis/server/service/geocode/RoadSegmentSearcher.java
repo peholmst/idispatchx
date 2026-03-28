@@ -1,8 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressResult;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressSource;
 import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
 import org.jspecify.annotations.Nullable;
 
@@ -15,7 +13,7 @@ import java.util.Objects;
  * Results are assigned a fixed score of 0.9 — high, but below exact address point
  * matches — so that address points take priority during result merging.
  */
-public final class RoadSegmentSearcher {
+final class RoadSegmentSearcher {
 
     private static final double INTERPOLATED_SCORE = 0.9;
 

@@ -1,7 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
-import net.pkhapps.idispatchx.gis.server.api.geocode.PlaceResult;
 import net.pkhapps.idispatchx.gis.server.repository.NamedPlaceRepository;
 import org.jspecify.annotations.Nullable;
 
@@ -11,7 +10,7 @@ import java.util.Objects;
 /**
  * Searches named places and maps results to {@link ScoredResult} entries.
  */
-public final class NamedPlaceSearcher {
+final class NamedPlaceSearcher {
 
     private final NamedPlaceRepository repository;
 

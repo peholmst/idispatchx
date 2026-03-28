@@ -4,8 +4,6 @@ import net.pkhapps.idispatchx.common.domain.model.Coordinates;
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.Municipality;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressResult;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressSource;
 import net.pkhapps.idispatchx.gis.server.repository.InterpolatedAddressResult;
 import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
 import org.junit.jupiter.api.Test;

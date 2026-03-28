@@ -7,6 +7,8 @@ import net.pkhapps.idispatchx.common.api.ValidationException;
 import net.pkhapps.idispatchx.gis.server.api.error.GisErrorCode;
 import net.pkhapps.idispatchx.gis.server.service.geocode.DatabaseUnavailableException;
 import net.pkhapps.idispatchx.gis.server.service.geocode.GeocodeService;
+import net.pkhapps.idispatchx.gis.server.service.geocode.SearchRequest;
+import net.pkhapps.idispatchx.gis.server.service.geocode.SearchResponse;
 
 import java.util.Objects;
 

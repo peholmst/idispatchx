@@ -1,8 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressResult;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressSource;
 import net.pkhapps.idispatchx.gis.server.repository.AddressPointRepository;
 import org.jspecify.annotations.Nullable;
 
@@ -13,7 +11,7 @@ import java.util.Objects;
  * Searches address points and maps results to {@link ScoredResult} entries
  * with {@link AddressSource#ADDRESS_POINT} source.
  */
-public final class AddressPointSearcher {
+final class AddressPointSearcher {
 
     private final AddressPointRepository repository;
 

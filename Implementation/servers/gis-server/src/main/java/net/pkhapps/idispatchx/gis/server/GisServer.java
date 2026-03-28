@@ -21,17 +21,7 @@ import net.pkhapps.idispatchx.gis.server.config.GisServerConfig;
 import net.pkhapps.idispatchx.gis.server.db.DataSourceProvider;
 import net.pkhapps.idispatchx.gis.server.db.FlywayMigrator;
 import net.pkhapps.idispatchx.gis.server.db.JooqContextProvider;
-import net.pkhapps.idispatchx.gis.server.repository.AddressPointRepository;
-import net.pkhapps.idispatchx.gis.server.repository.NamedPlaceRepository;
-import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
-import net.pkhapps.idispatchx.gis.server.service.geocode.AddressPointSearcher;
 import net.pkhapps.idispatchx.gis.server.service.geocode.GeocodeService;
-import net.pkhapps.idispatchx.gis.server.service.geocode.IntersectionSearcher;
-import net.pkhapps.idispatchx.gis.server.service.geocode.NamedPlaceSearcher;
-import net.pkhapps.idispatchx.gis.server.service.geocode.RoadSegmentSearcher;
-import net.pkhapps.idispatchx.gis.server.service.tile.LayerDiscovery;
-import net.pkhapps.idispatchx.gis.server.service.tile.TileCache;
-import net.pkhapps.idispatchx.gis.server.service.tile.TileResampler;
 import net.pkhapps.idispatchx.gis.server.service.tile.TileService;
 import org.jooq.DSLContext;
 import org.slf4j.Logger;
@@ -96,28 +86,17 @@ public final class GisServer implements AutoCloseable {
         var logoutHandler = new BackChannelLogoutHandler(logoutValidator, sessionStore);
 
         // Initialize tile services
-        var layers = new LayerDiscovery(config.tileDirectory()).discoverLayers();
-        var tileService = new TileService(
-                config.tileDirectory(), layers,
-                new TileResampler(config.tileDirectory()),
-                new TileCache());
-        var capGen = new CapabilitiesGenerator(layers);
+        var tileService = TileService.create(config.tileDirectory());
+        var capGen = new CapabilitiesGenerator(tileService.getLayers());
 
         // Initialize geocoding services
-        var addressPointRepo = new AddressPointRepository(jooqContextProvider.getDslContext());
-        var roadSegmentRepo = new RoadSegmentRepository(jooqContextProvider.getDslContext());
-        var namedPlaceRepo = new NamedPlaceRepository(jooqContextProvider.getDslContext());
-        var geocodeService = new GeocodeService(
-                new AddressPointSearcher(addressPointRepo),
-                new RoadSegmentSearcher(roadSegmentRepo),
-                new NamedPlaceSearcher(namedPlaceRepo),
-                new IntersectionSearcher(roadSegmentRepo));
+        var geocodeService = GeocodeService.create(jooqContextProvider.getDslContext());
 
         // Register global exception handler
         GlobalExceptionHandler.register(javalin);
 
         // Register routes
-        new HealthController(dataSourceProvider.getDataSource(), config.tileDirectory(), layers)
+        new HealthController(dataSourceProvider.getDataSource(), config.tileDirectory(), tileService.getLayers())
                 .registerRoutes(javalin);
         new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
         new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth);

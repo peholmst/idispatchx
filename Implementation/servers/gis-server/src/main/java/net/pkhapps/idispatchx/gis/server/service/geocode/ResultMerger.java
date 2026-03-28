@@ -1,8 +1,5 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressResult;
-import net.pkhapps.idispatchx.gis.server.api.geocode.AddressSource;
-import net.pkhapps.idispatchx.gis.server.api.geocode.LocationResult;
 
 import java.util.ArrayList;
 import java.util.Comparator;

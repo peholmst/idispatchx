@@ -1,4 +1,4 @@
-package net.pkhapps.idispatchx.gis.server.api.geocode;
+package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
 import org.junit.jupiter.api.Test;
