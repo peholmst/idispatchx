@@ -23,7 +23,7 @@ ADR-0005 and ADR-0006 were found not applicable and require no action.
 | 1 | ADR-0007 | Domain Primitive Consistency | 2 | Done |
 | 2 | ADR-0009 | Package Visibility and ArchUnit | 4 | Not Started |
 | 3 | ADR-0004 | Reverse Proxy Support | 4 | Done |
-| 4 | ADR-0002, ADR-0003 | Deployment Infrastructure | 3 | Not Started |
+| 4 | ADR-0002, ADR-0003 | Deployment Infrastructure | 3 | Done |
 | **Total** | | | **13** | |
 
 Phase 1 must be completed before Phase 2 (ArchUnit tests verify the corrected
@@ -422,7 +422,7 @@ conforms to ADR-0002. Those stubs will be filled in when the CAD Server is imple
 
 ### Task 4.1 — Create nginx configuration for reverse proxy
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create an nginx configuration file that routes requests to the GIS Server replicas.
@@ -456,7 +456,7 @@ It must not expose the `/health` path to public clients.
 
 ### Task 4.2 — Create `docker-compose.yml`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create the main Docker Compose file for the development HA environment. It must
@@ -512,7 +512,7 @@ dependency ordering, no implicit dependencies, individual containers stoppable).
 
 ### Task 4.3 — Create GIS Server `Dockerfile`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 The docker-compose file references a locally-built `idispatchx/gis-server` image.
