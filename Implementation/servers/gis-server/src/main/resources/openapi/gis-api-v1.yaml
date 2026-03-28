@@ -1,0 +1,515 @@
+openapi: "3.0.3"
+info:
+  title: iDispatchX GIS Server API
+  version: "1.0"
+  description: |
+    REST API for the iDispatchX GIS Server.
+
+    Provides geocoding (address, place, and intersection search) and WMTS map tile services.
+
+    All endpoints require a valid JWT Bearer token issued by the configured OIDC provider.
+    The caller must have the `Dispatcher` or `Observer` role.
+
+servers:
+  - url: /
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorBody:
+      type: object
+      description: The error detail body containing the error code, message, and optional details.
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+          example: INVALID_QUERY
+        message:
+          type: string
+          description: Human-readable description of the error.
+          example: "query must be at least 3 characters"
+        details:
+          type: object
+          description: Optional additional details (e.g. field-level validation failures).
+          nullable: true
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      description: Standard error response returned for all non-2xx responses.
+      required: [error, timestamp, path]
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO-8601 timestamp when the error occurred.
+          example: "2026-03-07T12:00:00Z"
+        path:
+          type: string
+          description: The request path that caused the error.
+          example: "/api/v1/geocode/search"
+
+    MultilingualName:
+      type: object
+      description: |
+        A name with optional translations.
+        At least one language entry will be present.
+      additionalProperties:
+        type: string
+      example:
+        fi: "Mannerheimintie"
+        sv: "Mannerheimvägen"
+
+    Coordinates:
+      type: object
+      description: WGS-84 geographic coordinates (EPSG:4326).
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude in decimal degrees (WGS-84).
+          example: 60.1699
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude in decimal degrees (WGS-84).
+          example: 24.9384
+
+    Municipality:
+      type: object
+      description: Municipality associated with a location result.
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{3}$"
+          description: Finnish 3-digit municipality code.
+          example: "091"
+        name:
+          $ref: "#/components/schemas/MultilingualName"
+
+    AddressSource:
+      type: string
+      description: |
+        Data source used to produce an address result.
+        - `address_point`: Result came from a point address dataset (higher precision).
+        - `road_segment`: Result was interpolated along a road segment geometry.
+      enum:
+        - address_point
+        - road_segment
+
+    AddressResult:
+      type: object
+      description: A geocoded address point or interpolated road address.
+      required: [type, name, number, coordinates, source]
+      properties:
+        type:
+          type: string
+          enum: [address]
+          description: Discriminator field identifying this as an address result.
+        name:
+          $ref: "#/components/schemas/MultilingualName"
+        number:
+          type: string
+          description: Street address number.
+          example: "5"
+        municipality:
+          $ref: "#/components/schemas/Municipality"
+          nullable: true
+        coordinates:
+          $ref: "#/components/schemas/Coordinates"
+        source:
+          $ref: "#/components/schemas/AddressSource"
+
+    PlaceResult:
+      type: object
+      description: A geocoded named place (lake, district, landmark, etc.).
+      required: [type, name, placeClass, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [place]
+          description: Discriminator field identifying this as a place result.
+        name:
+          $ref: "#/components/schemas/MultilingualName"
+        placeClass:
+          type: integer
+          description: |
+            Numeric place class code from the National Land Survey of Finland
+            place name classification.
+          example: 540
+        municipality:
+          $ref: "#/components/schemas/Municipality"
+          nullable: true
+        coordinates:
+          $ref: "#/components/schemas/Coordinates"
+
+    IntersectionResult:
+      type: object
+      description: A road intersection geocoding result.
+      required: [type, roadA, roadB, coordinates]
+      properties:
+        type:
+          type: string
+          enum: [intersection]
+          description: Discriminator field identifying this as an intersection result.
+        roadA:
+          $ref: "#/components/schemas/MultilingualName"
+        roadB:
+          $ref: "#/components/schemas/MultilingualName"
+        municipality:
+          $ref: "#/components/schemas/Municipality"
+          nullable: true
+        coordinates:
+          $ref: "#/components/schemas/Coordinates"
+
+    LocationResult:
+      description: |
+        A single geocoding result. The `type` field discriminates between
+        address, place, and intersection results.
+      oneOf:
+        - $ref: "#/components/schemas/AddressResult"
+        - $ref: "#/components/schemas/PlaceResult"
+        - $ref: "#/components/schemas/IntersectionResult"
+      discriminator:
+        propertyName: type
+        mapping:
+          address: "#/components/schemas/AddressResult"
+          place: "#/components/schemas/PlaceResult"
+          intersection: "#/components/schemas/IntersectionResult"
+
+    SearchResponse:
+      type: object
+      description: Response from the geocoding search endpoint.
+      required: [results, query]
+      properties:
+        results:
+          type: array
+          description: |
+            Ordered list of matching results, ranked by relevance.
+            May be empty if no results were found.
+          items:
+            $ref: "#/components/schemas/LocationResult"
+        query:
+          type: string
+          description: The original search query string.
+          example: "Mannerheimintie 5"
+
+paths:
+  /api/v1/geocode/search:
+    get:
+      summary: Search for addresses, places, and road intersections
+      operationId: geocodeSearch
+      description: |
+        Performs a geocoding search for the given query string.
+
+        The search engine automatically detects the query type:
+        - **Address**: a street name followed by a house number (e.g. `Mannerheimintie 5`)
+        - **Intersection**: two road names separated by `/`, `&`, `and`, `ja`, or `och`
+          (e.g. `Kaivokatu / Keskuskatu`)
+        - **Street / Place**: any other input
+
+        Results are ranked by similarity to the query. Address point results rank
+        above interpolated road-segment results for the same address.
+
+        Coordinates are in WGS-84 (EPSG:4326) with at most 6 decimal places.
+      tags:
+        - Geocoding
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: |
+            The search query string. Minimum 3 characters, maximum 200 characters.
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 200
+          example: "Mannerheimintie 5"
+        - name: limit
+          in: query
+          required: false
+          description: |
+            Maximum number of results to return.
+            Must be between 1 and 50. Defaults to 20.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          example: 10
+        - name: municipality
+          in: query
+          required: false
+          description: |
+            Filter results to a specific municipality by its 3-digit Finnish municipality code.
+            When omitted, results from all municipalities are returned.
+          schema:
+            type: string
+            pattern: "^[0-9]{3}$"
+          example: "091"
+      responses:
+        "200":
+          description: |
+            Search completed successfully. The `results` array may be empty
+            if no matching locations were found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+              examples:
+                address:
+                  summary: Address result
+                  value:
+                    query: "Mannerheimintie 5"
+                    results:
+                      - type: address
+                        name:
+                          fi: "Mannerheimintie"
+                          sv: "Mannerheimvägen"
+                        number: "5"
+                        municipality:
+                          code: "091"
+                          name:
+                            fi: "Helsinki"
+                            sv: "Helsingfors"
+                        coordinates:
+                          latitude: 60.169900
+                          longitude: 24.938400
+                        source: address_point
+                place:
+                  summary: Place result
+                  value:
+                    query: "Kallio"
+                    results:
+                      - type: place
+                        name:
+                          fi: "Kallio"
+                          sv: "Berget"
+                        placeClass: 540
+                        municipality:
+                          code: "091"
+                          name:
+                            fi: "Helsinki"
+                            sv: "Helsingfors"
+                        coordinates:
+                          latitude: 60.185000
+                          longitude: 24.950000
+                intersection:
+                  summary: Intersection result
+                  value:
+                    query: "Mannerheimintie / Runeberginkatu"
+                    results:
+                      - type: intersection
+                        roadA:
+                          fi: "Mannerheimintie"
+                          sv: "Mannerheimvägen"
+                        roadB:
+                          fi: "Runeberginkatu"
+                          sv: "Runebergsgatan"
+                        municipality:
+                          code: "091"
+                          name:
+                            fi: "Helsinki"
+                            sv: "Helsingfors"
+                        coordinates:
+                          latitude: 60.170000
+                          longitude: 24.931000
+                empty:
+                  summary: No results found
+                  value:
+                    query: "Zyxwvutsrq"
+                    results: []
+        "400":
+          description: |
+            The request parameters are invalid.
+
+            Possible error codes:
+            - `INVALID_QUERY`: The `q` parameter is missing, blank, too short, or too long.
+            - `INVALID_PARAMETER`: The `limit` or `municipality` parameter is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: INVALID_QUERY
+                  message: "query must be at least 3 characters"
+                timestamp: "2026-03-07T12:00:00Z"
+                path: "/api/v1/geocode/search"
+        "401":
+          description: The request is not authenticated or the token is invalid/expired.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: UNAUTHORIZED
+                  message: "Missing Authorization header"
+                timestamp: "2026-03-07T12:00:00Z"
+                path: "/api/v1/geocode/search"
+        "403":
+          description: The authenticated user lacks the required role (Dispatcher or Observer).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: FORBIDDEN
+                  message: "Insufficient permissions"
+                timestamp: "2026-03-07T12:00:00Z"
+                path: "/api/v1/geocode/search"
+        "503":
+          description: |
+            The database is temporarily unavailable. The response body contains an empty
+            results array rather than an error response, so clients can handle this
+            gracefully without special error handling.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+              example:
+                query: "Helsinki"
+                results: []
+
+  /wmts/1.0.0/WMTSCapabilities.xml:
+    get:
+      summary: WMTS GetCapabilities
+      operationId: wmtsGetCapabilities
+      description: |
+        Returns the WMTS 1.0.0 Capabilities document listing all available layers
+        and the ETRS-TM35FIN tile matrix set (zoom levels 0–15).
+      tags:
+        - WMTS
+      responses:
+        "200":
+          description: WMTS Capabilities XML document.
+          content:
+            application/xml:
+              schema:
+                type: string
+                description: OGC WMTS 1.0.0 Capabilities XML.
+        "401":
+          description: The request is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The authenticated user lacks the required role.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{col}.png:
+    get:
+      summary: WMTS GetTile
+      operationId: wmtsGetTile
+      description: |
+        Returns a map tile for the specified layer, zoom level, row, and column.
+
+        Tiles are served in PNG format and use the ETRS-TM35FIN tile matrix set.
+
+        - Pre-rendered tiles are cached for 24 hours and include an ETag header.
+        - Resampled tiles (from coarser zoom levels) are cached for 1 hour.
+        - If no tile data exists within 3 zoom levels of the requested zoom,
+          HTTP 204 No Content is returned.
+      tags:
+        - WMTS
+      parameters:
+        - name: layer
+          in: path
+          required: true
+          description: The tile layer name (e.g. `terrain`, `roads`).
+          schema:
+            type: string
+          example: terrain
+        - name: zoom
+          in: path
+          required: true
+          description: Zoom level (0–15).
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 15
+          example: 10
+        - name: row
+          in: path
+          required: true
+          description: Tile row index (0-based, increases southward).
+          schema:
+            type: integer
+            minimum: 0
+          example: 100
+        - name: col
+          in: path
+          required: true
+          description: Tile column index (0-based, increases eastward), without `.png` suffix.
+          schema:
+            type: integer
+            minimum: 0
+          example: 200
+      responses:
+        "200":
+          description: The requested tile image.
+          headers:
+            Cache-Control:
+              description: "`public, max-age=86400` for pre-rendered; `public, max-age=3600` for resampled."
+              schema:
+                type: string
+            ETag:
+              description: SHA-256 content hash (pre-rendered tiles only).
+              schema:
+                type: string
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "204":
+          description: No tile data available for the requested coordinates.
+        "304":
+          description: The tile has not changed (conditional request with matching ETag).
+        "400":
+          description: The zoom, row, or column values are invalid or out of bounds.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: The request is not authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The authenticated user lacks the required role.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The requested layer does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

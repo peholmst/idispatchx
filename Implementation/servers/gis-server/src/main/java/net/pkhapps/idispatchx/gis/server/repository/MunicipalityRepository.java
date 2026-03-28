@@ -51,7 +51,13 @@ public final class MunicipalityRepository {
 
         log.debug("Looking up municipality by code: {}", code);
 
-        var record = dsl.select()
+        var record = dsl.select(
+                        MUNICIPALITY.MUNICIPALITY_CODE,
+                        MUNICIPALITY.NAME_FI,
+                        MUNICIPALITY.NAME_SV,
+                        MUNICIPALITY.NAME_SMN,
+                        MUNICIPALITY.NAME_SMS,
+                        MUNICIPALITY.NAME_SME)
                 .from(MUNICIPALITY)
                 .where(MUNICIPALITY.MUNICIPALITY_CODE.eq(code.code()))
                 .fetchOne();
@@ -105,7 +111,13 @@ public final class MunicipalityRepository {
                 DSL.coalesce(DSL.function("similarity", Double.class, MUNICIPALITY.NAME_SME, DSL.val(query)), 0.0)
         );
 
-        var records = dsl.select(MUNICIPALITY.fields())
+        var records = dsl.select(
+                        MUNICIPALITY.MUNICIPALITY_CODE,
+                        MUNICIPALITY.NAME_FI,
+                        MUNICIPALITY.NAME_SV,
+                        MUNICIPALITY.NAME_SMN,
+                        MUNICIPALITY.NAME_SMS,
+                        MUNICIPALITY.NAME_SME)
                 .select(maxSimilarity.as("score"))
                 .from(MUNICIPALITY)
                 .where(nameCondition)

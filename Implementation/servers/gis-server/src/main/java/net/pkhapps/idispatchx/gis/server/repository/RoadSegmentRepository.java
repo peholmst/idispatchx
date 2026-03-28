@@ -257,7 +257,6 @@ public final class RoadSegmentRepository {
                         ROAD_SEGMENT.MUNICIPALITY_CODE,
                         minAddress.as("min_addr"),
                         maxAddress.as("max_addr"),
-                        ROAD_SEGMENT.GEOMETRY,
                         MUNICIPALITY.NAME_FI.as("m_name_fi"),
                         MUNICIPALITY.NAME_SV.as("m_name_sv"),
                         MUNICIPALITY.NAME_SMN.as("m_name_smn"),
