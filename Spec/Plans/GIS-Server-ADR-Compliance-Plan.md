@@ -22,7 +22,7 @@ ADR-0005 and ADR-0006 were found not applicable and require no action.
 |-------|------|-------------|-------|--------|
 | 1 | ADR-0007 | Domain Primitive Consistency | 2 | Done |
 | 2 | ADR-0009 | Package Visibility and ArchUnit | 4 | Not Started |
-| 3 | ADR-0004 | Reverse Proxy Support | 4 | Not Started |
+| 3 | ADR-0004 | Reverse Proxy Support | 4 | Done |
 | 4 | ADR-0002, ADR-0003 | Deployment Infrastructure | 3 | Not Started |
 | **Total** | | | **13** | |
 
@@ -282,7 +282,7 @@ prefix. These four tasks add the necessary flexibility.
 
 ### Task 3.1 — Add `GIS_CONTEXT_PATH` environment variable to `GisServerConfig`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Introduce an optional `GIS_CONTEXT_PATH` environment variable (default: empty string)
@@ -312,7 +312,7 @@ reverse proxy. Valid values are either empty or start with `/` and do not end wi
 
 ### Task 3.2 — Apply context path prefix to all route registrations
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 All route registrations in the three controllers and `GisServer` must be prefixed
@@ -350,7 +350,7 @@ with `config.contextPath()`. When the context path is empty, behavior is unchang
 
 ### Task 3.3 — Fix `CapabilitiesGenerator` to use configurable base URL
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 The WMTS Capabilities XML document contains `ResourceURL` elements with hardcoded
@@ -380,7 +380,7 @@ context path and prepend it.
 
 ### Task 3.4 — Document proxy deployment requirements
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 The Security NFR states that `/health` must not be exposed through the public reverse

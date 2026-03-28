@@ -23,11 +23,69 @@ class GisServerConfigTest {
 
         assertEquals(GisServerConfig.DEFAULT_PORT, config.port());
         assertEquals(Path.of("/var/tiles"), config.tileDirectory());
+        assertEquals("", config.contextPath());
+        assertEquals("", config.corsAllowedOrigins());
         assertEquals("jdbc:postgresql://localhost/gis", config.databaseConfig().url());
         assertEquals("gisuser", config.databaseConfig().username());
         assertEquals("gispass", config.databaseConfig().password());
         assertEquals(URI.create("https://auth.example.com"), config.oidcConfig().issuer());
         assertEquals("gis-server", config.oidcConfig().clientId());
+    }
+
+    @Test
+    void load_withContextPath() {
+        var envVars = createRequiredEnvVars();
+        envVars.put("GIS_CONTEXT_PATH", "/gis");
+
+        var loader = new ConfigLoader(new Properties(), envVars::get);
+        var config = GisServerConfig.load(loader);
+
+        assertEquals("/gis", config.contextPath());
+    }
+
+    @Test
+    void load_withCorsAllowedOrigins() {
+        var envVars = createRequiredEnvVars();
+        envVars.put("GIS_CORS_ALLOWED_ORIGINS", "https://example.com,https://app.example.com");
+
+        var loader = new ConfigLoader(new Properties(), envVars::get);
+        var config = GisServerConfig.load(loader);
+
+        assertEquals("https://example.com,https://app.example.com", config.corsAllowedOrigins());
+    }
+
+    @Test
+    void contextPathWithTrailingSlash_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new GisServerConfig(
+                        8080,
+                        Path.of("/var/tiles"),
+                        "/gis/",
+                        "",
+                        new net.pkhapps.idispatchx.common.config.DatabaseConfig(
+                                "jdbc:postgresql://localhost/gis", "user", "pass", 10),
+                        new net.pkhapps.idispatchx.common.config.OidcConfig(
+                                URI.create("https://auth.example.com"),
+                                URI.create("https://auth.example.com/.well-known/jwks.json"),
+                                "gis-server")
+                ));
+    }
+
+    @Test
+    void contextPathWithoutLeadingSlash_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new GisServerConfig(
+                        8080,
+                        Path.of("/var/tiles"),
+                        "gis",
+                        "",
+                        new net.pkhapps.idispatchx.common.config.DatabaseConfig(
+                                "jdbc:postgresql://localhost/gis", "user", "pass", 10),
+                        new net.pkhapps.idispatchx.common.config.OidcConfig(
+                                URI.create("https://auth.example.com"),
+                                URI.create("https://auth.example.com/.well-known/jwks.json"),
+                                "gis-server")
+                ));
     }
 
     @Test
@@ -87,6 +145,8 @@ class GisServerConfigTest {
                 () -> new GisServerConfig(
                         0, // invalid port
                         Path.of("/var/tiles"),
+                        "",
+                        "",
                         new net.pkhapps.idispatchx.common.config.DatabaseConfig(
                                 "jdbc:postgresql://localhost/gis", "user", "pass", 10),
                         new net.pkhapps.idispatchx.common.config.OidcConfig(
@@ -102,6 +162,8 @@ class GisServerConfigTest {
                 () -> new GisServerConfig(
                         65536, // port too high
                         Path.of("/var/tiles"),
+                        "",
+                        "",
                         new net.pkhapps.idispatchx.common.config.DatabaseConfig(
                                 "jdbc:postgresql://localhost/gis", "user", "pass", 10),
                         new net.pkhapps.idispatchx.common.config.OidcConfig(
@@ -117,6 +179,8 @@ class GisServerConfigTest {
                 () -> new GisServerConfig(
                         8080,
                         null,
+                        "",
+                        "",
                         new net.pkhapps.idispatchx.common.config.DatabaseConfig(
                                 "jdbc:postgresql://localhost/gis", "user", "pass", 10),
                         new net.pkhapps.idispatchx.common.config.OidcConfig(

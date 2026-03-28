@@ -87,7 +87,7 @@ public final class GisServer implements AutoCloseable {
 
         // Initialize tile services
         var tileService = TileService.create(config.tileDirectory());
-        var capGen = new CapabilitiesGenerator(tileService.getLayers());
+        var capGen = new CapabilitiesGenerator(config.contextPath(), tileService.getLayers());
 
         // Initialize geocoding services
         var geocodeService = GeocodeService.create(jooqContextProvider.getDslContext());
@@ -96,11 +96,12 @@ public final class GisServer implements AutoCloseable {
         GlobalExceptionHandler.register(javalin);
 
         // Register routes
+        var contextPath = config.contextPath();
         new HealthController(dataSourceProvider.getDataSource(), config.tileDirectory(), tileService.getLayers())
-                .registerRoutes(javalin);
-        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
-        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth);
-        javalin.post("/api/v1/auth/logout", logoutHandler);
+                .registerRoutes(javalin, contextPath);
+        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
+        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
+        javalin.post(contextPath + "/api/v1/auth/logout", logoutHandler);
 
         log.info("GIS Server initialized");
     }
@@ -110,9 +111,21 @@ public final class GisServer implements AutoCloseable {
                 .findAndRegisterModules()
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
+        var corsOrigins = config.corsAllowedOrigins();
+
         return Javalin.create(javalinConfig -> {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
             javalinConfig.showJavalinBanner = false;
+            if (!corsOrigins.isBlank()) {
+                var origins = corsOrigins.split(",");
+                javalinConfig.bundledPlugins.enableCors(cors ->
+                        cors.addRule(rule -> {
+                            for (var origin : origins) {
+                                rule.allowHost(origin.trim());
+                            }
+                        })
+                );
+            }
         });
     }
 

@@ -14,7 +14,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void generatesValidXmlDocument() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10, 14)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertNotNull(xml);
@@ -26,7 +26,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void containsLayerIdentifier() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertTrue(xml.contains("terrain"));
@@ -38,7 +38,7 @@ class CapabilitiesGeneratorTest {
                 "terrain", new TileLayer("terrain", Set.of(10)),
                 "roads", new TileLayer("roads", Set.of(12))
         );
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertTrue(xml.contains("terrain"));
@@ -48,7 +48,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void contains16ZoomLevels() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         // Count occurrences of TileMatrix elements
@@ -64,7 +64,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void containsCorrectTileMatrixSet() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertTrue(xml.contains("ETRS-TM35FIN"));
@@ -74,7 +74,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void containsCorrectTopLeftCorner() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertTrue(xml.contains("-548576.0 8388608.0"), "Should contain correct TopLeftCorner");
@@ -83,7 +83,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void containsCorrectTileSize() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertTrue(xml.contains("<TileWidth>256</TileWidth>"));
@@ -93,7 +93,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void scaleDenominatorsFollowJhs180() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         // Zoom 0: 29257143.0 / 2^0 = 29257143 (no fractional part)
@@ -106,7 +106,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void matrixDimensionsFollowJhs180() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         // Zoom 0: 1x1
@@ -131,7 +131,7 @@ class CapabilitiesGeneratorTest {
     @Test
     void resourceUrlTemplateContainsLayer() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
         var xml = generator.getCapabilitiesXml();
 
         assertTrue(xml.contains("ResourceURL"));
@@ -139,9 +139,27 @@ class CapabilitiesGeneratorTest {
     }
 
     @Test
+    void resourceUrlTemplate_withContextPath_includesPrefix() {
+        var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
+        var generator = new CapabilitiesGenerator("/gis", layers);
+        var xml = generator.getCapabilitiesXml();
+
+        assertTrue(xml.contains("/gis/wmts/terrain/ETRS-TM35FIN/{TileMatrix}/{TileRow}/{TileCol}.png"));
+    }
+
+    @Test
+    void resourceUrlTemplate_withContextPath_doesNotHaveDoubleSlash() {
+        var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
+        var generator = new CapabilitiesGenerator("/gis", layers);
+        var xml = generator.getCapabilitiesXml();
+
+        assertFalse(xml.contains("//wmts"), "ResourceURL must not contain double slashes");
+    }
+
+    @Test
     void capabilitiesXmlIsCached() {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
-        var generator = new CapabilitiesGenerator(layers);
+        var generator = new CapabilitiesGenerator("", layers);
 
         // Should return the same string instance
         assertSame(generator.getCapabilitiesXml(), generator.getCapabilitiesXml());
@@ -149,7 +167,7 @@ class CapabilitiesGeneratorTest {
 
     @Test
     void emptyLayersProducesValidXml() {
-        var generator = new CapabilitiesGenerator(Map.of());
+        var generator = new CapabilitiesGenerator("", Map.of());
         var xml = generator.getCapabilitiesXml();
 
         assertNotNull(xml);

@@ -15,6 +15,8 @@ import java.util.Objects;
  * <ul>
  *   <li>{@code GIS_SERVER_PORT} - HTTP server port (default: 8080)</li>
  *   <li>{@code GIS_TILE_DIR} - Base path for tile storage (required)</li>
+ *   <li>{@code GIS_CONTEXT_PATH} - URL context path prefix for reverse proxy (default: empty)</li>
+ *   <li>{@code GIS_CORS_ALLOWED_ORIGINS} - Comma-separated list of allowed CORS origins (default: empty)</li>
  *   <li>{@code GIS_DB_URL} - JDBC connection URL (required)</li>
  *   <li>{@code GIS_DB_USER} - Database username (required)</li>
  *   <li>{@code GIS_DB_PASSWORD} - Database password</li>
@@ -25,14 +27,18 @@ import java.util.Objects;
  *   <li>{@code GIS_OIDC_CLIENT_ID} - OIDC client ID (required)</li>
  * </ul>
  *
- * @param port           the HTTP server port
- * @param tileDirectory  the base path for tile storage
- * @param databaseConfig the database connection configuration
- * @param oidcConfig     the OIDC provider configuration
+ * @param port               the HTTP server port
+ * @param tileDirectory      the base path for tile storage
+ * @param contextPath        the URL context path prefix (empty or starts with {@code /}, no trailing slash)
+ * @param corsAllowedOrigins comma-separated list of allowed CORS origins, or empty to disable CORS
+ * @param databaseConfig     the database connection configuration
+ * @param oidcConfig         the OIDC provider configuration
  */
 public record GisServerConfig(
         int port,
         Path tileDirectory,
+        String contextPath,
+        String corsAllowedOrigins,
         DatabaseConfig databaseConfig,
         OidcConfig oidcConfig
 ) {
@@ -45,6 +51,8 @@ public record GisServerConfig(
     // Environment variable names
     private static final String ENV_PORT = "GIS_SERVER_PORT";
     private static final String ENV_TILE_DIR = "GIS_TILE_DIR";
+    public static final String ENV_CONTEXT_PATH = "GIS_CONTEXT_PATH";
+    private static final String ENV_CORS_ALLOWED_ORIGINS = "GIS_CORS_ALLOWED_ORIGINS";
     private static final String ENV_DB_URL = "GIS_DB_URL";
     private static final String ENV_DB_USER = "GIS_DB_USER";
     private static final String ENV_DB_PASSWORD = "GIS_DB_PASSWORD";
@@ -57,16 +65,30 @@ public record GisServerConfig(
     /**
      * Creates a GIS server configuration with validation.
      *
-     * @param port           the HTTP server port
-     * @param tileDirectory  the base path for tile storage
-     * @param databaseConfig the database connection configuration
-     * @param oidcConfig     the OIDC provider configuration
+     * @param port               the HTTP server port
+     * @param tileDirectory      the base path for tile storage
+     * @param contextPath        the URL context path prefix
+     * @param corsAllowedOrigins comma-separated CORS origins
+     * @param databaseConfig     the database connection configuration
+     * @param oidcConfig         the OIDC provider configuration
      */
     public GisServerConfig {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("port must be between 1 and 65535, got " + port);
         }
         Objects.requireNonNull(tileDirectory, "tileDirectory must not be null");
+        Objects.requireNonNull(contextPath, "contextPath must not be null");
+        if (!contextPath.isEmpty()) {
+            if (!contextPath.startsWith("/")) {
+                throw new IllegalArgumentException(
+                        "contextPath must be empty or start with '/', got: " + contextPath);
+            }
+            if (contextPath.endsWith("/")) {
+                throw new IllegalArgumentException(
+                        "contextPath must not end with '/', got: " + contextPath);
+            }
+        }
+        Objects.requireNonNull(corsAllowedOrigins, "corsAllowedOrigins must not be null");
         Objects.requireNonNull(databaseConfig, "databaseConfig must not be null");
         Objects.requireNonNull(oidcConfig, "oidcConfig must not be null");
     }
@@ -91,9 +113,13 @@ public record GisServerConfig(
     public static GisServerConfig load(ConfigLoader loader) {
         var portProperty = ConfigProperty.optionalInt(ENV_PORT, DEFAULT_PORT);
         var tileDirProperty = ConfigProperty.requiredPath(ENV_TILE_DIR);
+        var contextPathProperty = ConfigProperty.optionalString(ENV_CONTEXT_PATH, "");
+        var corsOriginsProperty = ConfigProperty.optionalString(ENV_CORS_ALLOWED_ORIGINS, "");
 
         var port = loader.get(portProperty);
         var tileDir = loader.get(tileDirProperty);
+        var contextPath = loader.get(contextPathProperty);
+        var corsAllowedOrigins = loader.get(corsOriginsProperty);
 
         var dbConfig = DatabaseConfig.builder(
                 ENV_DB_URL,
@@ -109,6 +135,6 @@ public record GisServerConfig(
                 ENV_OIDC_CLIENT_ID
         ).load(loader);
 
-        return new GisServerConfig(port, tileDir, dbConfig, oidcConfig);
+        return new GisServerConfig(port, tileDir, contextPath, corsAllowedOrigins, dbConfig, oidcConfig);
     }
 }
