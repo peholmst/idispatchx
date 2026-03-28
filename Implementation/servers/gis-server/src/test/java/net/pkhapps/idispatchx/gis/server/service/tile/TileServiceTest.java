@@ -1,5 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.service.tile;
 
+import net.pkhapps.idispatchx.gis.server.model.TileCoordinates;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -26,7 +27,7 @@ class TileServiceTest {
         var service = new TileService(tileDir, layers, new TileResampler(tileDir), new TileCache());
 
         assertThrows(IllegalArgumentException.class,
-                () -> service.getTile("nonexistent", 10, 0, 0));
+                () -> service.getTile("nonexistent", TileCoordinates.of(10, 0, 0)));
     }
 
     @Test
@@ -36,7 +37,7 @@ class TileServiceTest {
         var layers = Map.of("terrain", new TileLayer("terrain", Set.of(10)));
         var service = new TileService(tileDir, layers, new TileResampler(tileDir), new TileCache());
 
-        var result = service.getTile("terrain", 10, 100, 200);
+        var result = service.getTile("terrain", TileCoordinates.of(10, 100, 200));
         assertInstanceOf(TileService.TileResult.PreRendered.class, result);
         assertNotNull(((TileService.TileResult.PreRendered) result).data());
         assertTrue(((TileService.TileResult.PreRendered) result).data().length > 0);
@@ -49,7 +50,7 @@ class TileServiceTest {
         var service = new TileService(tileDir, layers, new TileResampler(tileDir), new TileCache());
 
         assertThrows(TileService.TileNotFoundException.class,
-                () -> service.getTile("terrain", 10, 100, 200));
+                () -> service.getTile("terrain", TileCoordinates.of(10, 100, 200)));
     }
 
     @Test
@@ -62,7 +63,7 @@ class TileServiceTest {
                 new TileResampler(tileDir), new TileCache());
 
         // Request zoom 11 (no pre-rendered tile, resampled from zoom 10)
-        var result = service.getTile("terrain", 11, 100, 200);
+        var result = service.getTile("terrain", TileCoordinates.of(11, 100, 200));
         assertInstanceOf(TileService.TileResult.Resampled.class, result);
     }
 
@@ -76,12 +77,12 @@ class TileServiceTest {
                 new TileResampler(tileDir), cache);
 
         // First call — cache miss, resamples and stores
-        service.getTile("terrain", 11, 100, 200);
+        service.getTile("terrain", TileCoordinates.of(11, 100, 200));
         assertEquals(0, cache.getHits());
         assertEquals(1, cache.getMisses());
 
         // Second call — cache hit
-        service.getTile("terrain", 11, 100, 200);
+        service.getTile("terrain", TileCoordinates.of(11, 100, 200));
         assertEquals(1, cache.getHits());
         assertEquals(1, cache.getMisses());
     }

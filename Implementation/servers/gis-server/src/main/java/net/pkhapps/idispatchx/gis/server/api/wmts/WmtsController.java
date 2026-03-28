@@ -79,20 +79,14 @@ public final class WmtsController {
             throw new BadRequestResponse("Tile file must have .png extension");
         }
 
-        int zoom;
-        int row;
-        int col;
+        TileCoordinates coordinates;
         try {
-            zoom = Integer.parseInt(zoomStr);
-            row = Integer.parseInt(rowStr);
-            col = Integer.parseInt(colStr);
+            var zoom = Integer.parseInt(zoomStr);
+            var row = Integer.parseInt(rowStr);
+            var col = Integer.parseInt(colStr);
+            coordinates = TileCoordinates.of(zoom, row, col);
         } catch (NumberFormatException e) {
             throw new BadRequestResponse("Invalid tile coordinates: zoom, row, and col must be integers");
-        }
-
-        // Validate coordinates
-        try {
-            TileCoordinates.of(zoom, row, col);
         } catch (IllegalArgumentException e) {
             throw new BadRequestResponse("Invalid tile coordinates: " + e.getMessage());
         }
@@ -100,7 +94,7 @@ public final class WmtsController {
         // Retrieve tile
         TileService.TileResult result;
         try {
-            result = tileService.getTile(layerName, zoom, row, col);
+            result = tileService.getTile(layerName, coordinates);
         } catch (IllegalArgumentException e) {
             throw new NotFoundResponse("Unknown layer: " + layerName);
         } catch (TileService.TileNotFoundException e) {

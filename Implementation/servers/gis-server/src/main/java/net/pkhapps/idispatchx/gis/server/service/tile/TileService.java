@@ -1,5 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.service.tile;
 
+import net.pkhapps.idispatchx.gis.server.model.TileCoordinates;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,19 +77,22 @@ public final class TileService {
      *   <li>Newly resampled tile (then cached)</li>
      * </ol>
      *
-     * @param layerName the name of the tile layer
-     * @param zoom      the zoom level
-     * @param row       the row index
-     * @param col       the column index
+     * @param layerName   the name of the tile layer
+     * @param coordinates the tile coordinates (zoom, row, col)
      * @return the tile result
      * @throws IllegalArgumentException if the layer is not known
      * @throws TileNotFoundException    if no tile can be produced for the given coordinates
      */
-    public TileResult getTile(String layerName, int zoom, int row, int col) {
+    public TileResult getTile(String layerName, TileCoordinates coordinates) {
+        Objects.requireNonNull(coordinates, "coordinates must not be null");
         var layer = layers.get(layerName);
         if (layer == null) {
             throw new IllegalArgumentException("Unknown layer: " + layerName);
         }
+
+        var zoom = coordinates.zoom();
+        var row = coordinates.row();
+        var col = coordinates.col();
 
         // Try pre-rendered tile first
         if (layer.hasZoomLevel(zoom)) {
