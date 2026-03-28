@@ -20,7 +20,7 @@ ADR-0005 and ADR-0006 were found not applicable and require no action.
 
 | Phase | ADRs | Description | Tasks | Status |
 |-------|------|-------------|-------|--------|
-| 1 | ADR-0007 | Domain Primitive Consistency | 2 | Not Started |
+| 1 | ADR-0007 | Domain Primitive Consistency | 2 | Done |
 | 2 | ADR-0009 | Package Visibility and ArchUnit | 4 | Not Started |
 | 3 | ADR-0004 | Reverse Proxy Support | 4 | Not Started |
 | 4 | ADR-0002, ADR-0003 | Deployment Infrastructure | 3 | Not Started |
@@ -43,7 +43,7 @@ the service. These two tasks fix that round-trip.
 
 ### Task 1.1 — Change `TileService.getTile()` to accept `TileCoordinates`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Replace the three raw `int zoom, int row, int col` parameters with a single
@@ -73,7 +73,7 @@ or pass the individual values separately.
 
 ### Task 1.2 — Update `WmtsController` to pass `TileCoordinates` to the service
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 `WmtsController.handleGetTile` currently creates a `TileCoordinates` instance for

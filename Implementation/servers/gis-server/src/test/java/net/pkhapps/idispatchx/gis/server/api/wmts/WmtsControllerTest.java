@@ -4,6 +4,7 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
+import net.pkhapps.idispatchx.gis.server.model.TileCoordinates;
 import net.pkhapps.idispatchx.gis.server.service.tile.TileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,7 +96,7 @@ class WmtsControllerTest {
     @Test
     void getTile_unknownLayer_throws404() {
         setupTilePathParams("unknown", "10", "100", "200.png");
-        when(tileService.getTile("unknown", 10, 100, 200))
+        when(tileService.getTile("unknown", TileCoordinates.of(10, 100, 200)))
                 .thenThrow(new IllegalArgumentException("Unknown layer"));
 
         assertThrows(NotFoundResponse.class, this::invokeGetTile);
@@ -106,7 +107,7 @@ class WmtsControllerTest {
     @Test
     void getTile_tileNotFound_returns204() throws Exception {
         setupTilePathParams("terrain", "10", "100", "200.png");
-        when(tileService.getTile("terrain", 10, 100, 200))
+        when(tileService.getTile("terrain", TileCoordinates.of(10, 100, 200)))
                 .thenThrow(new TileService.TileNotFoundException("No tile"));
 
         invokeGetTile();
@@ -120,7 +121,7 @@ class WmtsControllerTest {
     void getTile_preRendered_returns200WithEtag() throws Exception {
         var data = new byte[]{1, 2, 3, 4};
         setupTilePathParams("terrain", "10", "100", "200.png");
-        when(tileService.getTile("terrain", 10, 100, 200))
+        when(tileService.getTile("terrain", TileCoordinates.of(10, 100, 200)))
                 .thenReturn(new TileService.TileResult.PreRendered(data));
         when(ctx.header("If-None-Match")).thenReturn(null);
 
@@ -137,7 +138,7 @@ class WmtsControllerTest {
     void getTile_preRendered_etagMatchReturns304() throws Exception {
         var data = new byte[]{1, 2, 3, 4};
         setupTilePathParams("terrain", "10", "100", "200.png");
-        when(tileService.getTile("terrain", 10, 100, 200))
+        when(tileService.getTile("terrain", TileCoordinates.of(10, 100, 200)))
                 .thenReturn(new TileService.TileResult.PreRendered(data));
 
         // Compute what the ETag will be
@@ -157,7 +158,7 @@ class WmtsControllerTest {
     void getTile_preRendered_differentEtagDoesNotReturn304() throws Exception {
         var data = new byte[]{1, 2, 3, 4};
         setupTilePathParams("terrain", "10", "100", "200.png");
-        when(tileService.getTile("terrain", 10, 100, 200))
+        when(tileService.getTile("terrain", TileCoordinates.of(10, 100, 200)))
                 .thenReturn(new TileService.TileResult.PreRendered(data));
         when(ctx.header("If-None-Match")).thenReturn("\"different-etag\"");
 
@@ -173,7 +174,7 @@ class WmtsControllerTest {
     void getTile_resampled_returns200WithShortCacheControl() throws Exception {
         var data = new byte[]{5, 6, 7, 8};
         setupTilePathParams("terrain", "11", "200", "400.png");
-        when(tileService.getTile("terrain", 11, 200, 400))
+        when(tileService.getTile("terrain", TileCoordinates.of(11, 200, 400)))
                 .thenReturn(new TileService.TileResult.Resampled(data));
 
         invokeGetTile();
