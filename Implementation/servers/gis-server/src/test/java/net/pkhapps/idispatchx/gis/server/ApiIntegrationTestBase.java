@@ -23,17 +23,7 @@ import net.pkhapps.idispatchx.gis.server.api.wmts.WmtsController;
 import net.pkhapps.idispatchx.gis.server.auth.BackChannelLogoutHandler;
 import net.pkhapps.idispatchx.gis.server.auth.JwtAuthHandler;
 import net.pkhapps.idispatchx.gis.server.auth.RoleAuthHandler;
-import net.pkhapps.idispatchx.gis.server.repository.AddressPointRepository;
-import net.pkhapps.idispatchx.gis.server.repository.NamedPlaceRepository;
-import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
-import net.pkhapps.idispatchx.gis.server.service.geocode.AddressPointSearcher;
 import net.pkhapps.idispatchx.gis.server.service.geocode.GeocodeService;
-import net.pkhapps.idispatchx.gis.server.service.geocode.IntersectionSearcher;
-import net.pkhapps.idispatchx.gis.server.service.geocode.NamedPlaceSearcher;
-import net.pkhapps.idispatchx.gis.server.service.geocode.RoadSegmentSearcher;
-import net.pkhapps.idispatchx.gis.server.service.tile.LayerDiscovery;
-import net.pkhapps.idispatchx.gis.server.service.tile.TileCache;
-import net.pkhapps.idispatchx.gis.server.service.tile.TileResampler;
 import net.pkhapps.idispatchx.gis.server.service.tile.TileService;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
@@ -102,18 +92,10 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
         // Empty tile directory for tests
         tileDirectory = Files.createTempDirectory("gis-test-tiles");
 
-        var layers = new LayerDiscovery(tileDirectory).discoverLayers();
-        var tileService = new TileService(tileDirectory, layers, new TileResampler(tileDirectory), new TileCache());
-        var capGen = new CapabilitiesGenerator(layers);
+        var tileService = TileService.create(tileDirectory);
+        var capGen = new CapabilitiesGenerator(tileService.getLayers());
 
-        var addressRepo = new AddressPointRepository(dsl);
-        var roadRepo = new RoadSegmentRepository(dsl);
-        var namedPlaceRepo = new NamedPlaceRepository(dsl);
-        var geocodeService = new GeocodeService(
-                new AddressPointSearcher(addressRepo),
-                new RoadSegmentSearcher(roadRepo),
-                new NamedPlaceSearcher(namedPlaceRepo),
-                new IntersectionSearcher(roadRepo));
+        var geocodeService = GeocodeService.create(dsl);
 
         var objectMapper = new ObjectMapper()
                 .findAndRegisterModules()
@@ -125,7 +107,7 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
         });
 
         GlobalExceptionHandler.register(javalin);
-        new HealthController(dataSource, tileDirectory, layers).registerRoutes(javalin);
+        new HealthController(dataSource, tileDirectory, tileService.getLayers()).registerRoutes(javalin);
         new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
         new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth);
 

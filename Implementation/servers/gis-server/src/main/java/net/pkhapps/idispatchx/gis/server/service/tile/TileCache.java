@@ -14,7 +14,7 @@ import java.util.Map;
  * <p>
  * This class is thread-safe.
  */
-public final class TileCache {
+final class TileCache {
 
     /**
      * Default maximum number of entries in the cache.

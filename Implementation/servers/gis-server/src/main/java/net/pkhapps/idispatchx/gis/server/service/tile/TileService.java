@@ -52,6 +52,17 @@ public final class TileService {
     private final TileCache cache;
 
     /**
+     * Creates a TileService by discovering layers in the given directory.
+     *
+     * @param tileDirectory the base directory containing tile data
+     * @return a fully wired TileService
+     */
+    public static TileService create(Path tileDirectory) {
+        var layers = new LayerDiscovery(tileDirectory).discoverLayers();
+        return new TileService(tileDirectory, layers, new TileResampler(tileDirectory), new TileCache());
+    }
+
+    /**
      * Creates a new tile service.
      *
      * @param tileDirectory the base directory containing tile data
@@ -59,7 +70,7 @@ public final class TileService {
      * @param resampler     the resampler for producing tiles at missing zoom levels
      * @param cache         the cache for resampled tiles
      */
-    public TileService(Path tileDirectory, Map<String, TileLayer> layers,
+    TileService(Path tileDirectory, Map<String, TileLayer> layers,
                        TileResampler resampler, TileCache cache) {
         this.tileDirectory = Objects.requireNonNull(tileDirectory, "tileDirectory must not be null");
         this.layers = Map.copyOf(Objects.requireNonNull(layers, "layers must not be null"));

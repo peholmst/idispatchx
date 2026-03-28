@@ -1,6 +1,5 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
-import net.pkhapps.idispatchx.gis.server.api.geocode.LocationResult;
 
 import java.util.Objects;
 

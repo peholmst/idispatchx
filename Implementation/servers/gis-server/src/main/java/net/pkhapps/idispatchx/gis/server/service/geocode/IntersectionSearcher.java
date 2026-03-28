@@ -2,7 +2,6 @@ package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
-import net.pkhapps.idispatchx.gis.server.api.geocode.IntersectionResult;
 import net.pkhapps.idispatchx.gis.server.repository.IntersectionSearchResult;
 import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
 import org.jspecify.annotations.Nullable;
@@ -13,7 +12,7 @@ import java.util.Objects;
 /**
  * Searches road intersections and maps results to {@link ScoredResult} entries.
  */
-public final class IntersectionSearcher {
+final class IntersectionSearcher {
 
     private final RoadSegmentRepository repository;
 

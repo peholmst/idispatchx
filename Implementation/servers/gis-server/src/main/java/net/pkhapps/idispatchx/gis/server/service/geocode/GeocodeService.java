@@ -1,8 +1,10 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
-import net.pkhapps.idispatchx.gis.server.api.geocode.SearchRequest;
-import net.pkhapps.idispatchx.gis.server.api.geocode.SearchResponse;
+import net.pkhapps.idispatchx.gis.server.repository.AddressPointRepository;
+import net.pkhapps.idispatchx.gis.server.repository.NamedPlaceRepository;
+import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
+import org.jooq.DSLContext;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,23 @@ public final class GeocodeService {
     private final ResultMerger resultMerger = new ResultMerger();
 
     /**
+     * Creates a new GeocodeService by wiring up repositories and searchers from a DSL context.
+     *
+     * @param dsl the jOOQ DSL context
+     * @return a fully wired GeocodeService
+     */
+    public static GeocodeService create(DSLContext dsl) {
+        var addressPointRepo = new AddressPointRepository(dsl);
+        var roadSegmentRepo = new RoadSegmentRepository(dsl);
+        var namedPlaceRepo = new NamedPlaceRepository(dsl);
+        return new GeocodeService(
+                new AddressPointSearcher(addressPointRepo),
+                new RoadSegmentSearcher(roadSegmentRepo),
+                new NamedPlaceSearcher(namedPlaceRepo),
+                new IntersectionSearcher(roadSegmentRepo));
+    }
+
+    /**
      * Creates a new geocode service with the given searchers.
      *
      * @param addressPointSearcher  the address point searcher
@@ -37,7 +56,7 @@ public final class GeocodeService {
      * @param namedPlaceSearcher    the named place searcher
      * @param intersectionSearcher  the intersection searcher
      */
-    public GeocodeService(AddressPointSearcher addressPointSearcher,
+    GeocodeService(AddressPointSearcher addressPointSearcher,
                           RoadSegmentSearcher roadSegmentSearcher,
                           NamedPlaceSearcher namedPlaceSearcher,
                           IntersectionSearcher intersectionSearcher) {

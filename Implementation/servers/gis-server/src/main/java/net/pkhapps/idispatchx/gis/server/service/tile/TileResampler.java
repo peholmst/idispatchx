@@ -24,7 +24,7 @@ import java.util.Objects;
  * The maximum resampling depth is 3 zoom levels (i.e., the source tile
  * must be no more than 3 levels below the requested zoom level).
  */
-public final class TileResampler {
+final class TileResampler {
 
     private static final Logger log = LoggerFactory.getLogger(TileResampler.class);
 
