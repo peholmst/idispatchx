@@ -1,0 +1,126 @@
+# iDispatchX development HA environment
+#
+# Satisfies ADR-0002 (Docker Compose HA topology) and ADR-0003 (partial failure
+# testing via individual container stop/start).
+#
+# Prerequisites:
+#   1. Build the GIS Server image from the Implementation/ directory:
+#        docker build -t idispatchx/gis-server -f servers/gis-server/Dockerfile .
+#   2. Populate the gis_tiles volume with tile data (see tools/gis-data-importer).
+#   3. Copy .env.example to .env and fill in the required values.
+#
+# Usage:
+#   docker compose up          # start all services
+#   docker compose stop gis-server-1   # test GIS Server partial failure
+#   docker compose stop gis-db         # test database failure (GIS replicas go unhealthy)
+
+services:
+
+  # --------------------------------------------------------------------------
+  # GIS Database (PostGIS)
+  # --------------------------------------------------------------------------
+  gis-db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: gisdb
+      POSTGRES_USER: ${GIS_DB_USER}
+      POSTGRES_PASSWORD: ${GIS_DB_PASSWORD}
+    volumes:
+      - gis_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${GIS_DB_USER} -d gisdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # --------------------------------------------------------------------------
+  # GIS Server — replica 1
+  # --------------------------------------------------------------------------
+  gis-server-1:
+    image: idispatchx/gis-server
+    depends_on:
+      gis-db:
+        condition: service_healthy
+    environment:
+      GIS_SERVER_PORT: "8080"
+      GIS_TILE_DIR: /tiles
+      GIS_CONTEXT_PATH: ""
+      GIS_CORS_ALLOWED_ORIGINS: ${GIS_CORS_ALLOWED_ORIGINS:-}
+      GIS_DB_URL: jdbc:postgresql://gis-db:5432/gisdb
+      GIS_DB_USER: ${GIS_DB_USER}
+      GIS_DB_PASSWORD: ${GIS_DB_PASSWORD}
+      GIS_OIDC_ISSUER: ${GIS_OIDC_ISSUER}
+      GIS_OIDC_CLIENT_ID: ${GIS_OIDC_CLIENT_ID}
+    volumes:
+      - gis_tiles:/tiles:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # --------------------------------------------------------------------------
+  # GIS Server — replica 2
+  # --------------------------------------------------------------------------
+  gis-server-2:
+    image: idispatchx/gis-server
+    depends_on:
+      gis-db:
+        condition: service_healthy
+    environment:
+      GIS_SERVER_PORT: "8080"
+      GIS_TILE_DIR: /tiles
+      GIS_CONTEXT_PATH: ""
+      GIS_CORS_ALLOWED_ORIGINS: ${GIS_CORS_ALLOWED_ORIGINS:-}
+      GIS_DB_URL: jdbc:postgresql://gis-db:5432/gisdb
+      GIS_DB_USER: ${GIS_DB_USER}
+      GIS_DB_PASSWORD: ${GIS_DB_PASSWORD}
+      GIS_OIDC_ISSUER: ${GIS_OIDC_ISSUER}
+      GIS_OIDC_CLIENT_ID: ${GIS_OIDC_CLIENT_ID}
+    volumes:
+      - gis_tiles:/tiles:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # --------------------------------------------------------------------------
+  # Shared reverse proxy (nginx)
+  # --------------------------------------------------------------------------
+  proxy:
+    image: nginx:1.27-alpine
+    depends_on:
+      gis-server-1:
+        condition: service_healthy
+      gis-server-2:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/idispatchx.conf:ro
+
+  # --------------------------------------------------------------------------
+  # CAD Server stubs (placeholders — to be replaced when CAD Server is implemented)
+  # --------------------------------------------------------------------------
+  cad-server-active:
+    image: busybox
+    command: ["sleep", "infinity"]
+
+  cad-server-standby:
+    image: busybox
+    command: ["sleep", "infinity"]
+
+# --------------------------------------------------------------------------
+# Named volumes
+# --------------------------------------------------------------------------
+volumes:
+  # Tile data — populated by the GIS Data Importer tool; mounted read-only
+  # into both GIS Server replicas.
+  gis_tiles:
+
+  # PostGIS data directory — persists the GIS database across restarts.
+  gis_db_data:
