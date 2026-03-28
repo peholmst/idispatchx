@@ -3,6 +3,7 @@ package net.pkhapps.idispatchx.gis.server.api.geocode;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HandlerType;
 import net.pkhapps.idispatchx.common.api.ValidationException;
 import net.pkhapps.idispatchx.gis.server.api.error.GisErrorCode;
 import net.pkhapps.idispatchx.gis.server.service.geocode.DatabaseUnavailableException;
@@ -44,8 +45,8 @@ public final class GeocodeController {
      * @param contextPath     the URL context path prefix (empty or starts with {@code /})
      */
     public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
-        app.before(contextPath + "/api/v1/geocode/*", jwtAuthHandler);
-        app.before(contextPath + "/api/v1/geocode/*", roleAuthHandler);
+        app.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        app.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
         app.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
     }
 
