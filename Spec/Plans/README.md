@@ -48,6 +48,7 @@ Each plan follows a consistent structure:
 
 | File | Description |
 |------|-------------|
+| [GIS-Server-ADR-Compliance-Plan.md](GIS-Server-ADR-Compliance-Plan.md) | Plan to bring the GIS Server into compliance with ADR-0002, -0003, -0004, -0007, -0009 |
 | [GIS-Server-Implementation-Plan.md](GIS-Server-Implementation-Plan.md) | Implementation plan for the GIS Server REST API |
 
 ## Creating New Plans
