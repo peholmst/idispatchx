@@ -93,7 +93,7 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
         tileDirectory = Files.createTempDirectory("gis-test-tiles");
 
         var tileService = TileService.create(tileDirectory);
-        var capGen = new CapabilitiesGenerator(tileService.getLayers());
+        var capGen = new CapabilitiesGenerator("", tileService.getLayers());
 
         var geocodeService = GeocodeService.create(dsl);
 
@@ -107,9 +107,9 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
         });
 
         GlobalExceptionHandler.register(javalin);
-        new HealthController(dataSource, tileDirectory, tileService.getLayers()).registerRoutes(javalin);
-        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth);
-        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth);
+        new HealthController(dataSource, tileDirectory, tileService.getLayers()).registerRoutes(javalin, "");
+        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth, "");
+        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth, "");
 
         // Back-channel logout (not used in most tests, but registered for completeness)
         JwksKeyProvider logoutKeyProvider = keyId -> TEST_KEY_ID.equals(keyId) ? publicKey : null;

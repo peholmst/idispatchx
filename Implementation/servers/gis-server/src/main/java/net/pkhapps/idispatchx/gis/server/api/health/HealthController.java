@@ -61,10 +61,11 @@ public final class HealthController {
      * Registers the health check route on the given Javalin instance.
      * No authentication filters are applied.
      *
-     * @param app the Javalin application
+     * @param app         the Javalin application
+     * @param contextPath the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app) {
-        app.get("/health", this::handleHealthCheck);
+    public void registerRoutes(Javalin app, String contextPath) {
+        app.get(contextPath + "/health", this::handleHealthCheck);
     }
 
     private void handleHealthCheck(Context ctx) {

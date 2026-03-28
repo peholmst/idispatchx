@@ -41,11 +41,12 @@ public final class GeocodeController {
      * @param app             the Javalin application
      * @param jwtAuthHandler  the JWT authentication handler (applied as before-filter)
      * @param roleAuthHandler the role authorization handler (applied as before-filter)
+     * @param contextPath     the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler) {
-        app.before("/api/v1/geocode/*", jwtAuthHandler);
-        app.before("/api/v1/geocode/*", roleAuthHandler);
-        app.get("/api/v1/geocode/search", this::handleSearch);
+    public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
+        app.before(contextPath + "/api/v1/geocode/*", jwtAuthHandler);
+        app.before(contextPath + "/api/v1/geocode/*", roleAuthHandler);
+        app.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
     }
 
     private void handleSearch(Context ctx) {

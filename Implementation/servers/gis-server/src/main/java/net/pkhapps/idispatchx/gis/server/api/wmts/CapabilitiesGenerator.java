@@ -33,11 +33,13 @@ public final class CapabilitiesGenerator {
     /**
      * Creates a new capabilities generator and generates the XML.
      *
-     * @param layers the map of available tile layers
+     * @param contextPath the URL context path prefix (empty or starts with {@code /}, no trailing slash)
+     * @param layers      the map of available tile layers
      */
-    public CapabilitiesGenerator(Map<String, TileLayer> layers) {
+    public CapabilitiesGenerator(String contextPath, Map<String, TileLayer> layers) {
+        Objects.requireNonNull(contextPath, "contextPath must not be null");
         Objects.requireNonNull(layers, "layers must not be null");
-        this.capabilitiesXml = generateXml(layers);
+        this.capabilitiesXml = generateXml(contextPath, layers);
     }
 
     /**
@@ -49,7 +51,7 @@ public final class CapabilitiesGenerator {
         return capabilitiesXml;
     }
 
-    private String generateXml(Map<String, TileLayer> layers) {
+    private String generateXml(String contextPath, Map<String, TileLayer> layers) {
         var sb = new StringBuilder();
 
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -70,7 +72,7 @@ public final class CapabilitiesGenerator {
 
         // Layers
         for (var layer : layers.values()) {
-            appendLayer(sb, layer);
+            appendLayer(sb, layer, contextPath);
         }
 
         // TileMatrixSet
@@ -82,7 +84,7 @@ public final class CapabilitiesGenerator {
         return sb.toString();
     }
 
-    private void appendLayer(StringBuilder sb, TileLayer layer) {
+    private void appendLayer(StringBuilder sb, TileLayer layer, String contextPath) {
         var layerName = escapeXml(layer.name());
 
         sb.append("    <Layer>\n");
@@ -96,7 +98,7 @@ public final class CapabilitiesGenerator {
         sb.append("        <TileMatrixSet>").append(TILE_MATRIX_SET).append("</TileMatrixSet>\n");
         sb.append("      </TileMatrixSetLink>\n");
         sb.append("      <ResourceURL format=\"image/png\" resourceType=\"tile\"\n");
-        sb.append("                   template=\"/wmts/").append(layerName)
+        sb.append("                   template=\"").append(contextPath).append("/wmts/").append(layerName)
                 .append("/").append(TILE_MATRIX_SET)
                 .append("/{TileMatrix}/{TileRow}/{TileCol}.png\"/>\n");
         sb.append("    </Layer>\n");
