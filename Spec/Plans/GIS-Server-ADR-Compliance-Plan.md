@@ -21,7 +21,7 @@ ADR-0005 and ADR-0006 were found not applicable and require no action.
 | Phase | ADRs | Description | Tasks | Status |
 |-------|------|-------------|-------|--------|
 | 1 | ADR-0007 | Domain Primitive Consistency | 2 | Done |
-| 2 | ADR-0009 | Package Visibility and ArchUnit | 4 | Not Started |
+| 2 | ADR-0009 | Package Visibility and ArchUnit | 4 | Done |
 | 3 | ADR-0004 | Reverse Proxy Support | 4 | Done |
 | 4 | ADR-0002, ADR-0003 | Deployment Infrastructure | 3 | Done |
 | **Total** | | | **13** | |
@@ -112,7 +112,7 @@ address the visibility violations first, then add ArchUnit to detect future regr
 
 ### Task 2.1 — Make service-internal classes package-private
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 The following classes are visible only within their own package yet are declared
@@ -148,7 +148,7 @@ In `service/tile/`:
 
 ### Task 2.2 — Resolve `GisServer` cross-package wiring and `DatabaseUnavailableException` coupling
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Two coupling problems exist that must be resolved in conjunction with Task 2.1:
@@ -204,7 +204,7 @@ simple static method that constructs the private collaborators internally.
 
 ### Task 2.3 — Add ArchUnit dependency to the parent POM
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 ArchUnit is not yet declared in the parent POM. It must be added so all Java containers
@@ -229,7 +229,7 @@ can use it without individually managing the version.
 
 ### Task 2.4 — Add ArchUnit dependency to the GIS Server POM and create architecture tests
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 An ArchUnit test class must be created that encodes the layering rules for the GIS
