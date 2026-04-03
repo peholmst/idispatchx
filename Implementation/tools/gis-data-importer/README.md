@@ -44,8 +44,21 @@ Import municipality names from JSON and GML features into PostGIS:
   --input-dir /path/to/gml-files/
 ```
 
+To avoid exposing the password in shell history or process listings, use `--db-password-file` instead:
+
+```bash
+./gis-data-importer.sh \
+  --db-url jdbc:postgresql://localhost:5432/idispatchx \
+  --db-user postgres \
+  --db-password-file /run/secrets/db_password \
+  --municipalities /path/to/codelist_kunta.json \
+  --input-dir /path/to/gml-files/
+```
+
 Options:
-- `--db-url`, `--db-user`, `--db-password` - PostgreSQL connection (required)
+- `--db-url`, `--db-user` - PostgreSQL connection (required)
+- `--db-password <password>` - Database password as a string (mutually exclusive with `--db-password-file`)
+- `--db-password-file <file>` - Read database password from a file (mutually exclusive with `--db-password`)
 - `--municipalities <file>` - Municipality reference JSON from koodistot.suomi.fi
 - `--input <file...>` - One or more GML files
 - `--input-dir <dir>` - Directory containing GML files (*.xml)

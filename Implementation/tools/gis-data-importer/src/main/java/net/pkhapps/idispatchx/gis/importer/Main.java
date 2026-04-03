@@ -43,6 +43,7 @@ public final class Main {
         String dbUrl = null;
         String dbUser = null;
         String dbPassword = null;
+        Path dbPasswordFile = null;
         String featuresArg = null;
 
         // Tile import args
@@ -114,6 +115,16 @@ public final class Main {
                         System.exit(1);
                     }
                 }
+                case "--db-password-file" -> {
+                    i++;
+                    if (i < args.length) {
+                        dbPasswordFile = Path.of(args[i]);
+                        i++;
+                    } else {
+                        LOG.error("--db-password-file requires a file path argument");
+                        System.exit(1);
+                    }
+                }
                 case "--features" -> {
                     i++;
                     if (i < args.length) {
@@ -174,6 +185,20 @@ public final class Main {
             }
         }
 
+        // Resolve password from file (mutually exclusive with --db-password)
+        if (dbPassword != null && dbPasswordFile != null) {
+            LOG.error("--db-password and --db-password-file are mutually exclusive");
+            System.exit(1);
+        }
+        if (dbPasswordFile != null) {
+            try {
+                dbPassword = readPasswordFromFile(dbPasswordFile);
+            } catch (IOException e) {
+                LOG.error("Cannot read password file {}: {}", dbPasswordFile, e.getMessage());
+                System.exit(1);
+            }
+        }
+
         // Scan GML input directory for XML files
         if (gmlInputDir != null) {
             if (!Files.isDirectory(gmlInputDir)) {
@@ -226,7 +251,7 @@ public final class Main {
         // Vector data import
         if (hasVectorInput) {
             if (dbUrl == null || dbUser == null || dbPassword == null) {
-                LOG.error("--db-url, --db-user, and --db-password are required for GML/JSON import");
+                LOG.error("--db-url, --db-user, and --db-password (or --db-password-file) are required for GML/JSON import");
                 System.exit(1);
             }
             runVectorImport(dbUrl, dbUser, dbPassword, municipalitiesFile, gmlPaths, truncate, featureFilter);
@@ -246,6 +271,10 @@ public final class Main {
         }
 
         System.exit(0);
+    }
+
+    static String readPasswordFromFile(Path file) throws IOException {
+        return Files.readString(file).strip();
     }
 
     private static void runVectorImport(String dbUrl, String dbUser, String dbPassword,
