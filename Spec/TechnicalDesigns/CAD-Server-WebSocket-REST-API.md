@@ -39,7 +39,7 @@ Dispatcher and Mobile Unit Clients fetch initial operational state via REST GET 
 
 ### 1.2 Authentication
 
-All endpoints require JWT bearer authentication per the Security NFR. The single exception is the `/health` endpoint.
+All endpoints require JWT bearer authentication per the Security NFR. The exceptions are `/health` and `/auth/backchannel-logout`, which are unauthenticated (the latter is called by the OIDC provider, not by clients).
 
 **Request header:**
 ```
@@ -439,7 +439,7 @@ All fields optional. When `sourceCallId` is provided, `location` is copied from 
 **Errors:**
 - 404: `sourceCallId` not found
 - 409: call referenced by `sourceCallId` is in state `ended`
-- 409: call referenced by `sourceCallId` already has `outcome = incident_created`
+- 409: call referenced by `sourceCallId` already has `outcome = incident_created` or `outcome = attached_to_incident` (the call is already linked to an incident; detach it first)
 
 ---
 
@@ -1718,10 +1718,10 @@ No authentication required. This endpoint must not be exposed through the public
 }
 ```
 
-**Response 503 Service Unavailable:**
+**Response 200 OK (degraded — archive unavailable):**
 ```json
 {
-  "status": "DOWN",
+  "status": "DEGRADED",
   "components": {
     "wal": { "status": "UP" },
     "archive": { "status": "DOWN", "error": "Connection refused" },
@@ -1730,7 +1730,7 @@ No authentication required. This endpoint must not be exposed through the public
 }
 ```
 
-The archive component being `DOWN` does not cause the server to be `DOWN` from an operational standpoint — the server continues processing per the Availability NFR degraded mode. The health endpoint reflects the degraded state for monitoring purposes.
+When only the archive component is unavailable, the server returns HTTP 200 with `status: "DEGRADED"` rather than 503. The server continues processing calls and incidents per the Availability NFR degraded mode, so it must not be taken out of service by a load balancer. HTTP 503 is reserved for failures that genuinely prevent the server from handling requests (e.g., WAL unavailable or JWKS unreachable).
 
 ---
 
