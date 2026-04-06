@@ -13,6 +13,7 @@ This document describes the REST and WebSocket API design for the CAD Server. Th
 
 ## References
 
+- [ADR-0004: Shared Reverse Proxy](../ADR/ADR-0004-shared-reverse-proxy.md) — proxy path routing, WebSocket upgrade support, CORS, JWT forwarding
 - [ADR-0005: Session State During Failover](../ADR/ADR-0005-session-state-during-failover.md) — WebSocket sessions not preserved; clients must reconnect and re-authenticate
 - [ADR-0008: CAD Server Ports-and-Adapters Architecture](../ADR/ADR-0008-cad-server-ports-and-adapters.md) — REST and WebSocket adapters as primary ports
 - [Technical Design: CAD Server Domain Core](CAD-Server-Domain-Core.md) — Command/event model, idempotency, WAL sequence numbers
@@ -122,9 +123,26 @@ All error responses use a consistent JSON format:
 
 All REST endpoints use URL path versioning at `/api/v1/`. Breaking changes require a new version path.
 
-WebSocket connection URLs follow the same versioning: `/ws/v1/dispatcher`, `/ws/v1/unit`, `/ws/v1/station`.
+WebSocket connection URLs follow the same versioning and share the `/api/` prefix required by the Security NFR and ADR-0004: `/api/v1/ws/dispatcher`, `/api/v1/ws/unit`, `/api/v1/ws/station`.
 
-### 1.7 Data Formats
+### 1.7 CORS
+
+Per ADR-0004, CORS configuration must be correct for browser-based clients. The Dispatcher Client and Admin Client run in Chromium and make cross-origin requests to the CAD Server.
+
+The CAD Server must include CORS response headers that allow requests from the configured client origins. The allowed origin(s) are deployment-specific and must be set via configuration — wildcards must not be used, as this would allow any origin to call authenticated endpoints.
+
+Required CORS headers on API responses:
+
+```
+Access-Control-Allow-Origin: <configured-client-origin>
+Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Authorization, Content-Type, X-Command-Id
+Access-Control-Max-Age: 86400
+```
+
+The `/auth/back-channel-logout` endpoint is called server-to-server by the OIDC provider; it does not require CORS headers.
+
+### 1.8 Data Formats
 
 - **Timestamps**: ISO 8601 in UTC, e.g. `"2026-04-03T10:30:00Z"`
 - **Coordinates**: EPSG:4326, max 6 decimal places, Finland bounds (lat 58.84–70.09, lon 19.08–31.59)
@@ -1330,14 +1348,14 @@ Immediately terminates the session. All WebSocket connections associated with th
 
 ### 6.1 Dispatcher Client WebSocket
 
-**Connection URL:** `ws://cad-server/ws/v1/dispatcher`
+**Connection URL:** `ws://cad-server/api/v1/ws/dispatcher`
 
 Required role: `Dispatcher` or `Observer`.
 
 The JWT is passed as a query parameter on the initial HTTP upgrade request:
 
 ```
-GET /ws/v1/dispatcher?token=<jwt> HTTP/1.1
+GET /api/v1/ws/dispatcher?token=<jwt> HTTP/1.1
 Upgrade: websocket
 ```
 
@@ -1572,7 +1590,7 @@ Payload:
 
 ### 6.2 Mobile Unit Client WebSocket
 
-**Connection URL:** `ws://cad-server/ws/v1/unit?token=<jwt>`
+**Connection URL:** `ws://cad-server/api/v1/ws/unit?token=<jwt>`
 
 Required role: `Unit`. The `unit_id` JWT claim identifies the unit.
 
@@ -1621,7 +1639,7 @@ Sent when a unit is dispatched to an incident (transition to `dispatching`). Als
 
 ### 6.3 Station Alert Client WebSocket
 
-**Connection URL:** `ws://cad-server/ws/v1/station?token=<jwt>`
+**Connection URL:** `ws://cad-server/api/v1/ws/station?token=<jwt>`
 
 Required role: `Station`. The `alert_target_id` JWT claim identifies the `station_alert_client` AlertTarget.
 
@@ -1682,10 +1700,12 @@ The `alertId` is taken from the alert event payload. If the server cannot find a
 ## 7. OIDC Back-Channel Logout
 
 ```
-POST /auth/backchannel-logout
+POST /auth/back-channel-logout
 ```
 
 Unauthenticated endpoint for OIDC provider callbacks. Accepts the OIDC back-channel logout token and invalidates all sessions associated with the `sid` claim.
+
+**Proxy exposure:** This path is outside the `/api/` prefix and must not be exposed through the public reverse proxy (consistent with the Security NFR). The OIDC provider must be able to reach it directly on the CAD Server's internal address. Deployment configuration must ensure the OIDC provider has network access to this endpoint.
 
 **Request body:** `application/x-www-form-urlencoded` per OIDC spec.
 
