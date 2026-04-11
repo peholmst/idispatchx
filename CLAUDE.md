@@ -68,6 +68,40 @@ Refer to `Spec/UseCases/README.md` for usage rules.
 
 ---
 
+### `Spec/ADR/` – Architectural Decision Records
+
+* Document significant architectural decisions and their rationale.
+* Are historical records; superseded decisions get new ADRs rather than modifications.
+* Do **not** override NFRs or C4 specifications.
+
+---
+
+### `Spec/TechnicalDesigns/` – Technical Design Documents
+
+* Provide detailed implementation guidance bridging specifications and code.
+* Define package structures, interfaces, threading models, and data flow.
+* Must comply with all higher-level specifications (NFRs, C4, Domain, Use Cases).
+* **Read the relevant technical design before implementing a container or major subsystem.**
+
+---
+
+### `Spec/UXDesigns/` – User Experience Designs
+
+* Define interaction patterns and visual guidelines for client applications.
+* Inform frontend implementation decisions.
+* Must align with domain concepts and use case flows.
+
+---
+
+### `Spec/Plans/` – Implementation Plans
+
+* Contain task breakdowns with dependencies and success criteria.
+* Used by AI agents and developers to implement features systematically.
+* Reference technical designs and specifications.
+* Track implementation status.
+
+---
+
 ### `Implementation/` – Container Implementations
 
 The `Implementation/` directory contains the actual code for all iDispatchX containers.

@@ -145,6 +145,7 @@ Deployment configurations and scripts.
 |------------------------|----------------------------------|
 | `deploy/docker/`       | Dockerfiles and compose files    |
 | `deploy/kubernetes/`   | Kubernetes manifests             |
+| `deploy/manual/`       | Manual deployment instructions   |
 | `deploy/scripts/`      | Deployment and utility scripts   |
 
 
