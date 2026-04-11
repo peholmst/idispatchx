@@ -1,0 +1,4 @@
+# Playwright test output
+playwright-report/
+test-results/
+.keycloak-container-id
