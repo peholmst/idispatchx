@@ -2,58 +2,11 @@
 // Manages authentication state display, session warning banners,
 // and transitions between login and authenticated views.
 
+import STYLES from './AppShell.css?inline';
 import { AuthChangedEvent, AuthState, SessionWarningEvent } from '../auth/AuthState.ts';
 import type { AuthStatus } from '../auth/types.ts';
 import { LoginRequestedEvent, LoginScreen } from './LoginScreen.ts';
 import type { SessionManager } from '../auth/SessionManager.ts';
-
-const STYLES = `
-  :host {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-
-  .app-content {
-    width: 100%;
-    height: 100%;
-  }
-
-  .warning-banner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: #664d00;
-    color: #ffd700;
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    font-size: 13px;
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .warning-banner span {
-    flex: 1;
-  }
-
-  .warning-dismiss {
-    background: none;
-    border: 1px solid #ffd700;
-    color: #ffd700;
-    border-radius: 3px;
-    padding: 2px 10px;
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-  }
-
-  .warning-dismiss:hover {
-    background: rgba(255, 215, 0, 0.15);
-  }
-`;
 
 /**
  * `<idispatch-app-shell>` Web Component.
@@ -190,21 +143,22 @@ export class AppShell extends HTMLElement {
         this.#dismissWarningBanner();
 
         const banner = document.createElement('div');
-        banner.className = 'warning-banner';
+        banner.className = 'session-warning';
         banner.setAttribute('role', 'alert');
 
         const minutesRemaining = Math.ceil(secondsRemaining / 60);
         const cause = reason === 'idle-timeout' ? 'inactivity' : 'reaching the maximum session duration';
-        const span = document.createElement('span');
-        span.textContent = `Your session will expire in approximately ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'} due to ${cause}. Please save your work.`;
+        const messageEl = document.createElement('span');
+        messageEl.className = 'warning-message';
+        messageEl.textContent = `Your session will expire in approximately ${minutesRemaining} minute${minutesRemaining === 1 ? '' : 's'} due to ${cause}. Please save your work.`;
 
         const dismissBtn = document.createElement('button');
-        dismissBtn.className = 'warning-dismiss';
+        dismissBtn.className = 'dismiss-button';
         dismissBtn.textContent = 'Dismiss';
         dismissBtn.setAttribute('type', 'button');
         dismissBtn.addEventListener('click', () => this.#dismissWarningBanner());
 
-        banner.appendChild(span);
+        banner.appendChild(messageEl);
         banner.appendChild(dismissBtn);
         this.#shadow.appendChild(banner);
         this.#warningBanner = banner;

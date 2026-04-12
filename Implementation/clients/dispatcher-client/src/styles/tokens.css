@@ -1,0 +1,43 @@
+/*
+ * iDispatchX design tokens — CSS custom properties.
+ * Defined on :root so they cascade into shadow DOMs via inheritance.
+ */
+
+:root {
+    /* Background surfaces */
+    --color-bg-base:    #1e1e1e;
+    --color-bg-surface: #252526;
+    --color-bg-border:  #454545;
+
+    /* Text */
+    --color-text-primary:   #ffffff;
+    --color-text-secondary: #cccccc;
+    --color-text-muted:     #9d9d9d;
+
+    /* Accent (brand blue) */
+    --color-accent:        #0078d4;
+    --color-accent-hover:  #106ebe;
+    --color-accent-active: #005a9e;
+
+    /* Warning / session-expiry banner */
+    --color-warning-bg:   #664d00;
+    --color-warning-text: #ffd700;
+
+    /* Typography */
+    --font-family-ui: "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-size-sm:   12px;
+    --font-size-base: 14px;
+    --font-size-lg:   20px;
+
+    /* Spacing */
+    --space-xs:  4px;
+    --space-sm:  8px;
+    --space-md:  16px;
+    --space-lg:  24px;
+    --space-xl:  40px;
+    --space-2xl: 48px;
+
+    /* Border radius */
+    --radius-sm: 3px;
+    --radius-md: 6px;
+}

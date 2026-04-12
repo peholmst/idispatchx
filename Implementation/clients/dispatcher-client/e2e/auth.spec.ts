@@ -61,7 +61,7 @@ async function clickSignInAgain(page: Page): Promise<void> {
     await page.evaluate(() => {
         const shell = document.querySelector('idispatch-app-shell');
         const loginScreen = shell?.shadowRoot?.querySelector('idispatch-login-screen');
-        const btn = loginScreen?.shadowRoot?.querySelector('.btn') as HTMLElement | null;
+        const btn = loginScreen?.shadowRoot?.querySelector('.sign-in-button') as HTMLElement | null;
         btn?.click();
     });
 }
@@ -71,7 +71,7 @@ async function getLoginScreenMessage(page: Page): Promise<string> {
     return page.evaluate(() => {
         const shell = document.querySelector('idispatch-app-shell');
         const loginScreen = shell?.shadowRoot?.querySelector('idispatch-login-screen');
-        return loginScreen?.shadowRoot?.querySelector('.message')?.textContent ?? '';
+        return loginScreen?.shadowRoot?.querySelector('.status-message')?.textContent ?? '';
     });
 }
 
@@ -238,7 +238,7 @@ test.describe('Authentication', () => {
         const hasVisibleButton = await page.evaluate(() => {
             const shell = document.querySelector('idispatch-app-shell');
             const loginScreen = shell?.shadowRoot?.querySelector('idispatch-login-screen');
-            const btn = loginScreen?.shadowRoot?.querySelector('.btn') as HTMLElement | null;
+            const btn = loginScreen?.shadowRoot?.querySelector('.sign-in-button') as HTMLElement | null;
             return btn !== null && btn.style.display !== 'none';
         });
         expect(hasVisibleButton).toBe(true);
