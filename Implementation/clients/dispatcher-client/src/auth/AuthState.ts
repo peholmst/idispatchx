@@ -227,6 +227,9 @@ export class AuthState extends EventTarget {
         } catch (err) {
             console.warn('[AuthState] Token refresh failed:', err);
             sessionStorage.removeItem(KEY_REFRESH_TOKEN);
+            // Clear login timestamp so a fresh login after a stale refresh token
+            // starts its own max-lifetime clock from zero, not from the prior session.
+            sessionStorage.removeItem(KEY_LOGIN_AT);
             return false;
         }
     }
@@ -257,11 +260,12 @@ export class AuthState extends EventTarget {
             parsedAccess: parsed,
         };
 
-        // Persist refresh token and id token to sessionStorage for page refreshes
+        // Persist refresh token and id token to sessionStorage for page refreshes.
+        // Only overwrite the stored refresh token when the provider returns a new one
+        // (i.e. token rotation). If the response omits refresh_token the provider is
+        // keeping the original valid, so the existing stored token must be preserved.
         if (response.refresh_token) {
             sessionStorage.setItem(KEY_REFRESH_TOKEN, response.refresh_token);
-        } else {
-            sessionStorage.removeItem(KEY_REFRESH_TOKEN);
         }
 
         if (response.id_token) {

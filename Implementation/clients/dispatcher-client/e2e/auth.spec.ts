@@ -262,4 +262,91 @@ test.describe('Authentication', () => {
         await expectAuthenticated(page);
     });
 
+    // -----------------------------------------------------------------------
+    // Regression tests for second review pass
+    // -----------------------------------------------------------------------
+
+    test('failed bootstrap refresh clears stale login timestamp for new session', async ({ page }) => {
+        // Regression for: #tryRefresh only removed KEY_REFRESH_TOKEN on failure,
+        // leaving KEY_LOGIN_AT intact. A fresh login following a stale refresh token
+        // then inherited the old timestamp, making max-lifetime checks fire immediately
+        // or shorten the brand-new session by the age of the prior one.
+        //
+        // We prime sessionStorage on the first load with a login_at 8 hours in the
+        // past and a deliberately invalid refresh token. The app tries the bootstrap
+        // refresh, fails, then starts a fresh PKCE login. After that login completes
+        // the stored login_at must reflect the new session, not the stale one.
+        //
+        // The guard key prevents the init script from re-seeding the stale values
+        // when the browser returns to this origin after the Keycloak redirect.
+        await page.addInitScript(() => {
+            if (sessionStorage.getItem('__test_prime') === null) {
+                sessionStorage.setItem('__test_prime', '1');
+                sessionStorage.setItem('idispatchx.login_at', String(Date.now() - 8 * 60 * 60 * 1000));
+                sessionStorage.setItem('idispatchx.refresh_token', 'deliberately-stale-invalid-token');
+            }
+        });
+
+        await loginViaKeycloak(page);
+        await expectAuthenticated(page);
+
+        const loginAt = await page.evaluate(() =>
+            Number(sessionStorage.getItem('idispatchx.login_at') ?? '0')
+        );
+        const ageMs = Date.now() - loginAt;
+        // login_at must reflect the new session (< 30 s old), not the stale one (8 h).
+        expect(ageMs).toBeLessThan(30_000);
+    });
+
+    test('access token refresh preserves stored refresh token when provider omits rotation', async ({ page }) => {
+        // Regression for: #applyTokenResponse unconditionally removed the stored
+        // refresh token when the token response omitted refresh_token. Providers that
+        // keep the original token valid without rotating it (a valid OAuth/OIDC
+        // behaviour) would therefore cause the next refresh cycle to call forceLogout.
+        //
+        // We intercept the token endpoint for refresh_token grants and strip
+        // refresh_token from the response body, simulating a non-rotating provider.
+        // After the refresh completes the original token must still be in storage.
+        await loginViaKeycloak(page);
+        await expectAuthenticated(page);
+
+        const tokenBefore = await page.evaluate(() =>
+            sessionStorage.getItem('idispatchx.refresh_token')
+        );
+        expect(tokenBefore).not.toBeNull();
+
+        // Strip refresh_token from refresh responses only (leave code-exchange alone).
+        await page.route('**/realms/idispatchx/protocol/openid-connect/token', async route => {
+            const body = route.request().postData() ?? '';
+            if (body.includes('grant_type=refresh_token')) {
+                const response = await route.fetch();
+                const json = await response.json() as Record<string, unknown>;
+                delete json['refresh_token'];
+                await route.fulfill({
+                    status: response.status(),
+                    headers: response.headers(),
+                    body: JSON.stringify(json),
+                });
+            } else {
+                await route.continue();
+            }
+        });
+
+        // Trigger an explicit refresh and wait for the app to remain authenticated.
+        await page.evaluate(() => {
+            const w = window as Window & { __authState?: { refresh(): Promise<void> } };
+            return w.__authState?.refresh();
+        });
+        await page.waitForFunction(() => {
+            const shell = document.querySelector('idispatch-app-shell');
+            return !!shell?.shadowRoot?.querySelector('.app-content');
+        }, { timeout: 5_000 });
+
+        // The original refresh token must still be present — it was not rotated.
+        const tokenAfter = await page.evaluate(() =>
+            sessionStorage.getItem('idispatchx.refresh_token')
+        );
+        expect(tokenAfter).toBe(tokenBefore);
+    });
+
 });
