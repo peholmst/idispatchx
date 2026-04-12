@@ -94,13 +94,16 @@ const STYLES = `
   }
 `;
 
-type LoginScreenStatus = 'loading' | 'session-expired' | 'idle-timeout' | 'max-lifetime';
+type LoginScreenStatus = 'loading' | 'session-expired' | 'idle-timeout' | 'max-lifetime' | 'forced-logout';
 
 const STATUS_MESSAGES: Record<LoginScreenStatus, string> = {
     'loading': 'Signing in…',
     'session-expired': 'You have been signed out.',
     'idle-timeout': 'You were signed out due to inactivity.',
     'max-lifetime': 'Your session has reached its maximum duration.',
+    // Set by AppShell when the server revokes the session (back-channel logout
+    // or admin termination) or when OIDC discovery fails.
+    'forced-logout': 'You have been signed out.',
 };
 
 /** Event dispatched when the user clicks "Sign in again". Bubbles through the DOM. */

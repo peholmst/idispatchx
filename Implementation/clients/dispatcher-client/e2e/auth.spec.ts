@@ -198,6 +198,52 @@ test.describe('Authentication', () => {
         await expect(page.locator('input[name="username"]')).toBeVisible();
     });
 
+    // -----------------------------------------------------------------------
+    // Regression tests for review comments
+    // -----------------------------------------------------------------------
+
+    test('forced-logout screen shows a "signed out" message, not the loading spinner message', async ({ page }) => {
+        // Regression for: AppShell sets status="forced-logout" on LoginScreen, but
+        // LoginScreen only handled 'loading', 'session-expired', 'idle-timeout', and
+        // 'max-lifetime'. The 'forced-logout' value fell through to the STATUS_MESSAGES
+        // fallback, showing "Signing in…" instead of a meaningful sign-out message.
+        await loginViaKeycloak(page);
+        await expectAuthenticated(page);
+
+        await simulateForceLogout(page, 'forced-logout');
+        await expectLoginScreen(page, 'forced-logout');
+
+        const message = await getLoginScreenMessage(page);
+        expect(message).not.toContain('Signing in');
+        expect(message.toLowerCase()).toContain('signed out');
+    });
+
+    test('OIDC discovery failure shows a recoverable error screen with a retry button', async ({ page }) => {
+        // Regression for: when OIDC discovery threw, AuthState emitted
+        // { kind: 'unauthenticated' }, which rendered the "loading" screen
+        // (spinner, no button). Users were permanently stuck with no in-app
+        // recovery path. The fix must emit a recoverable state so the "Sign in
+        // again" button appears.
+        await page.route(
+            `**/realms/idispatchx/.well-known/openid-configuration`,
+            route => route.fulfill({ status: 500, body: 'Internal Server Error' }),
+        );
+
+        await page.goto(APP_URL);
+
+        // A login screen must appear (not just a loading spinner forever)
+        await expectLoginScreen(page);
+
+        // The "Sign in again" button must be visible — not hidden behind a spinner
+        const hasVisibleButton = await page.evaluate(() => {
+            const shell = document.querySelector('idispatch-app-shell');
+            const loginScreen = shell?.shadowRoot?.querySelector('idispatch-login-screen');
+            const btn = loginScreen?.shadowRoot?.querySelector('.btn') as HTMLElement | null;
+            return btn !== null && btn.style.display !== 'none';
+        });
+        expect(hasVisibleButton).toBe(true);
+    });
+
     test('sign-in-again button after session expiry restarts login flow', async ({ page }) => {
         await loginViaKeycloak(page);
         await expectAuthenticated(page);

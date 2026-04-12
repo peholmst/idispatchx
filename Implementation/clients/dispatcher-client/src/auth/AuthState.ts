@@ -66,7 +66,10 @@ export class AuthState extends EventTarget {
             this.#discovery = await this.#loadDiscovery();
         } catch (err) {
             console.error('[AuthState] OIDC discovery failed:', err);
-            this.#emit({ kind: 'unauthenticated' });
+            // Emit a recoverable expired state so AppShell shows the login screen
+            // with a "Sign in again" button. Emitting 'unauthenticated' here would
+            // render the indefinite loading spinner, leaving users with no retry path.
+            this.#emit({ kind: 'expired', reason: 'forced-logout' });
             return;
         }
 
