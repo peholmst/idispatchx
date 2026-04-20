@@ -125,6 +125,24 @@ export class AppShell extends HTMLElement {
                 const content = document.createElement('div');
                 content.className = 'app-content';
                 content.setAttribute('data-username', status.tokenSet.parsedAccess.preferred_username ?? status.tokenSet.parsedAccess.sub);
+
+                const toolbar = document.createElement('div');
+                toolbar.className = 'app-toolbar';
+
+                const username = document.createElement('span');
+                username.className = 'toolbar-username';
+                username.textContent = status.tokenSet.parsedAccess.preferred_username ?? status.tokenSet.parsedAccess.sub;
+
+                const signOutBtn = document.createElement('button');
+                signOutBtn.className = 'toolbar-sign-out';
+                signOutBtn.setAttribute('type', 'button');
+                signOutBtn.textContent = 'Sign out';
+                signOutBtn.addEventListener('click', () => { void this.#authState!.logout(); });
+
+                toolbar.appendChild(username);
+                toolbar.appendChild(signOutBtn);
+                content.appendChild(toolbar);
+
                 // Placeholder: full dispatcher UI will be built here in future iterations
                 this.#shadow.appendChild(content);
                 break;
