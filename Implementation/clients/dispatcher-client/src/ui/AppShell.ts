@@ -7,6 +7,10 @@ import { AuthChangedEvent, AuthState, SessionWarningEvent } from '../auth/AuthSt
 import type { AuthStatus } from '../auth/types.ts';
 import { LoginRequestedEvent, LoginScreen } from './LoginScreen.ts';
 import type { SessionManager } from '../auth/SessionManager.ts';
+import type { WindowType } from './windowType.ts';
+import { LauncherPage } from './LauncherPage.ts';
+import { PrimaryWindow } from './PrimaryWindow.ts';
+import { SecondaryWindow } from './SecondaryWindow.ts';
 
 /**
  * `<idispatch-app-shell>` Web Component.
@@ -18,6 +22,7 @@ export class AppShell extends HTMLElement {
     #shadow: ShadowRoot;
     #authState: AuthState | null = null;
     #sessionManager: SessionManager | null = null;
+    #windowType: WindowType = 'launcher';
     #warningBanner: HTMLDivElement | null = null;
 
     // Bound handler references for removeEventListener
@@ -34,9 +39,10 @@ export class AppShell extends HTMLElement {
      * Injects dependencies after the element is constructed.
      * Called by main.ts before the element is connected to the DOM.
      */
-    initialize(authState: AuthState, sessionManager: SessionManager): void {
+    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType): void {
         this.#authState = authState;
         this.#sessionManager = sessionManager;
+        this.#windowType = windowType;
     }
 
     connectedCallback(): void {
@@ -100,16 +106,14 @@ export class AppShell extends HTMLElement {
     }
 
     #renderStatus(status: AuthStatus): void {
-        // Remove any existing login screen
-        const existingLogin = this.#shadow.querySelector(LoginScreen.TAG);
-        if (existingLogin) {
-            existingLogin.remove();
-        }
-
-        // Remove any existing app content placeholder
-        const existingContent = this.#shadow.querySelector('.app-content');
-        if (existingContent) {
-            existingContent.remove();
+        // Remove any existing authenticated view or login screen
+        for (const tag of [
+            LoginScreen.TAG,
+            LauncherPage.TAG,
+            PrimaryWindow.TAG,
+            SecondaryWindow.TAG,
+        ]) {
+            this.#shadow.querySelector(tag)?.remove();
         }
 
         switch (status.kind) {
@@ -122,29 +126,30 @@ export class AppShell extends HTMLElement {
             }
 
             case 'authenticated': {
-                const content = document.createElement('div');
-                content.className = 'app-content';
-                content.setAttribute('data-username', status.tokenSet.parsedAccess.preferred_username ?? status.tokenSet.parsedAccess.sub);
+                const username =
+                    status.tokenSet.parsedAccess.preferred_username ??
+                    status.tokenSet.parsedAccess.sub;
 
-                const toolbar = document.createElement('div');
-                toolbar.className = 'app-toolbar';
-
-                const username = document.createElement('span');
-                username.className = 'toolbar-username';
-                username.textContent = status.tokenSet.parsedAccess.preferred_username ?? status.tokenSet.parsedAccess.sub;
-
-                const signOutBtn = document.createElement('button');
-                signOutBtn.className = 'toolbar-sign-out';
-                signOutBtn.setAttribute('type', 'button');
-                signOutBtn.textContent = 'Sign out';
-                signOutBtn.addEventListener('click', () => { void this.#authState!.logout(); });
-
-                toolbar.appendChild(username);
-                toolbar.appendChild(signOutBtn);
-                content.appendChild(toolbar);
-
-                // Placeholder: full dispatcher UI will be built here in future iterations
-                this.#shadow.appendChild(content);
+                switch (this.#windowType) {
+                    case 'launcher': {
+                        const launcher = document.createElement(LauncherPage.TAG) as LauncherPage;
+                        launcher.initialize(this.#authState!, username);
+                        this.#shadow.appendChild(launcher);
+                        break;
+                    }
+                    case 'primary': {
+                        const primary = document.createElement(PrimaryWindow.TAG) as PrimaryWindow;
+                        primary.initialize(username);
+                        this.#shadow.appendChild(primary);
+                        break;
+                    }
+                    case 'secondary': {
+                        const secondary = document.createElement(SecondaryWindow.TAG) as SecondaryWindow;
+                        secondary.initialize(username);
+                        this.#shadow.appendChild(secondary);
+                        break;
+                    }
+                }
                 break;
             }
 

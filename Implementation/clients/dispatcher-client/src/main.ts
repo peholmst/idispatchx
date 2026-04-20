@@ -14,9 +14,20 @@ import { SessionManager } from './auth/SessionManager.ts';
 import { HttpClient } from './http/HttpClient.ts';
 import { AppShell } from './ui/AppShell.ts';
 import { LoginScreen } from './ui/LoginScreen.ts';
+import { WindowHeader, WindowFooter } from './ui/WindowChrome.ts';
+import { LauncherPage } from './ui/LauncherPage.ts';
+import { PrimaryWindow } from './ui/PrimaryWindow.ts';
+import { SecondaryWindow } from './ui/SecondaryWindow.ts';
+import { WINDOW_TYPE_KEY } from './ui/windowType.ts';
+import type { WindowType } from './ui/windowType.ts';
 
 // Register custom elements before any template or innerHTML usage
 customElements.define(LoginScreen.TAG, LoginScreen);
+customElements.define(WindowHeader.TAG, WindowHeader);
+customElements.define(WindowFooter.TAG, WindowFooter);
+customElements.define(LauncherPage.TAG, LauncherPage);
+customElements.define(PrimaryWindow.TAG, PrimaryWindow);
+customElements.define(SecondaryWindow.TAG, SecondaryWindow);
 customElements.define(AppShell.TAG, AppShell);
 
 async function boot(): Promise<void> {
@@ -24,6 +35,18 @@ async function boot(): Promise<void> {
     if (!appEl) {
         throw new Error('Missing #app element in index.html');
     }
+
+    // Determine the window type from the URL param, persisting it to sessionStorage
+    // so it survives the OIDC redirect that erases the query string.
+    const urlWindowType = new URLSearchParams(window.location.search).get('window');
+    if (urlWindowType === 'primary' || urlWindowType === 'secondary') {
+        sessionStorage.setItem(WINDOW_TYPE_KEY, urlWindowType);
+    }
+    const storedWindowType = sessionStorage.getItem(WINDOW_TYPE_KEY);
+    const windowType: WindowType =
+        storedWindowType === 'primary' ? 'primary' :
+        storedWindowType === 'secondary' ? 'secondary' :
+        'launcher';
 
     // Load runtime configuration
     const config = await loadAppConfig();
@@ -42,7 +65,7 @@ async function boot(): Promise<void> {
     // Mount the AppShell AFTER initialize() so that connectedCallback fires
     // with a fully wired authState — ensuring event listeners are registered.
     const shell = document.createElement(AppShell.TAG) as AppShell;
-    shell.initialize(authState, sessionManager);
+    shell.initialize(authState, sessionManager, windowType);
     appEl.appendChild(shell);
 
     // Expose authState for Playwright E2E tests in development mode

@@ -1,0 +1,20 @@
+/*
+ * Styles for <idispatch-secondary-window>.
+ * Column flex layout: header (fixed) → body (fills remaining space) → footer (fixed).
+ */
+
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.window-body {
+    flex: 1;
+    background: var(--color-bg-base);
+    overflow: hidden;
+    /* Map and unit dashboard will be placed here */
+}
