@@ -119,6 +119,8 @@ export class WindowFooter extends HTMLElement {
 
     #shadow: ShadowRoot;
     #usernameEl: HTMLSpanElement | null = null;
+    // Buffers the value set before connectedCallback creates the element
+    #pendingUsername = '';
 
     constructor() {
         super();
@@ -126,6 +128,7 @@ export class WindowFooter extends HTMLElement {
     }
 
     set username(value: string) {
+        this.#pendingUsername = value;
         if (this.#usernameEl) {
             this.#usernameEl.textContent = value;
         }
@@ -139,6 +142,7 @@ export class WindowFooter extends HTMLElement {
 
         this.#usernameEl = document.createElement('span');
         this.#usernameEl.className = 'footer-left';
+        this.#usernameEl.textContent = this.#pendingUsername;
 
         const modeEl = document.createElement('span');
         modeEl.className = 'footer-right';
