@@ -8,6 +8,7 @@ import type { AuthStatus } from '../auth/types.ts';
 import { LoginRequestedEvent, LoginScreen } from './LoginScreen.ts';
 import type { SessionManager } from '../auth/SessionManager.ts';
 import type { WindowType } from './windowType.ts';
+import { SESSION_CHANNEL_NAME } from './windowType.ts';
 import { LauncherPage } from './LauncherPage.ts';
 import { PrimaryWindow } from './PrimaryWindow.ts';
 import { SecondaryWindow } from './SecondaryWindow.ts';
@@ -24,6 +25,9 @@ export class AppShell extends HTMLElement {
     #sessionManager: SessionManager | null = null;
     #windowType: WindowType = 'launcher';
     #warningBanner: HTMLDivElement | null = null;
+    // BroadcastChannel used by dispatcher windows (primary/secondary) to receive
+    // session events from the launcher — notably sign-out propagation.
+    #sessionChannel: BroadcastChannel | null = null;
 
     // Bound handler references for removeEventListener
     #onAuthChanged: ((e: Event) => void) | null = null;
@@ -93,16 +97,41 @@ export class AppShell extends HTMLElement {
         if (this.#onLoginRequested) {
             this.#shadow.removeEventListener(LoginRequestedEvent.TYPE, this.#onLoginRequested);
         }
+        this.#closeSessionChannel();
     }
 
     #onStatusChanged(status: AuthStatus): void {
         if (status.kind === 'authenticated') {
             this.#sessionManager!.start();
+            // Dispatcher windows listen for session events from the launcher
+            // (e.g. sign-out) so they can respond immediately without waiting
+            // for a token expiry or a 401 from the server.
+            if (this.#windowType !== 'launcher') {
+                this.#openSessionChannel();
+            }
         } else if (status.kind === 'expired' || status.kind === 'unauthenticated') {
             this.#sessionManager!.stop();
             this.#dismissWarningBanner();
+            this.#closeSessionChannel();
         }
         this.#renderStatus(status);
+    }
+
+    #openSessionChannel(): void {
+        if (this.#sessionChannel) return;
+        this.#sessionChannel = new BroadcastChannel(SESSION_CHANNEL_NAME);
+        this.#sessionChannel.onmessage = (e: MessageEvent<{ type: string }>) => {
+            if (e.data.type === 'sign-out') {
+                // The launcher has initiated an OIDC logout. Show the signed-out
+                // overlay immediately rather than waiting for a 401.
+                void this.#authState!.forceLogout('forced-logout');
+            }
+        };
+    }
+
+    #closeSessionChannel(): void {
+        this.#sessionChannel?.close();
+        this.#sessionChannel = null;
     }
 
     #renderStatus(status: AuthStatus): void {

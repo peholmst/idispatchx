@@ -4,6 +4,7 @@
 
 import STYLES from './LauncherPage.css?inline';
 import type { AuthState } from '../auth/AuthState.ts';
+import { SESSION_CHANNEL_NAME } from './windowType.ts';
 import { PRIMARY_WINDOW_OPEN_KEY } from './PrimaryWindow.ts';
 import { SECONDARY_WINDOW_OPEN_KEY } from './SecondaryWindow.ts';
 
@@ -43,6 +44,10 @@ export class LauncherPage extends HTMLElement {
     // beforeunload guard — registered when any dispatcher window is open
     #beforeUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null;
 
+    // BroadcastChannel used to propagate session events (e.g. sign-out) to all
+    // open dispatcher windows so they respond immediately.
+    #sessionChannel: BroadcastChannel | null = null;
+
     constructor() {
         super();
         this.#shadow = this.attachShadow({ mode: 'open' });
@@ -54,6 +59,10 @@ export class LauncherPage extends HTMLElement {
     }
 
     connectedCallback(): void {
+        // Open the broadcast channel so sign-out can be propagated to all open
+        // dispatcher windows the moment the user clicks Sign Out.
+        this.#sessionChannel = new BroadcastChannel(SESSION_CHANNEL_NAME);
+
         // If this launcher was refreshed while dispatcher windows were open, the
         // in-memory refs are gone but the sessionStorage flags remain (written by
         // the child windows via window.opener). Re-arm the beforeunload guard so
@@ -107,8 +116,14 @@ export class LauncherPage extends HTMLElement {
 
         const signOutBtn = this.#makeButton(
             'Sign Out',
-            'launcher-btn',
-            () => { void this.#authState?.logout(); },
+            'launcher-btn launcher-btn-signout',
+            () => {
+                // Notify all open dispatcher windows before redirecting so they
+                // can show the signed-out overlay immediately rather than waiting
+                // for a token expiry or a 401.
+                this.#sessionChannel?.postMessage({ type: 'sign-out' });
+                void this.#authState?.logout();
+            },
         );
 
         actions.append(openPrimaryBtn, openSecondaryBtn, divider, accountBtn, signOutBtn);
@@ -117,6 +132,8 @@ export class LauncherPage extends HTMLElement {
     }
 
     disconnectedCallback(): void {
+        this.#sessionChannel?.close();
+        this.#sessionChannel = null;
         this.#stopPolling();
         this.#unregisterBeforeUnload();
     }
@@ -127,28 +144,50 @@ export class LauncherPage extends HTMLElement {
 
     #openWindow(type: 'primary' | 'secondary'): void {
         const existingRef = type === 'primary' ? this.#primaryWindowRef : this.#secondaryWindowRef;
+        const windowName = `idispatch-${type}` as const;
+        const flagKey = type === 'primary' ? PRIMARY_WINDOW_OPEN_KEY : SECONDARY_WINDOW_OPEN_KEY;
 
-        // Layer 2: in-memory ref check — focus if already open
+        // Layer 2: in-memory ref check — focus if still open
         if (existingRef !== null && !existingRef.closed) {
             existingRef.focus();
             return;
         }
 
-        // Layer 1: named window target ensures the browser reuses the tab if the
-        // ref was lost (e.g. after a launcher page refresh)
-        const newWin = window.open(`?window=${type}`, `idispatch-${type}`, WINDOW_FEATURES);
+        // Layer 1: if the sessionStorage flag is set the window announced itself
+        // as open during this launcher session. The launcher may have been
+        // refreshed since, losing the in-memory ref. Probe with an empty URL to
+        // focus the window without navigating (reloading) it.
+        //
+        // The probe is guarded behind the flag so that the normal first-open path
+        // goes straight to window.open(url), avoiding a spurious about:blank popup
+        // that would otherwise appear and immediately be closed.
+        if (sessionStorage.getItem(flagKey) === '1') {
+            const probed = window.open('', windowName);
+            if (probed !== null && probed.location.href !== 'about:blank') {
+                // Existing window found — recover the ref and focus without reload
+                if (type === 'primary') this.#primaryWindowRef = probed;
+                else this.#secondaryWindowRef = probed;
+                probed.focus();
+                this.#registerBeforeUnload();
+                this.#startPolling();
+                return;
+            }
+            // Flag was stale (window crashed or closed without clearing it).
+            // Clean up and fall through to open a fresh window.
+            sessionStorage.removeItem(flagKey);
+            probed?.close();
+        }
 
+        // Open the real URL with the correct window features
+        const newWin = window.open(`?window=${type}`, windowName, WINDOW_FEATURES);
         if (newWin === null) {
             // Popup was blocked — the browser shows its own indicator
             console.warn(`[LauncherPage] Popup blocked for ${type} window`);
             return;
         }
 
-        if (type === 'primary') {
-            this.#primaryWindowRef = newWin;
-        } else {
-            this.#secondaryWindowRef = newWin;
-        }
+        if (type === 'primary') this.#primaryWindowRef = newWin;
+        else this.#secondaryWindowRef = newWin;
 
         this.#registerBeforeUnload();
         this.#startPolling();

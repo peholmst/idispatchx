@@ -191,6 +191,32 @@ test.describe('Launcher Page', () => {
         await dispatcherPage.close();
     });
 
+    test('sign-out propagates to open dispatcher windows via BroadcastChannel', async ({ page, context }) => {
+        await loginViaKeycloak(page);
+        await expectLauncherPage(page);
+
+        // Open the primary window and wait for it to reach the authenticated state
+        const [dispatcherPage] = await Promise.all([
+            context.waitForEvent('page', { timeout: 10_000 }),
+            clickLauncherBtn(page, 'open-primary-btn'),
+        ]);
+        await dispatcherPage.waitForFunction(() => {
+            const shell = document.querySelector('idispatch-app-shell');
+            return !!shell?.shadowRoot?.querySelector('idispatch-primary-window');
+        }, { timeout: 20_000 });
+
+        // Trigger sign-out from the launcher
+        await clickLauncherBtn(page, 'launcher-btn-signout');
+
+        // The dispatcher window should immediately show the forced-logout screen
+        // without waiting for a token expiry or a 401 from the server.
+        await dispatcherPage.waitForFunction(() => {
+            const shell = document.querySelector('idispatch-app-shell');
+            const loginScreen = shell?.shadowRoot?.querySelector('idispatch-login-screen');
+            return loginScreen?.getAttribute('status') === 'forced-logout';
+        }, { timeout: 8_000 });
+    });
+
     test('beforeunload guard is removed after all dispatcher windows are closed', async ({ page, context }) => {
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
