@@ -59,16 +59,29 @@ export class LauncherPage extends HTMLElement {
     }
 
     connectedCallback(): void {
-        // Open the broadcast channel so sign-out can be propagated to all open
-        // dispatcher windows the moment the user clicks Sign Out.
         this.#sessionChannel = new BroadcastChannel(SESSION_CHANNEL_NAME);
 
-        // If this launcher was refreshed while dispatcher windows were open, the
-        // in-memory refs are gone but the sessionStorage flags remain (written by
-        // the child windows via window.opener). Re-arm the beforeunload guard so
-        // the dispatcher is still warned before accidentally closing the launcher.
+        // Listen for dispatcher windows announcing themselves. This handles the
+        // race where a window is still in its OIDC flow when connectedCallback
+        // runs — the flag is not yet written, so the initial check below would
+        // miss it. The message arrives once the window reaches authenticated state.
+        this.#sessionChannel.onmessage = (e: MessageEvent<{ type: string }>) => {
+            if (e.data.type === 'window-authenticated') {
+                this.#registerBeforeUnload();
+                this.#startPolling();
+            }
+        };
+
+        // Always register the beforeunload guard — it is a no-op when no windows
+        // are open because the handler checks #anyWindowOpen() before preventing
+        // navigation. Registering unconditionally avoids the race where the guard
+        // was never armed because no flag was set at load time.
+        this.#registerBeforeUnload();
+
+        // If windows were already open and authenticated before this load (flags
+        // set), start polling immediately so the guard is removed when they close.
         if (this.#anyWindowFlagSet()) {
-            this.#registerBeforeUnload();
+            this.#startPolling();
         }
 
         const style = document.createElement('style');

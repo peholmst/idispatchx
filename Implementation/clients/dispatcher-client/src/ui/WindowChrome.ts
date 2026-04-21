@@ -4,18 +4,27 @@ import STYLES from './WindowChrome.css?inline';
 
 const HELSINKI_TZ = 'Europe/Helsinki';
 
-/** Formats a Date as "DD.MM.YYYY HH:mm:ss" in the Europe/Helsinki timezone, 24-hour clock. */
+// Reuse a single formatter instance — constructing Intl objects is expensive.
+// formatToParts() is used to assemble an explicit "DD.MM.YYYY HH:mm:ss" string
+// rather than relying on toLocaleString(), which can include locale-specific
+// literals (e.g. 'klo' in fi-FI) that diverge from the intended format.
+const HELSINKI_FORMATTER = new Intl.DateTimeFormat('fi-FI', {
+    timeZone: HELSINKI_TZ,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+});
+
+/** Returns "DD.MM.YYYY HH:mm:ss" in the Europe/Helsinki timezone, 24-hour clock. */
 function formatHelsinki(date: Date): string {
-    return date.toLocaleString('fi-FI', {
-        timeZone: HELSINKI_TZ,
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-    });
+    const parts = HELSINKI_FORMATTER.formatToParts(date);
+    const p = (type: Intl.DateTimeFormatPartTypes): string =>
+        parts.find(part => part.type === type)?.value ?? '00';
+    return `${p('day')}.${p('month')}.${p('year')} ${p('hour')}:${p('minute')}:${p('second')}`;
 }
 
 /**

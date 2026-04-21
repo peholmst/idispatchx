@@ -127,6 +127,12 @@ export class AppShell extends HTMLElement {
                 void this.#authState!.forceLogout('forced-logout');
             }
         };
+        // Announce to the launcher that this dispatcher window is authenticated.
+        // This lets the launcher arm its beforeunload guard even if it was
+        // refreshed while this window was still in its OIDC flow (and therefore
+        // hadn't written its sessionStorage flag yet at the time the launcher's
+        // connectedCallback ran).
+        this.#sessionChannel.postMessage({ type: 'window-authenticated', windowType: this.#windowType });
     }
 
     #closeSessionChannel(): void {
