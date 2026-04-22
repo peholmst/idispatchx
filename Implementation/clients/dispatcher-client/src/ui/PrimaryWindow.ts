@@ -3,6 +3,7 @@
 
 import STYLES from './PrimaryWindow.css?inline';
 import { WindowHeader, WindowFooter } from './WindowChrome.ts';
+import { t } from '../i18n/index.ts';
 
 /** localStorage key set by this window so the launcher can detect it is open. */
 export const PRIMARY_WINDOW_OPEN_KEY = 'idispatch:window:primary' as const;
@@ -42,13 +43,13 @@ export class PrimaryWindow extends HTMLElement {
         const newCallBtn = document.createElement('button');
         newCallBtn.type = 'button';
         newCallBtn.className = 'header-action-btn';
-        newCallBtn.textContent = 'New Call';
+        newCallBtn.textContent = t('primaryWindow.newCall');
         newCallBtn.slot = 'actions';
 
         const newIncidentBtn = document.createElement('button');
         newIncidentBtn.type = 'button';
         newIncidentBtn.className = 'header-action-btn';
-        newIncidentBtn.textContent = 'New Incident';
+        newIncidentBtn.textContent = t('primaryWindow.newIncident');
         newIncidentBtn.slot = 'actions';
 
         header.append(newCallBtn, newIncidentBtn);
