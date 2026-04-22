@@ -23,13 +23,6 @@ async function setLocaleInStorage(page: Page, locale: string): Promise<void> {
     );
 }
 
-async function clearLocaleFromStorage(page: Page): Promise<void> {
-    await page.addInitScript(
-        (key: string) => { localStorage.removeItem(key); },
-        LOCALE_KEY,
-    );
-}
-
 async function loginViaKeycloak(page: Page): Promise<void> {
     await page.goto(APP_URL);
     await page.waitForURL(`${KEYCLOAK_ORIGIN}/**`, { timeout: 10_000 });
@@ -120,7 +113,6 @@ async function getLoginScreenTexts(page: Page): Promise<{ message: string; butto
 test.describe('i18n — locale selection and UI string localisation', () => {
 
     test('2.1 — default locale is English when no locale is stored', async ({ page }) => {
-        await clearLocaleFromStorage(page);
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
 
@@ -210,7 +202,6 @@ test.describe('i18n — locale selection and UI string localisation', () => {
     });
 
     test('2.5 — selected locale persists across a page reload', async ({ page }) => {
-        await clearLocaleFromStorage(page);
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
 
@@ -235,7 +226,6 @@ test.describe('i18n — locale selection and UI string localisation', () => {
     });
 
     test('2.6 — language selector renders with the active locale marked', async ({ page }) => {
-        await clearLocaleFromStorage(page);
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
 
@@ -275,7 +265,6 @@ test.describe('i18n — locale selection and UI string localisation', () => {
     });
 
     test('2.7 — clicking a language button triggers a reload and applies the new locale', async ({ page }) => {
-        await clearLocaleFromStorage(page);
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
 
@@ -297,7 +286,6 @@ test.describe('i18n — locale selection and UI string localisation', () => {
     });
 
     test('2.8 — login screen strings are localised (English default)', async ({ page }) => {
-        await clearLocaleFromStorage(page);
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
 

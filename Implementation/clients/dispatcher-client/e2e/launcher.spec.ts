@@ -57,12 +57,9 @@ async function clickLauncherBtn(page: Page, className: string): Promise<void> {
 test.describe('Launcher Page', () => {
 
     test('renders launcher card with expected buttons after login', async ({ page }) => {
-        // No locale is set — English default is active, so English labels are expected.
-        // If this test is changed to run under a different locale, the expected strings
-        // must be updated to match the corresponding translation table in src/i18n/index.ts.
-        await page.context().clearCookies();
-        await page.evaluate(() => localStorage.removeItem('idispatch:locale'));
-
+        // No locale is pre-set; each test gets a fresh browser context with empty localStorage,
+        // so the English default is active. If this test is run under a different locale the
+        // expected strings must match the corresponding entry in src/i18n/index.ts.
         await loginViaKeycloak(page);
         await expectLauncherPage(page);
 
