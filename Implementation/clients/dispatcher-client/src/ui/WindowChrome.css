@@ -70,7 +70,7 @@
     white-space: nowrap;
 }
 
-.header-action-btn {
+::slotted(.header-action-btn) {
     background: var(--color-bg-surface);
     border: 1px solid var(--color-bg-border);
     color: var(--color-header-text);
@@ -82,11 +82,11 @@
     white-space: nowrap;
 }
 
-.header-action-btn:hover {
+::slotted(.header-action-btn:hover) {
     background: var(--color-bg-base);
 }
 
-.header-action-btn:active {
+::slotted(.header-action-btn:active) {
     background: var(--color-accent-active);
     border-color: var(--color-accent-active);
 }

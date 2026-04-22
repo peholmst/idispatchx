@@ -143,8 +143,9 @@ test.describe('Primary Window', () => {
             const shell = document.querySelector('idispatch-app-shell');
             const win = shell?.shadowRoot?.querySelector('idispatch-primary-window');
             const header = win?.shadowRoot?.querySelector('idispatch-window-header');
-            return Array.from(header?.shadowRoot?.querySelectorAll('button') ?? [])
-                .map(b => b.textContent?.trim());
+            // Buttons are distributed into the named slot — use assignedElements() to inspect them
+            const actionsSlot = header?.shadowRoot?.querySelector('slot[name="actions"]') as HTMLSlotElement | null;
+            return (actionsSlot?.assignedElements() ?? []).map(el => el.textContent?.trim());
         });
 
         expect(buttonTexts).toContain('New Call');
@@ -214,8 +215,9 @@ test.describe('Secondary Window', () => {
             const shell = document.querySelector('idispatch-app-shell');
             const win = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
             const header = win?.shadowRoot?.querySelector('idispatch-window-header');
-            return Array.from(header?.shadowRoot?.querySelectorAll('button') ?? [])
-                .map(b => b.textContent?.trim());
+            // No buttons should be distributed into the actions slot
+            const actionsSlot = header?.shadowRoot?.querySelector('slot[name="actions"]') as HTMLSlotElement | null;
+            return (actionsSlot?.assignedElements() ?? []).map(el => el.textContent?.trim());
         });
 
         expect(buttonTexts).not.toContain('New Call');

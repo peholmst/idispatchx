@@ -40,15 +40,10 @@ export class WindowHeader extends HTMLElement {
     #shadow: ShadowRoot;
     #clockEl: HTMLSpanElement | null = null;
     #tickId: ReturnType<typeof setInterval> | null = null;
-    #showPrimaryActions = false;
 
     constructor() {
         super();
         this.#shadow = this.attachShadow({ mode: 'open' });
-    }
-
-    set showPrimaryActions(value: boolean) {
-        this.#showPrimaryActions = value;
     }
 
     connectedCallback(): void {
@@ -74,23 +69,13 @@ export class WindowHeader extends HTMLElement {
 
         left.append(logo, this.#clockEl);
 
-        // Center: primary actions (primary window only)
+        // Center: named slot for caller-provided action buttons
         const center = document.createElement('div');
         center.className = 'header-center';
 
-        if (this.#showPrimaryActions) {
-            const newCallBtn = document.createElement('button');
-            newCallBtn.type = 'button';
-            newCallBtn.className = 'header-action-btn';
-            newCallBtn.textContent = 'New Call';
-
-            const newIncidentBtn = document.createElement('button');
-            newIncidentBtn.type = 'button';
-            newIncidentBtn.className = 'header-action-btn';
-            newIncidentBtn.textContent = 'New Incident';
-
-            center.append(newCallBtn, newIncidentBtn);
-        }
+        const actionsSlot = document.createElement('slot');
+        actionsSlot.name = 'actions';
+        center.appendChild(actionsSlot);
 
         // Right: layout customization (placeholder — buttons added in a later iteration)
         const right = document.createElement('div');

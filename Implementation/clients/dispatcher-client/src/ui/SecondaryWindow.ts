@@ -36,7 +36,6 @@ export class SecondaryWindow extends HTMLElement {
         style.textContent = STYLES;
 
         const header = document.createElement(WindowHeader.TAG) as WindowHeader;
-        header.showPrimaryActions = false;
 
         const body = document.createElement('div');
         body.className = 'window-body';

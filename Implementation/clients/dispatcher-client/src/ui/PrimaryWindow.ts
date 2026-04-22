@@ -38,7 +38,20 @@ export class PrimaryWindow extends HTMLElement {
         style.textContent = STYLES;
 
         const header = document.createElement(WindowHeader.TAG) as WindowHeader;
-        header.showPrimaryActions = true;
+
+        const newCallBtn = document.createElement('button');
+        newCallBtn.type = 'button';
+        newCallBtn.className = 'header-action-btn';
+        newCallBtn.textContent = 'New Call';
+        newCallBtn.slot = 'actions';
+
+        const newIncidentBtn = document.createElement('button');
+        newIncidentBtn.type = 'button';
+        newIncidentBtn.className = 'header-action-btn';
+        newIncidentBtn.textContent = 'New Incident';
+        newIncidentBtn.slot = 'actions';
+
+        header.append(newCallBtn, newIncidentBtn);
 
         const body = document.createElement('div');
         body.className = 'window-body';
