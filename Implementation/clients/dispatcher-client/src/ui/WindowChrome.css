@@ -1,0 +1,121 @@
+/*
+ * Shared styles for <idispatch-window-header> and <idispatch-window-footer>.
+ * Each component injects this file into its own shadow DOM.
+ * :host(.window-header-host) / :host(.window-footer-host) scope the rules
+ * to the correct element via a class the component adds to itself in connectedCallback.
+ */
+
+/* ---- WindowHeader ---- */
+
+:host(.window-header-host) {
+    display: flex;
+    align-items: center;
+    height: var(--height-header);
+    min-height: var(--height-header);
+    background: var(--color-header-bg);
+    border-bottom: 1px solid var(--color-header-border);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-base);
+    color: var(--color-header-text);
+    flex-shrink: 0;
+    padding: 0 var(--space-md);
+    gap: var(--space-md);
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex: 1;
+    min-width: 0;
+}
+
+.header-center {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex: 0 0 auto;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.brand-logo {
+    width: 28px;
+    height: 28px;
+    background: var(--color-accent);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+}
+
+.header-clock {
+    font-size: var(--font-size-sm);
+    color: var(--color-header-muted);
+    /* Tabular digits prevent layout shift on each second tick */
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+::slotted(.header-action-btn) {
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-bg-border);
+    color: var(--color-header-text);
+    border-radius: var(--radius-sm);
+    padding: 3px var(--space-sm);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+::slotted(.header-action-btn:hover) {
+    background: var(--color-bg-base);
+}
+
+::slotted(.header-action-btn:active) {
+    background: var(--color-accent-active);
+    border-color: var(--color-accent-active);
+}
+
+/* ---- WindowFooter ---- */
+
+:host(.window-footer-host) {
+    display: flex;
+    align-items: center;
+    height: var(--height-footer);
+    min-height: var(--height-footer);
+    background: var(--color-footer-bg);
+    border-top: 1px solid var(--color-footer-border);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+    padding: 0 var(--space-md);
+    box-sizing: border-box;
+}
+
+.footer-left {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.footer-right {
+    flex: 0 0 auto;
+    color: var(--color-text-muted);
+}

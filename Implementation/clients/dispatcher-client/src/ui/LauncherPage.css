@@ -1,0 +1,110 @@
+/*
+ * Styles for <idispatch-launcher-page>.
+ * Full-viewport centered card layout.
+ */
+
+:host {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--color-bg-base);
+    font-family: var(--font-family-ui);
+    color: var(--color-text-primary);
+    box-sizing: border-box;
+}
+
+.launcher-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    padding: var(--space-xl) var(--space-2xl);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-bg-border);
+    border-radius: var(--radius-md);
+    min-width: 320px;
+}
+
+.launcher-logo {
+    width: 48px;
+    height: 48px;
+    background: var(--color-accent);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.launcher-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.launcher-username {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.launcher-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+.launcher-btn {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--color-bg-border);
+    background: var(--color-bg-base);
+    color: var(--color-text-primary);
+    text-align: left;
+}
+
+.launcher-btn:hover:not(:disabled) {
+    background: var(--color-bg-surface);
+    border-color: var(--color-accent);
+}
+
+.launcher-btn:active:not(:disabled) {
+    background: var(--color-accent-active);
+    border-color: var(--color-accent-active);
+}
+
+.launcher-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.launcher-btn.primary-action {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.launcher-btn.primary-action:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+}
+
+.launcher-btn.primary-action:active:not(:disabled) {
+    background: var(--color-accent-active);
+    border-color: var(--color-accent-active);
+}
+
+.launcher-divider {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--color-bg-border);
+    margin: var(--space-xs) 0;
+}

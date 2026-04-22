@@ -1,6 +1,6 @@
 {
   "oidc": {
-    "issuer": "http://localhost:8080/realms/idispatchx",
+    "issuer": "http://localhost:8180/realms/idispatchx",
     "clientId": "dispatcher-client",
     "redirectUri": "http://localhost:5173/",
     "scopes": ["openid", "profile"],

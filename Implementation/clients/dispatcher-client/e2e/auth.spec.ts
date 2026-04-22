@@ -30,15 +30,15 @@ async function loginViaKeycloak(page: Page, username = TEST_USER, password = TES
 }
 
 /**
- * Waits for the app to be in an authenticated state.
- * Checks the AppShell's shadow DOM for the .app-content placeholder via page.waitForFunction,
+ * Waits for the app to be in an authenticated state (launcher page rendered).
+ * Checks the AppShell's shadow DOM via page.waitForFunction,
  * which is the most reliable way to cross shadow DOM boundaries.
  */
 async function expectAuthenticated(page: Page): Promise<void> {
     await page.waitForURL(APP_URL, { timeout: 10_000 });
     await page.waitForFunction(() => {
         const shell = document.querySelector('idispatch-app-shell');
-        return !!shell?.shadowRoot?.querySelector('.app-content');
+        return !!shell?.shadowRoot?.querySelector('idispatch-launcher-page');
     }, { timeout: 8_000 });
 }
 
@@ -339,7 +339,7 @@ test.describe('Authentication', () => {
         });
         await page.waitForFunction(() => {
             const shell = document.querySelector('idispatch-app-shell');
-            return !!shell?.shadowRoot?.querySelector('.app-content');
+            return !!shell?.shadowRoot?.querySelector('idispatch-launcher-page');
         }, { timeout: 5_000 });
 
         // The original refresh token must still be present — it was not rotated.

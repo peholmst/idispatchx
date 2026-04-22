@@ -7,6 +7,11 @@ import { AuthChangedEvent, AuthState, SessionWarningEvent } from '../auth/AuthSt
 import type { AuthStatus } from '../auth/types.ts';
 import { LoginRequestedEvent, LoginScreen } from './LoginScreen.ts';
 import type { SessionManager } from '../auth/SessionManager.ts';
+import type { WindowType } from './windowType.ts';
+import { SESSION_CHANNEL_NAME } from './windowType.ts';
+import { LauncherPage } from './LauncherPage.ts';
+import { PrimaryWindow } from './PrimaryWindow.ts';
+import { SecondaryWindow } from './SecondaryWindow.ts';
 
 /**
  * `<idispatch-app-shell>` Web Component.
@@ -18,7 +23,11 @@ export class AppShell extends HTMLElement {
     #shadow: ShadowRoot;
     #authState: AuthState | null = null;
     #sessionManager: SessionManager | null = null;
+    #windowType: WindowType = 'launcher';
     #warningBanner: HTMLDivElement | null = null;
+    // BroadcastChannel used by dispatcher windows (primary/secondary) to receive
+    // session events from the launcher — notably sign-out propagation.
+    #sessionChannel: BroadcastChannel | null = null;
 
     // Bound handler references for removeEventListener
     #onAuthChanged: ((e: Event) => void) | null = null;
@@ -34,9 +43,10 @@ export class AppShell extends HTMLElement {
      * Injects dependencies after the element is constructed.
      * Called by main.ts before the element is connected to the DOM.
      */
-    initialize(authState: AuthState, sessionManager: SessionManager): void {
+    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType): void {
         this.#authState = authState;
         this.#sessionManager = sessionManager;
+        this.#windowType = windowType;
     }
 
     connectedCallback(): void {
@@ -87,29 +97,58 @@ export class AppShell extends HTMLElement {
         if (this.#onLoginRequested) {
             this.#shadow.removeEventListener(LoginRequestedEvent.TYPE, this.#onLoginRequested);
         }
+        this.#closeSessionChannel();
     }
 
     #onStatusChanged(status: AuthStatus): void {
         if (status.kind === 'authenticated') {
             this.#sessionManager!.start();
+            // Dispatcher windows listen for session events from the launcher
+            // (e.g. sign-out) so they can respond immediately without waiting
+            // for a token expiry or a 401 from the server.
+            if (this.#windowType !== 'launcher') {
+                this.#openSessionChannel();
+            }
         } else if (status.kind === 'expired' || status.kind === 'unauthenticated') {
             this.#sessionManager!.stop();
             this.#dismissWarningBanner();
+            this.#closeSessionChannel();
         }
         this.#renderStatus(status);
     }
 
-    #renderStatus(status: AuthStatus): void {
-        // Remove any existing login screen
-        const existingLogin = this.#shadow.querySelector(LoginScreen.TAG);
-        if (existingLogin) {
-            existingLogin.remove();
-        }
+    #openSessionChannel(): void {
+        if (this.#sessionChannel) return;
+        this.#sessionChannel = new BroadcastChannel(SESSION_CHANNEL_NAME);
+        this.#sessionChannel.onmessage = (e: MessageEvent<{ type: string }>) => {
+            if (e.data.type === 'sign-out') {
+                // The launcher has initiated an OIDC logout. Show the signed-out
+                // overlay immediately rather than waiting for a 401.
+                void this.#authState!.forceLogout('forced-logout');
+            }
+        };
+        // Announce to the launcher that this dispatcher window is authenticated.
+        // This lets the launcher arm its beforeunload guard even if it was
+        // refreshed while this window was still in its OIDC flow (and therefore
+        // hadn't written its sessionStorage flag yet at the time the launcher's
+        // connectedCallback ran).
+        this.#sessionChannel.postMessage({ type: 'window-authenticated', windowType: this.#windowType });
+    }
 
-        // Remove any existing app content placeholder
-        const existingContent = this.#shadow.querySelector('.app-content');
-        if (existingContent) {
-            existingContent.remove();
+    #closeSessionChannel(): void {
+        this.#sessionChannel?.close();
+        this.#sessionChannel = null;
+    }
+
+    #renderStatus(status: AuthStatus): void {
+        // Remove any existing authenticated view or login screen
+        for (const tag of [
+            LoginScreen.TAG,
+            LauncherPage.TAG,
+            PrimaryWindow.TAG,
+            SecondaryWindow.TAG,
+        ]) {
+            this.#shadow.querySelector(tag)?.remove();
         }
 
         switch (status.kind) {
@@ -122,29 +161,30 @@ export class AppShell extends HTMLElement {
             }
 
             case 'authenticated': {
-                const content = document.createElement('div');
-                content.className = 'app-content';
-                content.setAttribute('data-username', status.tokenSet.parsedAccess.preferred_username ?? status.tokenSet.parsedAccess.sub);
+                const username =
+                    status.tokenSet.parsedAccess.preferred_username ??
+                    status.tokenSet.parsedAccess.sub;
 
-                const toolbar = document.createElement('div');
-                toolbar.className = 'app-toolbar';
-
-                const username = document.createElement('span');
-                username.className = 'toolbar-username';
-                username.textContent = status.tokenSet.parsedAccess.preferred_username ?? status.tokenSet.parsedAccess.sub;
-
-                const signOutBtn = document.createElement('button');
-                signOutBtn.className = 'toolbar-sign-out';
-                signOutBtn.setAttribute('type', 'button');
-                signOutBtn.textContent = 'Sign out';
-                signOutBtn.addEventListener('click', () => { void this.#authState!.logout(); });
-
-                toolbar.appendChild(username);
-                toolbar.appendChild(signOutBtn);
-                content.appendChild(toolbar);
-
-                // Placeholder: full dispatcher UI will be built here in future iterations
-                this.#shadow.appendChild(content);
+                switch (this.#windowType) {
+                    case 'launcher': {
+                        const launcher = document.createElement(LauncherPage.TAG) as LauncherPage;
+                        launcher.initialize(this.#authState!, username);
+                        this.#shadow.appendChild(launcher);
+                        break;
+                    }
+                    case 'primary': {
+                        const primary = document.createElement(PrimaryWindow.TAG) as PrimaryWindow;
+                        primary.initialize(username);
+                        this.#shadow.appendChild(primary);
+                        break;
+                    }
+                    case 'secondary': {
+                        const secondary = document.createElement(SecondaryWindow.TAG) as SecondaryWindow;
+                        secondary.initialize(username);
+                        this.#shadow.appendChild(secondary);
+                        break;
+                    }
+                }
                 break;
             }
 
