@@ -1,6 +1,7 @@
 // Shared header and footer Web Components used by both the primary and secondary windows.
 
 import STYLES from './WindowChrome.css?inline';
+import { t } from '../i18n/index.ts';
 
 const HELSINKI_TZ = 'Europe/Helsinki';
 
@@ -141,7 +142,7 @@ export class WindowFooter extends HTMLElement {
         const modeEl = document.createElement('span');
         modeEl.className = 'footer-right';
         // Placeholder — actual degraded-mode detection is added in a later iteration
-        modeEl.textContent = 'Normal';
+        modeEl.textContent = t('footer.normalMode');
 
         this.#shadow.append(style, this.#usernameEl, modeEl);
     }

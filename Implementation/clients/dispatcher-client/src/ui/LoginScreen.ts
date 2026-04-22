@@ -2,17 +2,18 @@
 // Displayed while the OIDC flow is in progress or after a session ends.
 
 import STYLES from './LoginScreen.css?inline';
+import { t, type TranslationKey } from '../i18n/index.ts';
 
 type LoginScreenStatus = 'loading' | 'session-expired' | 'idle-timeout' | 'max-lifetime' | 'forced-logout';
 
-const STATUS_MESSAGES: Record<LoginScreenStatus, string> = {
-    'loading': 'Signing in…',
-    'session-expired': 'You have been signed out.',
-    'idle-timeout': 'You were signed out due to inactivity.',
-    'max-lifetime': 'Your session has reached its maximum duration.',
+const STATUS_KEYS: Record<LoginScreenStatus, TranslationKey> = {
+    'loading':        'login.signingIn',
+    'session-expired': 'login.sessionExpired',
+    'idle-timeout':   'login.idleTimeout',
+    'max-lifetime':   'login.maxLifetime',
     // Set by AppShell when the server revokes the session (back-channel logout
     // or admin termination) or when OIDC discovery fails.
-    'forced-logout': 'You have been signed out.',
+    'forced-logout':  'login.forcedLogout',
 };
 
 /** Event dispatched when the user clicks "Sign in again". Bubbles through the DOM. */
@@ -86,7 +87,7 @@ export class LoginScreen extends HTMLElement {
 
         this.#signInButtonEl = document.createElement('button');
         this.#signInButtonEl.className = 'sign-in-button';
-        this.#signInButtonEl.textContent = 'Sign in again';
+        this.#signInButtonEl.textContent = t('login.signInAgain');
         this.#signInButtonEl.addEventListener('click', () => {
             this.dispatchEvent(new LoginRequestedEvent());
         });
@@ -104,7 +105,8 @@ export class LoginScreen extends HTMLElement {
         const status = (this.getAttribute('status') ?? 'loading') as LoginScreenStatus;
         const isLoading = status === 'loading';
 
-        this.#messageEl.textContent = STATUS_MESSAGES[status] ?? STATUS_MESSAGES['loading'];
+        const key = STATUS_KEYS[status] ?? STATUS_KEYS['loading'];
+        this.#messageEl.textContent = t(key);
         this.#loadingIndicatorEl.style.display = isLoading ? 'block' : 'none';
         this.#signInButtonEl.style.display = isLoading ? 'none' : 'inline-block';
     }

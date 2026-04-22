@@ -7,6 +7,7 @@ import type { AuthState } from '../auth/AuthState.ts';
 import { SESSION_CHANNEL_NAME } from './windowType.ts';
 import { PRIMARY_WINDOW_OPEN_KEY } from './PrimaryWindow.ts';
 import { SECONDARY_WINDOW_OPEN_KEY } from './SecondaryWindow.ts';
+import { t, getLocale, setLocale, type Locale } from '../i18n/index.ts';
 
 /** Feature string for window.open — no browser chrome, sized for Full HD monitors. */
 const WINDOW_FEATURES = 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no';
@@ -107,13 +108,13 @@ export class LauncherPage extends HTMLElement {
         actions.className = 'launcher-actions';
 
         const openPrimaryBtn = this.#makeButton(
-            'Open Primary Window',
+            t('launcher.openPrimaryWindow'),
             'launcher-btn primary-action open-primary-btn',
             () => { this.#openWindow('primary'); },
         );
 
         const openSecondaryBtn = this.#makeButton(
-            'Open Secondary Window',
+            t('launcher.openSecondaryWindow'),
             'launcher-btn primary-action open-secondary-btn',
             () => { this.#openWindow('secondary'); },
         );
@@ -122,13 +123,13 @@ export class LauncherPage extends HTMLElement {
         divider.className = 'launcher-divider';
 
         const accountBtn = this.#makeButton(
-            'Account Management',
+            t('launcher.accountManagement'),
             'launcher-btn',
             () => { this.#openAccountManagement(); },
         );
 
         const signOutBtn = this.#makeButton(
-            'Sign Out',
+            t('launcher.signOut'),
             'launcher-btn launcher-btn-signout',
             () => {
                 // Notify all open dispatcher windows before redirecting so they
@@ -140,7 +141,10 @@ export class LauncherPage extends HTMLElement {
         );
 
         actions.append(openPrimaryBtn, openSecondaryBtn, divider, accountBtn, signOutBtn);
-        card.append(logo, title, usernameEl, actions);
+
+        const langSelector = this.#makeLangSelector();
+
+        card.append(logo, title, usernameEl, actions, langSelector);
         this.#shadow.append(style, card);
     }
 
@@ -291,6 +295,41 @@ export class LauncherPage extends HTMLElement {
             sessionStorage.getItem(PRIMARY_WINDOW_OPEN_KEY) === '1' ||
             sessionStorage.getItem(SECONDARY_WINDOW_OPEN_KEY) === '1'
         );
+    }
+
+    /** Builds the language selector bar (FI / SV / EN toggle buttons). */
+    #makeLangSelector(): HTMLElement {
+        const activeLocale = getLocale();
+
+        const container = document.createElement('div');
+        container.className = 'lang-selector';
+
+        const label = document.createElement('span');
+        label.className = 'lang-selector-label';
+        label.textContent = t('launcher.language');
+        container.appendChild(label);
+
+        const locales: { code: Locale; label: string }[] = [
+            { code: 'fi', label: 'FI' },
+            { code: 'sv', label: 'SV' },
+            { code: 'en', label: 'EN' },
+        ];
+
+        for (const { code, label: btnLabel } of locales) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'lang-btn';
+            btn.textContent = btnLabel;
+            btn.setAttribute('lang', code);
+            if (code === activeLocale) {
+                btn.classList.add('lang-btn-active');
+                btn.setAttribute('aria-current', 'true');
+            }
+            btn.addEventListener('click', () => { setLocale(code); });
+            container.appendChild(btn);
+        }
+
+        return container;
     }
 
     #makeButton(text: string, className: string, onClick: () => void): HTMLButtonElement {
