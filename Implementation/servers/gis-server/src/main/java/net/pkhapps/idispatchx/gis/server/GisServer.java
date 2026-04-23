@@ -12,6 +12,7 @@ import net.pkhapps.idispatchx.common.auth.TokenValidator;
 import net.pkhapps.idispatchx.gis.server.api.error.GlobalExceptionHandler;
 import net.pkhapps.idispatchx.gis.server.api.geocode.GeocodeController;
 import net.pkhapps.idispatchx.gis.server.api.health.HealthController;
+import net.pkhapps.idispatchx.gis.server.api.layers.LayersController;
 import net.pkhapps.idispatchx.gis.server.api.wmts.CapabilitiesGenerator;
 import net.pkhapps.idispatchx.gis.server.api.wmts.WmtsController;
 import net.pkhapps.idispatchx.gis.server.auth.BackChannelLogoutHandler;
@@ -101,6 +102,7 @@ public final class GisServer implements AutoCloseable {
                 .registerRoutes(javalin, contextPath);
         new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
         new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
+        new LayersController(tileService.getLayers()).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
         javalin.post(contextPath + "/api/v1/auth/logout", logoutHandler);
 
         log.info("GIS Server initialized");

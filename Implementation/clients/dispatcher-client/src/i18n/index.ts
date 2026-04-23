@@ -30,7 +30,24 @@ export type TranslationKey =
     | 'login.idleTimeout'
     | 'login.maxLifetime'
     | 'login.forcedLogout'
-    | 'login.signInAgain';
+    | 'login.signInAgain'
+    | 'lookup.addressLabel'
+    | 'lookup.addressPlaceholder'
+    | 'lookup.coordsLabel'
+    | 'lookup.coordsPlaceholder'
+    | 'lookup.button'
+    | 'lookup.clear'
+    | 'lookup.noResults'
+    | 'lookup.unavailable'
+    | 'lookup.timeout'
+    | 'lookup.tooShort'
+    | 'lookup.coordsOutOfBounds'
+    | 'lookup.coordsInvalid'
+    | 'lookup.typeAddress'
+    | 'lookup.typeIntersection'
+    | 'lookup.typePlace'
+    | 'lookup.layers.loading'
+    | 'lookup.layers.unavailable';
 
 type Translations = Record<TranslationKey, string>;
 
@@ -55,6 +72,23 @@ const EN: Translations = {
     'login.maxLifetime':            'Your session has reached its maximum duration.',
     'login.forcedLogout':           'You have been signed out.',
     'login.signInAgain':            'Sign in again',
+    'lookup.addressLabel':          'Address',
+    'lookup.addressPlaceholder':    'Search address (geocoding)...',
+    'lookup.coordsLabel':           'Coordinates',
+    'lookup.coordsPlaceholder':     'e.g. 60°10.220′N 024°56.380′E',
+    'lookup.button':                'Lookup',
+    'lookup.clear':                 'Clear',
+    'lookup.noResults':             'No locations found',
+    'lookup.unavailable':           'Address lookup is temporarily unavailable',
+    'lookup.timeout':               'The request took too long. Please retry.',
+    'lookup.tooShort':              'Enter at least 3 characters',
+    'lookup.coordsOutOfBounds':     'Coordinates are outside the supported area',
+    'lookup.coordsInvalid':         'Invalid coordinate format',
+    'lookup.typeAddress':           'Address',
+    'lookup.typeIntersection':      'Intersection',
+    'lookup.typePlace':             'Place',
+    'lookup.layers.loading':        'Loading...',
+    'lookup.layers.unavailable':    '—',
 };
 
 const FI: Translations = {
@@ -72,6 +106,23 @@ const FI: Translations = {
     'login.maxLifetime':            'Istuntosi on saavuttanut enimmäiskestonsa.',
     'login.forcedLogout':           'Sinut on kirjattu ulos.',
     'login.signInAgain':            'Kirjaudu uudelleen',
+    'lookup.addressLabel':          'Osoite',
+    'lookup.addressPlaceholder':    'Hae osoitetta...',
+    'lookup.coordsLabel':           'Koordinaatit',
+    'lookup.coordsPlaceholder':     'esim. 60°10.220′P 024°56.380′I',
+    'lookup.button':                'Hae',
+    'lookup.clear':                 'Tyhjennä',
+    'lookup.noResults':             'Sijainteja ei löydy',
+    'lookup.unavailable':           'Osoitehaku ei ole tilapäisesti käytettävissä',
+    'lookup.timeout':               'Pyyntö kesti liian kauan. Yritä uudelleen.',
+    'lookup.tooShort':              'Kirjoita vähintään 3 merkkiä',
+    'lookup.coordsOutOfBounds':     'Koordinaatit ovat tuetun alueen ulkopuolella',
+    'lookup.coordsInvalid':         'Virheellinen koordinaattimuoto',
+    'lookup.typeAddress':           'Osoite',
+    'lookup.typeIntersection':      'Risteys',
+    'lookup.typePlace':             'Paikka',
+    'lookup.layers.loading':        'Ladataan...',
+    'lookup.layers.unavailable':    '—',
 };
 
 const SV: Translations = {
@@ -89,6 +140,23 @@ const SV: Translations = {
     'login.maxLifetime':            'Din session har nått sin maximala varaktighet.',
     'login.forcedLogout':           'Du har loggats ut.',
     'login.signInAgain':            'Logga in igen',
+    'lookup.addressLabel':          'Adress',
+    'lookup.addressPlaceholder':    'Sök adress...',
+    'lookup.coordsLabel':           'Koordinater',
+    'lookup.coordsPlaceholder':     't.ex. 60°10.220′N 024°56.380′E',
+    'lookup.button':                'Sök',
+    'lookup.clear':                 'Rensa',
+    'lookup.noResults':             'Inga platser hittades',
+    'lookup.unavailable':           'Adresssökning är tillfälligt otillgänglig',
+    'lookup.timeout':               'Förfrågan tog för lång tid. Försök igen.',
+    'lookup.tooShort':              'Ange minst 3 tecken',
+    'lookup.coordsOutOfBounds':     'Koordinaterna är utanför det stödda området',
+    'lookup.coordsInvalid':         'Ogiltigt koordinatformat',
+    'lookup.typeAddress':           'Adress',
+    'lookup.typeIntersection':      'Korsning',
+    'lookup.typePlace':             'Plats',
+    'lookup.layers.loading':        'Laddar...',
+    'lookup.layers.unavailable':    '—',
 };
 
 const LOCALE_MAP: Record<Locale, Translations> = { en: EN, fi: FI, sv: SV };

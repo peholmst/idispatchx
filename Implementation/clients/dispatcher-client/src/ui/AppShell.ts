@@ -12,6 +12,7 @@ import { SESSION_CHANNEL_NAME } from './windowType.ts';
 import { LauncherPage } from './LauncherPage.ts';
 import { PrimaryWindow } from './PrimaryWindow.ts';
 import { SecondaryWindow } from './SecondaryWindow.ts';
+import type { HttpClient } from '../http/HttpClient.ts';
 
 /**
  * `<idispatch-app-shell>` Web Component.
@@ -24,6 +25,8 @@ export class AppShell extends HTMLElement {
     #authState: AuthState | null = null;
     #sessionManager: SessionManager | null = null;
     #windowType: WindowType = 'launcher';
+    #http: HttpClient | null = null;
+    #gisServerUrl = '';
     #warningBanner: HTMLDivElement | null = null;
     // BroadcastChannel used by dispatcher windows (primary/secondary) to receive
     // session events from the launcher — notably sign-out propagation.
@@ -43,10 +46,12 @@ export class AppShell extends HTMLElement {
      * Injects dependencies after the element is constructed.
      * Called by main.ts before the element is connected to the DOM.
      */
-    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType): void {
+    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType, http: HttpClient, gisServerUrl: string): void {
         this.#authState = authState;
         this.#sessionManager = sessionManager;
         this.#windowType = windowType;
+        this.#http = http;
+        this.#gisServerUrl = gisServerUrl;
     }
 
     connectedCallback(): void {
@@ -180,7 +185,7 @@ export class AppShell extends HTMLElement {
                     }
                     case 'secondary': {
                         const secondary = document.createElement(SecondaryWindow.TAG) as SecondaryWindow;
-                        secondary.initialize(username);
+                        secondary.initialize(username, this.#gisServerUrl, this.#authState!, this.#http!);
                         this.#shadow.appendChild(secondary);
                         break;
                     }

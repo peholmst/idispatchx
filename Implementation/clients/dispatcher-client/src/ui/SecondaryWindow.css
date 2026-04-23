@@ -14,9 +14,98 @@
 
 .window-body {
     flex: 1;
-    background: var(--color-bg-base);
     overflow: hidden;
-    /* Map and unit dashboard will be placed here */
+    display: flex;
+    min-height: 0;
+}
+
+/* ---- Map container ---- */
+
+.map-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.map-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #252526;
+    border-bottom: 1px solid #2b2b2b;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.map-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.map-toolbar-separator {
+    width: 1px;
+    height: 18px;
+    background: #444444;
+    margin: 0 4px;
+}
+
+.map-toolbar-label {
+    font-size: 10px;
+    color: #777777;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-right: 2px;
+}
+
+.layer-select {
+    padding: 2px 6px;
+    font-size: 11px;
+    background: #3c3c3c;
+    color: #cccccc;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    font-family: inherit;
+}
+
+.layer-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    background: #3a3d41;
+    color: #9d9d9d;
+    border: 1px solid #555555;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.layer-toggle.active {
+    background: #0e4579;
+    color: #4daafc;
+    border-color: #0078d4;
+}
+
+.layer-toggle .toggle-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #555555;
+}
+
+.layer-toggle.active .toggle-dot {
+    background: #4daafc;
+}
+
+.ol-map-target {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* ---- Layout preset buttons (header-right slot) ---- */
