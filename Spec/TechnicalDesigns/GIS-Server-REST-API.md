@@ -195,11 +195,59 @@ Resampled tiles:
 
 ---
 
-## 3. Geocoding REST Endpoint
+## 3. Tile Layers REST Endpoint
+
+Returns the list of WMTS tile layers currently available on the GIS Server. The Dispatcher Client uses this to populate the base-layer selector in the secondary window.
+
+### 3.1 List Layers
+
+**Request:**
+
+```
+GET /api/v1/layers
+Authorization: Bearer <jwt-token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "layers": [
+    { "id": "terrain",    "title": "Terrain" },
+    { "id": "navigation", "title": "Navigation" }
+  ]
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `layers` | array | Available layers in discovery order |
+| `layers[].id` | string | Layer identifier; used in WMTS tile URLs and `GetTile` requests |
+| `layers[].title` | string | Human-readable display name derived from the identifier: hyphens and underscores replaced with spaces, then title-cased |
+
+**Notes:**
+
+- The list is derived from the same filesystem scan used for `GetCapabilities`. An empty array is returned when no layers are discoverable.
+- This endpoint does **not** require a database connection; it reflects the tile directory state only.
+- Role requirements are identical to other GIS Server endpoints (Dispatcher or Observer).
+
+**Error Responses:**
+
+| Status | Condition | Body |
+|--------|-----------|------|
+| 401 Unauthorized | Invalid or missing JWT | JSON error |
+| 403 Forbidden | User lacks required role | JSON error |
+| 500 Internal Server Error | Unexpected server error | JSON error |
+
+---
+
+## 4. Geocoding REST Endpoint
 
 The geocoding endpoint provides address, place name, and road intersection lookups.
 
-### 3.1 Search Endpoint
+### 4.1 Search Endpoint
 
 Performs a geocoding search against the GIS database.
 
@@ -348,7 +396,7 @@ Results are ordered by relevance using pg_trgm similarity scoring:
 | 403 Forbidden | User lacks required role | JSON error |
 | 503 Service Unavailable | Database connection failure | JSON error |
 
-### 3.2 Search Strategy
+### 4.2 Search Strategy
 
 The geocoding search combines multiple data sources in priority order:
 
@@ -370,7 +418,7 @@ The search query is parsed to detect patterns:
 
 **Separators for intersection queries:** `/`, `&`, `and`, `ja` (Finnish), `och` (Swedish)
 
-### 3.3 Coordinate Conversion
+### 4.3 Coordinate Conversion
 
 Per the Internationalization NFR:
 
@@ -380,7 +428,7 @@ Per the Internationalization NFR:
 
 ---
 
-## 4. Error Response Format
+## 5. Error Response Format
 
 All error responses use a consistent JSON format:
 
@@ -414,7 +462,7 @@ All error responses use a consistent JSON format:
 
 ---
 
-## 5. Health Check Endpoint
+## 6. Health Check Endpoint
 
 For infrastructure monitoring and load balancer health checks.
 
@@ -463,7 +511,7 @@ GET /health
 
 ---
 
-## 6. Package Structure
+## 7. Package Structure
 
 ```
 net.pkhapps.idispatchx.gis.server/
@@ -477,6 +525,8 @@ net.pkhapps.idispatchx.gis.server/
 │   │   ├── WmtsController.java         # WMTS endpoint handlers
 │   │   ├── CapabilitiesGenerator.java  # GetCapabilities XML generation
 │   │   └── TileResponse.java           # Tile response helpers
+│   ├── layers/
+│   │   └── LayersController.java       # GET /api/v1/layers endpoint
 │   ├── geocode/
 │   │   ├── GeocodeController.java      # Geocoding endpoint handlers
 │   │   ├── SearchRequest.java          # Request DTO with validation
@@ -520,9 +570,9 @@ net.pkhapps.idispatchx.gis.server/
 
 ---
 
-## 7. Request Validation
+## 8. Request Validation
 
-### 7.1 Geocoding Query Validation
+### 8.1 Geocoding Query Validation
 
 | Rule | Constraint |
 |------|------------|
@@ -532,7 +582,7 @@ net.pkhapps.idispatchx.gis.server/
 | Limit range | 1 to 50 |
 | Municipality code | 3-digit numeric string |
 
-### 7.2 Tile Coordinate Validation
+### 8.2 Tile Coordinate Validation
 
 | Rule | Constraint |
 |------|------------|
@@ -541,7 +591,7 @@ net.pkhapps.idispatchx.gis.server/
 | Column index | Non-negative, within matrix bounds for zoom level |
 | Layer name | Alphanumeric plus hyphens, max 50 characters |
 
-### 7.3 Validation Implementation
+### 8.3 Validation Implementation
 
 Validation is performed at the controller level using self-validating DTOs:
 
@@ -579,9 +629,9 @@ public record SearchRequest(
 
 ---
 
-## 8. Performance Considerations
+## 9. Performance Considerations
 
-### 8.1 Response Time Targets
+### 9.1 Response Time Targets
 
 Per the Performance NFR:
 
@@ -591,21 +641,21 @@ Per the Performance NFR:
 | Tile retrieval (resampled) | < 1 second |
 | Geocoding search | Within seconds |
 
-### 8.2 Tile Serving Optimizations
+### 9.2 Tile Serving Optimizations
 
 - **Filesystem direct read**: Tiles are served directly from the filesystem without database involvement
 - **OS page cache**: Frequently accessed tiles are cached in OS memory
 - **HTTP caching**: `Cache-Control` and `ETag` headers enable client and proxy caching
 - **Conditional requests**: `If-None-Match` support reduces bandwidth for unchanged tiles
 
-### 8.3 Geocoding Optimizations
+### 9.3 Geocoding Optimizations
 
 - **pg_trgm indexes**: GIN indexes on name columns enable efficient fuzzy matching
 - **Connection pooling**: jOOQ with HikariCP for database connection management
 - **Query limiting**: Results are limited at the database level, not in application code
 - **Parallel queries**: Address point, road segment, and named place searches can execute in parallel
 
-### 8.4 Resampled Tile Cache
+### 9.4 Resampled Tile Cache
 
 - **LRU eviction**: Least-recently-used tiles evicted when cache is full
 - **Configurable size**: Default 1,000 tiles (~50 MB)
@@ -614,17 +664,17 @@ Per the Performance NFR:
 
 ---
 
-## 9. API Versioning
+## 10. API Versioning
 
 The geocoding API uses URL path versioning (`/api/v1/`). The WMTS endpoint does not use versioning as it follows the OGC WMTS 1.0.0 standard.
 
-### 9.1 Version Compatibility
+### 10.1 Version Compatibility
 
 - Breaking changes require a new version (`/api/v2/`)
 - Additive changes (new optional fields) are backward compatible
 - Old versions may be deprecated but should remain functional for a reasonable period
 
-### 9.2 Content Negotiation
+### 10.2 Content Negotiation
 
 - Geocoding API: Always returns `application/json`
 - WMTS GetCapabilities: Always returns `application/xml`
@@ -632,16 +682,16 @@ The geocoding API uses URL path versioning (`/api/v1/`). The WMTS endpoint does 
 
 ---
 
-## 10. Verification Strategy
+## 11. Verification Strategy
 
-### 10.1 Unit Tests
+### 11.1 Unit Tests
 
 - **Query parsing**: Verify pattern detection for addresses, intersections, place names
 - **Coordinate validation**: Verify Finland bounds enforcement
 - **Search request validation**: Verify all validation rules
 - **Result merging**: Verify deduplication and ranking logic
 
-### 10.2 Integration Tests
+### 11.2 Integration Tests
 
 **Authentication:**
 - Valid JWT with Dispatcher role: 200 OK
@@ -659,6 +709,12 @@ The geocoding API uses URL path versioning (`/api/v1/`). The WMTS endpoint does 
 - GetTile with invalid zoom level returns 400 Bad Request
 - Resampled tiles match expected dimensions and format
 
+**Tile Layers:**
+- List layers returns JSON array of all discovered layers
+- Each entry contains correct `id` and derived `title`
+- Empty tile directory returns empty array
+- Request without JWT returns 401 Unauthorized
+
 **Geocoding:**
 - Address search returns address_point and road_segment results
 - Place name search returns named_place results
@@ -669,13 +725,13 @@ The geocoding API uses URL path versioning (`/api/v1/`). The WMTS endpoint does 
 - Query too short returns 400 Bad Request
 - Empty results return 200 OK with empty array
 
-### 10.3 Performance Tests
+### 11.3 Performance Tests
 
 - Tile retrieval under concurrent load meets < 1 second target
 - Geocoding search under concurrent load meets "within seconds" target
 - Resampled tile cache prevents repeated resampling
 
-### 10.4 Smoke Tests After Deployment
+### 11.4 Smoke Tests After Deployment
 
 ```bash
 # Health check
@@ -697,7 +753,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ---
 
-## 11. OpenAPI Specification
+## 12. OpenAPI Specification
 
 An OpenAPI 3.0 specification is maintained for the geocoding API (`/api/v1/geocode/*`). The WMTS endpoint is not included in OpenAPI as it follows the OGC WMTS standard.
 
