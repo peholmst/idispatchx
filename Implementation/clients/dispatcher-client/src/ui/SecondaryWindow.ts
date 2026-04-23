@@ -56,13 +56,15 @@ export class SecondaryWindow extends HTMLElement {
     /** Builds the five layout-preset buttons for the header-right slot. */
     #makeLayoutButtons(): HTMLButtonElement[] {
         const presets: { blocks: number[]; title: string }[] = [
-            { blocks: [20],     title: 'Map only (Ctrl+Shift+1)' },
+            { blocks: [18, 3],  title: 'Map only (Ctrl+Shift+1)' },
             { blocks: [14, 7],  title: 'Map 2:1 Dashboard (Ctrl+Shift+2)' },
             { blocks: [10, 10], title: 'Map 1:1 Dashboard (Ctrl+Shift+3)' },
             { blocks: [7, 14],  title: 'Map 1:2 Dashboard (Ctrl+Shift+4)' },
-            { blocks: [20],     title: 'Dashboard only (Ctrl+Shift+5)' },
+            { blocks: [3, 18],  title: 'Dashboard only (Ctrl+Shift+5)' },
         ];
 
+        // Buttons are visual-only placeholders; click handlers will be added
+        // when layout switching behaviour is implemented.
         return presets.map((preset, i) => {
             const btn = document.createElement('button');
             btn.type = 'button';

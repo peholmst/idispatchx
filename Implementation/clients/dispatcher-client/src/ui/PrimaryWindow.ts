@@ -73,12 +73,14 @@ export class PrimaryWindow extends HTMLElement {
     /** Builds the four layout-preset buttons for the header-right slot. */
     #makeLayoutButtons(): HTMLButtonElement[] {
         const presets: { bars: number[]; title: string }[] = [
-            { bars: [6, 4, 4], title: 'Call focused (Ctrl+Shift+1)' },
-            { bars: [4, 4, 4], title: 'Equal columns (Ctrl+Shift+2)' },
-            { bars: [4, 6, 4], title: 'Incident focused (Ctrl+Shift+3)' },
-            { bars: [4, 4, 6], title: 'Lists focused (Ctrl+Shift+4)' },
+            { bars: [10, 4, 4], title: 'Call focused (Ctrl+Shift+1)' },
+            { bars: [6, 6, 6],  title: 'Equal columns (Ctrl+Shift+2)' },
+            { bars: [4, 10, 4], title: 'Incident focused (Ctrl+Shift+3)' },
+            { bars: [4, 4, 10], title: 'Lists focused (Ctrl+Shift+4)' },
         ];
 
+        // Buttons are visual-only placeholders; click handlers will be added
+        // when layout switching behaviour is implemented.
         return presets.map((preset, i) => {
             const btn = document.createElement('button');
             btn.type = 'button';
