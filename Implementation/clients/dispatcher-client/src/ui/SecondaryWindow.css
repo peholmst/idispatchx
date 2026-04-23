@@ -18,3 +18,34 @@
     overflow: hidden;
     /* Map and unit dashboard will be placed here */
 }
+
+/* ---- Layout preset buttons (header-right slot) ---- */
+
+.layout-btn-secondary {
+    display: inline-flex;
+    gap: 2px;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    align-items: center;
+}
+
+.layout-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.layout-btn-secondary.active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.layout-block {
+    height: 14px;
+    background: #888888;
+    border-radius: 1px;
+}
+
+.layout-btn-secondary.active .layout-block {
+    background: #0078d4;
+}

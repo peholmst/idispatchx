@@ -54,6 +54,9 @@ export class PrimaryWindow extends HTMLElement {
 
         header.append(newCallBtn, newIncidentBtn);
 
+        const layoutButtons = this.#makeLayoutButtons();
+        header.append(...layoutButtons);
+
         const body = document.createElement('div');
         body.className = 'window-body';
 
@@ -65,6 +68,31 @@ export class PrimaryWindow extends HTMLElement {
 
     disconnectedCallback(): void {
         this.#unregisterOpenFlag();
+    }
+
+    /** Builds the four layout-preset buttons for the header-right slot. */
+    #makeLayoutButtons(): HTMLButtonElement[] {
+        const presets: { bars: number[]; title: string }[] = [
+            { bars: [6, 4, 4], title: 'Call focused (Ctrl+Shift+1)' },
+            { bars: [4, 4, 4], title: 'Equal columns (Ctrl+Shift+2)' },
+            { bars: [4, 6, 4], title: 'Incident focused (Ctrl+Shift+3)' },
+            { bars: [4, 4, 6], title: 'Lists focused (Ctrl+Shift+4)' },
+        ];
+
+        return presets.map((preset, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = i === 1 ? 'layout-btn active' : 'layout-btn';
+            btn.title = preset.title;
+            btn.slot = 'layout';
+            for (const w of preset.bars) {
+                const bar = document.createElement('span');
+                bar.className = 'layout-bar';
+                bar.style.width = `${w}px`;
+                btn.appendChild(bar);
+            }
+            return btn;
+        });
     }
 
     #registerOpenFlag(): void {

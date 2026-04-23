@@ -63,12 +63,16 @@ export class WindowHeader extends HTMLElement {
         logo.textContent = 'iD';
         logo.setAttribute('aria-hidden', 'true');
 
+        const appName = document.createElement('span');
+        appName.className = 'header-app-name';
+        appName.textContent = 'iDispatchX';
+
         this.#clockEl = document.createElement('span');
         this.#clockEl.className = 'header-clock';
         this.#clockEl.setAttribute('aria-live', 'off');
         this.#clockEl.setAttribute('aria-label', 'Current date and time');
 
-        left.append(logo, this.#clockEl);
+        left.append(logo, appName, this.#clockEl);
 
         // Center: named slot for caller-provided action buttons
         const center = document.createElement('div');
@@ -78,9 +82,13 @@ export class WindowHeader extends HTMLElement {
         actionsSlot.name = 'actions';
         center.appendChild(actionsSlot);
 
-        // Right: layout customization (placeholder — buttons added in a later iteration)
+        // Right: named slot for caller-provided layout-preset buttons
         const right = document.createElement('div');
         right.className = 'header-right';
+
+        const layoutSlot = document.createElement('slot');
+        layoutSlot.name = 'layout';
+        right.appendChild(layoutSlot);
 
         this.#shadow.append(style, left, center, right);
 
@@ -141,8 +149,16 @@ export class WindowFooter extends HTMLElement {
 
         const modeEl = document.createElement('span');
         modeEl.className = 'footer-right';
+
+        const modeDot = document.createElement('span');
+        modeDot.className = 'mode-dot';
+        modeDot.setAttribute('aria-hidden', 'true');
+
+        const modeText = document.createElement('span');
         // Placeholder — actual degraded-mode detection is added in a later iteration
-        modeEl.textContent = t('footer.normalMode');
+        modeText.textContent = t('footer.normalMode');
+
+        modeEl.append(modeDot, modeText);
 
         this.#shadow.append(style, this.#usernameEl, modeEl);
     }
