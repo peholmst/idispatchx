@@ -2,7 +2,7 @@ import type { HttpClient } from '../http/HttpClient.ts';
 
 export interface GeocodeResult {
     type: 'address' | 'place' | 'intersection';
-    name: Record<string, string>;
+    name?: Record<string, string>;
     number?: string;
     roadA?: Record<string, string>;
     roadB?: Record<string, string>;

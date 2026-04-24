@@ -270,6 +270,14 @@ export class LookupBar extends HTMLElement {
     }
 
     #clearAll(): void {
+        // Cancel any pending debounce and in-flight search so stale results
+        // don't repopulate the form after the user has explicitly cleared it.
+        if (this.#debounceTimer !== null) {
+            clearTimeout(this.#debounceTimer);
+            this.#debounceTimer = null;
+        }
+        this.#searchSeq++;
+
         this.#clearMarker();
         if (this.#addressInput) this.#addressInput.value = '';
         if (this.#coordsInput) this.#coordsInput.value = '';
@@ -311,7 +319,7 @@ export class LookupBar extends HTMLElement {
 
             const nameEl = document.createElement('span');
             nameEl.className = 'result-name';
-            nameEl.textContent = pickName(result.name, localePref);
+            nameEl.textContent = resultDisplayName(result, localePref);
 
             const municipalityEl = document.createElement('span');
             municipalityEl.className = 'result-municipality';
@@ -369,6 +377,15 @@ function pickName(names: Record<string, string>, pref: string[]): string {
         if (names[lang]) return names[lang];
     }
     return Object.values(names)[0] ?? '';
+}
+
+function resultDisplayName(result: GeocodeResult, pref: string[]): string {
+    if (result.type === 'intersection') {
+        const a = result.roadA ? pickName(result.roadA, pref) : '';
+        const b = result.roadB ? pickName(result.roadB, pref) : '';
+        return a && b ? `${a} × ${b}` : a || b;
+    }
+    return result.name ? pickName(result.name, pref) : '';
 }
 
 function coordsClose(a: Coordinate, b: Coordinate, tolerance = 1): boolean {
