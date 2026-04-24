@@ -138,6 +138,38 @@ Each specification directory has a README with a file index table. When you add,
 * Keep entries alphabetically sorted within each section
 * Include a brief description (one line) for each file
 
+## GitHub Authentication
+
+This repository is accessed via a **GitHub App** (not a personal access token or SSH key).  
+A fresh installation token must be obtained before every operation that contacts GitHub.
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/github-app-jwt.sh` | Generates a signed RS256 JWT from the app credentials |
+| `scripts/github-app-token.sh` | Exchanges the JWT for an installation access token (prints token to stdout) |
+| `scripts/github-configure-git.sh` | Rewrites the `origin` remote URL to embed a fresh token |
+
+Required environment variables (already persisted in the sandbox):
+
+```
+GITHUB_APP_CLIENT_ID=Iv23liD0s4TXagMLfvdM
+GITHUB_APP_PRIVATE_KEY_FILE=/home/agent/.config/idispatchx/idispatchx-agent.2026-04-24.private-key.pem
+```
+
+### Rules
+
+* **Before every `git push`**, run `scripts/github-configure-git.sh` to embed a fresh token in the remote URL. Tokens expire after one hour.
+* **Before every `gh` CLI command** that contacts the API, obtain a token and pass it via the `GH_TOKEN` environment variable:
+  ```bash
+  GH_TOKEN=$(scripts/github-app-token.sh) gh <command>
+  ```
+* Never use a cached or previously printed token without checking that it was obtained in the same session and less than one hour ago.
+* Never hardcode a token in any file, script, or command that gets committed.
+
+---
+
 ## General Rules for AI Agents
 
 * Specifications are authoritative. Do not invent functionality, behavior, or requirements.
