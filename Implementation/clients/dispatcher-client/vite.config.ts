@@ -5,5 +5,9 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true
-  }
+  },
+  test: {
+    include: ['**/*.test.ts'],
+    environment: 'node',
+  },
 })

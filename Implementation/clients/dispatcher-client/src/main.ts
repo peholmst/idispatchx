@@ -18,6 +18,7 @@ import { WindowHeader, WindowFooter } from './ui/WindowChrome.ts';
 import { LauncherPage } from './ui/LauncherPage.ts';
 import { PrimaryWindow } from './ui/PrimaryWindow.ts';
 import { SecondaryWindow } from './ui/SecondaryWindow.ts';
+import { LookupBar } from './ui/LookupBar.ts';
 import { WINDOW_TYPE_KEY } from './ui/windowType.ts';
 import type { WindowType } from './ui/windowType.ts';
 
@@ -28,6 +29,7 @@ customElements.define(WindowFooter.TAG, WindowFooter);
 customElements.define(LauncherPage.TAG, LauncherPage);
 customElements.define(PrimaryWindow.TAG, PrimaryWindow);
 customElements.define(SecondaryWindow.TAG, SecondaryWindow);
+customElements.define(LookupBar.TAG, LookupBar);
 customElements.define(AppShell.TAG, AppShell);
 
 async function boot(): Promise<void> {
@@ -65,7 +67,7 @@ async function boot(): Promise<void> {
     // Mount the AppShell AFTER initialize() so that connectedCallback fires
     // with a fully wired authState — ensuring event listeners are registered.
     const shell = document.createElement(AppShell.TAG) as AppShell;
-    shell.initialize(authState, sessionManager, windowType);
+    shell.initialize(authState, sessionManager, windowType, httpClient, config.gisServerUrl);
     appEl.appendChild(shell);
 
     // Expose authState for Playwright E2E tests in development mode

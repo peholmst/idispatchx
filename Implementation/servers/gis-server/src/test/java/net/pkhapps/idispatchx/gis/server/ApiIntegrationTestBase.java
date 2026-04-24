@@ -18,6 +18,7 @@ import net.pkhapps.idispatchx.common.auth.TokenValidator;
 import net.pkhapps.idispatchx.gis.server.api.error.GlobalExceptionHandler;
 import net.pkhapps.idispatchx.gis.server.api.geocode.GeocodeController;
 import net.pkhapps.idispatchx.gis.server.api.health.HealthController;
+import net.pkhapps.idispatchx.gis.server.api.layers.LayersController;
 import net.pkhapps.idispatchx.gis.server.api.wmts.CapabilitiesGenerator;
 import net.pkhapps.idispatchx.gis.server.api.wmts.WmtsController;
 import net.pkhapps.idispatchx.gis.server.auth.BackChannelLogoutHandler;
@@ -110,6 +111,7 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
         new HealthController(dataSource, tileDirectory, tileService.getLayers()).registerRoutes(javalin, "");
         new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth, "");
         new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth, "");
+        new LayersController(tileService.getLayers()).registerRoutes(javalin, jwtAuth, roleAuth, "");
 
         // Back-channel logout (not used in most tests, but registered for completeness)
         JwksKeyProvider logoutKeyProvider = keyId -> TEST_KEY_ID.equals(keyId) ? publicKey : null;
