@@ -16,6 +16,7 @@ import java.util.Objects;
 final class RoadSegmentSearcher {
 
     private static final double INTERPOLATED_SCORE = 0.9;
+    private static final double NAME_ONLY_SCORE = 0.85;
 
     private final RoadSegmentRepository repository;
 
@@ -36,5 +37,19 @@ final class RoadSegmentSearcher {
                         INTERPOLATED_SCORE))
                 .map(List::of)
                 .orElse(List.of());
+    }
+
+    List<ScoredResult> searchByName(String streetName, int limit, @Nullable MunicipalityCode municipality) {
+        return repository.findRepresentativePointsByName(streetName, limit, municipality).stream()
+                .filter(r -> r.municipality() != null)
+                .map(r -> new ScoredResult(
+                        new AddressResult(
+                                r.roadName(),
+                                null,
+                                r.municipality(),
+                                r.coordinates(),
+                                AddressSource.ROAD_SEGMENT),
+                        NAME_ONLY_SCORE))
+                .toList();
     }
 }

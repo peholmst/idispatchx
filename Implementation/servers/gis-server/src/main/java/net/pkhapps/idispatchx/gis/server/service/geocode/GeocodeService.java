@@ -115,6 +115,8 @@ public final class GeocodeService {
                             addressPointSearcher.search(sq.name(), limit, municipality)));
                     futures.add(executor.submit(() ->
                             namedPlaceSearcher.search(sq.name(), limit, municipality)));
+                    futures.add(executor.submit(() ->
+                            roadSegmentSearcher.searchByName(sq.name(), limit, municipality)));
                 }
                 case ParsedQuery.IntersectionQuery iq -> {
                     futures.add(executor.submit(() ->
@@ -127,6 +129,8 @@ public final class GeocodeService {
                             namedPlaceSearcher.search(pq.name(), limit, municipality)));
                     futures.add(executor.submit(() ->
                             addressPointSearcher.search(pq.name(), limit, municipality)));
+                    futures.add(executor.submit(() ->
+                            roadSegmentSearcher.searchByName(pq.name(), limit, municipality)));
                 }
             }
         }

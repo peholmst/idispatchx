@@ -46,6 +46,17 @@ describe('parseCoordinates', () => {
         it('parses DDM with trailing direction letters', () => {
             expect(parseCoordinates("65°30.0'N 025°45.0'E")).toEqual({ lat: 65.5, lon: 25.75 });
         });
+
+        it('parses DDM without degree symbol or prime', () => {
+            const result = parseCoordinates('60 10.1914N 24 56.3027E');
+            expect(result).not.toBeNull();
+            expect(result!.lat).toBeCloseTo(60.169857, 4);
+            expect(result!.lon).toBeCloseTo(24.938378, 4);
+        });
+
+        it('parses DDM without degree symbol but with prime', () => {
+            expect(parseCoordinates("65 30.0'N 025 45.0'E")).toEqual({ lat: 65.5, lon: 25.75 });
+        });
     });
 
     describe('Degrees Minutes Seconds (DMS)', () => {
@@ -67,6 +78,17 @@ describe('parseCoordinates', () => {
             expect(result).not.toBeNull();
             expect(result!.lat).toBeCloseTo(65.01, 5);
             expect(result!.lon).toBeCloseTo(25.0, 5);
+        });
+
+        it('parses DMS without degree, prime, or quote symbols', () => {
+            const result = parseCoordinates('60 10 11.49N 24 56 18.16E');
+            expect(result).not.toBeNull();
+            expect(result!.lat).toBeCloseTo(60.169858, 4);
+            expect(result!.lon).toBeCloseTo(24.938378, 4);
+        });
+
+        it('parses DMS without degree symbol but with prime and quote', () => {
+            expect(parseCoordinates("65 30'00.0\" 025 45'00.0\"")).toEqual({ lat: 65.5, lon: 25.75 });
         });
     });
 

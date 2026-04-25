@@ -1,6 +1,6 @@
 import STYLES from './LookupBar.css?inline';
 import { t, getLocale } from '../i18n/index.ts';
-import { parseCoordinates, validateFinlandBounds } from '../geo/coordinates.ts';
+import { parseCoordinates, validateFinlandBounds, formatCoordinates } from '../geo/coordinates.ts';
 import type { GeocodingClient, GeocodeResult } from '../gis/GeocodingClient.ts';
 import { GeocodingTimeoutError } from '../gis/GeocodingClient.ts';
 import { HttpError } from '../http/HttpClient.ts';
@@ -23,6 +23,7 @@ const MARKER_STYLE = new Style({
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LEN = 3;
+const COORD_FORMAT_KEY = 'idispatch:coordFormat';
 
 export class LookupBar extends HTMLElement {
     static readonly TAG = 'idispatch-lookup-bar' as const;
@@ -32,9 +33,10 @@ export class LookupBar extends HTMLElement {
     #olMap: OlMap | null = null;
     #markerSource: VectorSource | null = null;
     #markerFeature: Feature<Point> | null = null;
-    #markerCoord: Coordinate | null = null;
     #debounceTimer: ReturnType<typeof setTimeout> | null = null;
     #searchSeq = 0;
+    #coordFormat: 'DD' | 'DDM' | 'DMS';
+    #focusedIndex: number | null = null;
 
     // UI elements
     #addressInput: HTMLInputElement | null = null;
@@ -43,10 +45,18 @@ export class LookupBar extends HTMLElement {
     #inlineError: HTMLSpanElement | null = null;
     #dropdown: HTMLDivElement | null = null;
     #unavailableBanner: HTMLDivElement | null = null;
+    #formatBtns: HTMLButtonElement[] = [];
 
     constructor() {
         super();
         this.#shadow = this.attachShadow({ mode: 'open' });
+        const stored = localStorage.getItem(COORD_FORMAT_KEY);
+        this.#coordFormat = (stored === 'DD' || stored === 'DDM' || stored === 'DMS') ? stored : 'DDM';
+    }
+
+    /** Returns the number of marker features currently in the marker source. */
+    get markerFeatureCount(): number {
+        return this.#markerSource?.getFeatures().length ?? 0;
     }
 
     initialize(geocodingClient: GeocodingClient, olMap: OlMap, markerSource: VectorSource): void {
@@ -59,15 +69,6 @@ export class LookupBar extends HTMLElement {
             style: MARKER_STYLE,
         });
         olMap.addLayer(markerLayer);
-
-        olMap.on('moveend', () => {
-            if (this.#markerFeature && this.#markerCoord) {
-                const center = olMap.getView().getCenter();
-                if (center && !coordsClose(center, this.#markerCoord)) {
-                    this.#clearMarker();
-                }
-            }
-        });
     }
 
     connectedCallback(): void {
@@ -95,8 +96,22 @@ export class LookupBar extends HTMLElement {
         const coordsInput = document.createElement('input');
         coordsInput.type = 'text';
         coordsInput.className = 'lookup-input coords-input';
-        coordsInput.placeholder = t('lookup.coordsPlaceholder');
+        coordsInput.placeholder = this.#coordsPlaceholder();
         this.#coordsInput = coordsInput;
+
+        const formatGroup = document.createElement('div');
+        formatGroup.className = 'coord-format-group';
+        this.#formatBtns = (['DD', 'DDM', 'DMS'] as const).map(fmt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'coord-format-btn';
+            if (fmt === this.#coordFormat) btn.classList.add('active');
+            btn.textContent = fmt;
+            btn.dataset.format = fmt;
+            btn.addEventListener('click', () => this.#setCoordFormat(fmt));
+            formatGroup.appendChild(btn);
+            return btn;
+        });
 
         const lookupBtn = document.createElement('button');
         lookupBtn.type = 'button';
@@ -131,9 +146,28 @@ export class LookupBar extends HTMLElement {
         });
 
         addrInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.#triggerLookup();
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.#moveFocus(1);
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.#moveFocus(-1);
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (this.#focusedIndex !== null) {
+                        const items = this.#dropdown?.querySelectorAll<HTMLElement>('.result-item');
+                        items?.[this.#focusedIndex]?.click();
+                    } else {
+                        this.#triggerLookup();
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    this.#hideDropdown();
+                    break;
             }
         });
 
@@ -153,11 +187,52 @@ export class LookupBar extends HTMLElement {
 
         this.#shadow.append(
             addrLabel, addrInput,
-            coordsLabel, coordsInput,
+            coordsLabel, coordsInput, formatGroup,
             lookupBtn, clearBtn,
             spinner, inlineError,
             dropdown,
         );
+    }
+
+    #coordsPlaceholder(): string {
+        if (this.#coordFormat === 'DD') return t('lookup.coordsPlaceholder.DD');
+        if (this.#coordFormat === 'DMS') return t('lookup.coordsPlaceholder.DMS');
+        return t('lookup.coordsPlaceholder.DDM');
+    }
+
+    #setCoordFormat(fmt: 'DD' | 'DDM' | 'DMS'): void {
+        const raw = this.#coordsInput?.value.trim() ?? '';
+        if (raw) {
+            const parsed = parseCoordinates(raw);
+            if (parsed && this.#coordsInput) {
+                this.#coordsInput.value = formatCoordinates(parsed.lat, parsed.lon, fmt);
+            }
+        }
+        this.#coordFormat = fmt;
+        localStorage.setItem(COORD_FORMAT_KEY, fmt);
+        if (this.#coordsInput) {
+            this.#coordsInput.placeholder = this.#coordsPlaceholder();
+        }
+        for (const btn of this.#formatBtns) {
+            btn.classList.toggle('active', btn.dataset.format === fmt);
+        }
+    }
+
+    #moveFocus(delta: number): void {
+        const dropdown = this.#dropdown;
+        if (!dropdown || dropdown.hidden) return;
+        const items = dropdown.querySelectorAll<HTMLElement>('.result-item');
+        if (items.length === 0) return;
+
+        const count = items.length;
+        if (this.#focusedIndex !== null) {
+            items[this.#focusedIndex].classList.remove('focused');
+        }
+        const next = this.#focusedIndex === null
+            ? (delta > 0 ? 0 : count - 1)
+            : (this.#focusedIndex + delta + count) % count;
+        items[next].classList.add('focused');
+        this.#focusedIndex = next;
     }
 
     #scheduleSearch(query: string): void {
@@ -197,7 +272,7 @@ export class LookupBar extends HTMLElement {
 
         try {
             const response = await this.#geocodingClient!.search(query);
-            if (seq !== this.#searchSeq) return; // superseded by a newer search
+            if (seq !== this.#searchSeq) return;
             this.#hideSpinner();
 
             if (response.resultCount === 0) {
@@ -242,6 +317,7 @@ export class LookupBar extends HTMLElement {
     }
 
     #selectResult(result: GeocodeResult): void {
+        this.#focusedIndex = null;
         this.#hideDropdown();
         const coord = fromLonLat(
             [result.coordinates.longitude, result.coordinates.latitude],
@@ -252,7 +328,6 @@ export class LookupBar extends HTMLElement {
 
     #centerAndMark(coord: Coordinate): void {
         this.#clearMarker();
-        this.#markerCoord = coord;
 
         const feature = new Feature({ geometry: new Point(coord) });
         this.#markerFeature = feature;
@@ -266,7 +341,6 @@ export class LookupBar extends HTMLElement {
             this.#markerSource.removeFeature(this.#markerFeature);
         }
         this.#markerFeature = null;
-        this.#markerCoord = null;
     }
 
     #clearAll(): void {
@@ -291,6 +365,7 @@ export class LookupBar extends HTMLElement {
         const dropdown = this.#dropdown;
         if (!dropdown) return;
         dropdown.innerHTML = '';
+        this.#focusedIndex = null;
 
         if (results.length === 0) {
             const msg = document.createElement('div');
@@ -335,6 +410,7 @@ export class LookupBar extends HTMLElement {
 
     #hideDropdown(): void {
         if (this.#dropdown) this.#dropdown.hidden = true;
+        this.#focusedIndex = null;
     }
 
     #showSpinner(): void {
@@ -385,9 +461,7 @@ function resultDisplayName(result: GeocodeResult, pref: string[]): string {
         const b = result.roadB ? pickName(result.roadB, pref) : '';
         return a && b ? `${a} × ${b}` : a || b;
     }
-    return result.name ? pickName(result.name, pref) : '';
-}
-
-function coordsClose(a: Coordinate, b: Coordinate, tolerance = 1): boolean {
-    return Math.abs(a[0] - b[0]) < tolerance && Math.abs(a[1] - b[1]) < tolerance;
+    const name = result.name ? pickName(result.name, pref) : '';
+    const number = result.number ?? '';
+    return number ? `${name} ${number}` : name;
 }

@@ -10,7 +10,6 @@ import { t } from '../i18n/index.ts';
 import OlMap from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
-import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import WMTS from 'ol/source/WMTS';
 import WMTSTileGrid from 'ol/tilegrid/WMTS';
@@ -107,7 +106,7 @@ export class SecondaryWindow extends HTMLElement {
 
         const baseLabel = document.createElement('span');
         baseLabel.className = 'map-toolbar-label';
-        baseLabel.textContent = 'Base:';
+        baseLabel.textContent = t('lookup.toolbar.base');
 
         const select = document.createElement('select');
         select.className = 'layer-select';
@@ -127,7 +126,7 @@ export class SecondaryWindow extends HTMLElement {
 
         const layersLabel = document.createElement('span');
         layersLabel.className = 'map-toolbar-label';
-        layersLabel.textContent = 'Layers:';
+        layersLabel.textContent = t('lookup.toolbar.layers');
 
         const layerGroup = document.createElement('div');
         layerGroup.className = 'map-toolbar-group';
@@ -149,11 +148,10 @@ export class SecondaryWindow extends HTMLElement {
         this.#tileLayer = new TileLayer<WMTS>({ source: undefined });
 
         const markerSource = new VectorSource();
-        const markerLayer = new VectorLayer({ source: markerSource });
 
         this.#olMap = new OlMap({
             target: mapEl,
-            layers: [this.#tileLayer, markerLayer],
+            layers: [this.#tileLayer],
             view: new View({
                 projection: 'EPSG:3067',
                 center: fromLonLat([26, 65], 'EPSG:3067'),

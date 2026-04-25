@@ -418,6 +418,523 @@ test('GIS Server unavailable shows unavailable banner; coordinate entry still wo
     expect(errorText).not.toContain('Invalid');
 });
 
+// -------------------------------------------------------------------------
+// Helper to access shadow DOM elements
+// -------------------------------------------------------------------------
+
+async function getSecondaryWindow(page: Page) {
+    return page.evaluateHandle(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        return shell?.shadowRoot?.querySelector('idispatch-secondary-window') ?? null;
+    });
+}
+
+async function getLookupBarHandle(page: Page) {
+    return page.evaluateHandle(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        return (sw?.shadowRoot?.querySelector('idispatch-lookup-bar') ?? null) as (HTMLElement & { markerFeatureCount: number }) | null;
+    });
+}
+
+// -------------------------------------------------------------------------
+// Tests — Issue #1: Font family
+// -------------------------------------------------------------------------
+
+test('toolbar and lookup bar use the design-system font (Issue #1)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    const fontFamily = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as HTMLElement | null;
+        return lb ? getComputedStyle(lb).fontFamily : '';
+    });
+
+    expect(fontFamily).toMatch(/Segoe UI|system-ui/i);
+});
+
+// -------------------------------------------------------------------------
+// Tests — Issue #2: Internationalised toolbar labels
+// -------------------------------------------------------------------------
+
+test('toolbar labels switch to Finnish when Finnish locale is active (Issue #2)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await loginViaKeycloak(page);
+
+    // Set Finnish locale before opening secondary window (shared localStorage for same origin)
+    await page.evaluate(() => localStorage.setItem('idispatch:locale', 'fi'));
+
+    const secPage = await openSecondaryWindow(page, context);
+
+    const labels = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const spans = sw?.shadowRoot?.querySelectorAll('.map-toolbar-label');
+        return spans ? Array.from(spans).map(s => s.textContent ?? '') : [];
+    });
+
+    expect(labels).toContain('Pohjakartta:');
+    expect(labels).toContain('Tasot:');
+
+    // Reset locale for other tests
+    await page.evaluate(() => localStorage.removeItem('idispatch:locale'));
+});
+
+// -------------------------------------------------------------------------
+// Tests — Issue #6: Street number in dropdown
+// -------------------------------------------------------------------------
+
+test('address result shows street number alongside name in dropdown (Issue #6)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [
+                    { ...GEO_RESULT_MANNERHEIMINTIE, number: '5' },
+                    { ...GEO_RESULT_MANNERHEIMINTIE, number: '7' },
+                ],
+                query: 'Mannerheimintie',
+                resultCount: 2,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Mannerheimintie');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+
+    await expect(secPage.locator('.results-dropdown')).toBeVisible({ timeout: 5_000 });
+    const firstResultText = await secPage.locator('.result-name').first().textContent();
+    expect(firstResultText).toContain('Mannerheimintie');
+    expect(firstResultText).toContain('5');
+});
+
+// -------------------------------------------------------------------------
+// Tests — Issue #7: Marker persistence
+// -------------------------------------------------------------------------
+
+test('marker persists after map pan (Issue #7)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [GEO_RESULT_MANNERHEIMINTIE],
+                query: 'Mannerheimintie 1',
+                resultCount: 1,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    // Select a result to place a marker
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Mannerheimintie 1');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+    await secPage.waitForTimeout(800); // let animation settle
+
+    // Verify marker is present
+    const featureCountBefore = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as any;
+        return lb?.markerFeatureCount ?? -1;
+    });
+    expect(featureCountBefore).toBe(1);
+
+    // Simulate a map pan using mouse drag
+    const mapBounds = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const mapEl = sw?.shadowRoot?.querySelector('.ol-map-target');
+        const rect = mapEl?.getBoundingClientRect();
+        return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+    });
+
+    if (mapBounds) {
+        const cx = mapBounds.x + mapBounds.width / 2;
+        const cy = mapBounds.y + mapBounds.height / 2;
+        await secPage.mouse.move(cx, cy);
+        await secPage.mouse.down();
+        await secPage.mouse.move(cx + 80, cy + 40);
+        await secPage.mouse.up();
+    }
+
+    await secPage.waitForTimeout(500);
+
+    const featureCountAfter = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as any;
+        return lb?.markerFeatureCount ?? -1;
+    });
+    expect(featureCountAfter).toBe(1);
+});
+
+test('marker persists after map zoom (Issue #7)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [GEO_RESULT_MANNERHEIMINTIE],
+                query: 'Mannerheimintie 1',
+                resultCount: 1,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Mannerheimintie 1');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+    await secPage.waitForTimeout(800);
+
+    // Zoom in using keyboard shortcut (+ key on map)
+    const mapBounds = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const mapEl = sw?.shadowRoot?.querySelector('.ol-map-target');
+        const rect = mapEl?.getBoundingClientRect();
+        return rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+    });
+
+    if (mapBounds) {
+        await secPage.mouse.click(mapBounds.x + mapBounds.width / 2, mapBounds.y + mapBounds.height / 2);
+        await secPage.keyboard.press('+');
+        await secPage.waitForTimeout(400);
+    }
+
+    const featureCountAfter = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as any;
+        return lb?.markerFeatureCount ?? -1;
+    });
+    expect(featureCountAfter).toBe(1);
+});
+
+test('clicking Clear removes the marker (Issue #7)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [GEO_RESULT_MANNERHEIMINTIE],
+                query: 'Mannerheimintie 1',
+                resultCount: 1,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Mannerheimintie 1');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+    await secPage.waitForTimeout(800);
+
+    const featureCountBefore = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as any;
+        return lb?.markerFeatureCount ?? -1;
+    });
+    expect(featureCountBefore).toBe(1);
+
+    await secPage.getByRole('button', { name: 'Clear' }).click();
+
+    const featureCountAfter = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as any;
+        return lb?.markerFeatureCount ?? -1;
+    });
+    expect(featureCountAfter).toBe(0);
+});
+
+// -------------------------------------------------------------------------
+// Tests — Issue #8: Keyboard navigation
+// -------------------------------------------------------------------------
+
+test('ArrowDown highlights first result; Enter selects it (Issue #8)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [GEO_RESULT_MANNERHEIMINTIE, { ...GEO_RESULT_MANNERHEIMINTIE, number: '2' }],
+                query: 'Manner',
+                resultCount: 2,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Manner');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+
+    await expect(secPage.locator('.results-dropdown')).toBeVisible({ timeout: 5_000 });
+
+    // Focus the address input and press ArrowDown
+    await secPage.getByPlaceholder('Search address (geocoding)...').focus();
+    await secPage.keyboard.press('ArrowDown');
+
+    const firstIsFocused = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const items = lb?.shadowRoot?.querySelectorAll('.result-item');
+        return items?.[0]?.classList.contains('focused') ?? false;
+    });
+    expect(firstIsFocused).toBe(true);
+
+    // Press Enter to select the first item
+    await secPage.keyboard.press('Enter');
+
+    // Dropdown should close
+    await secPage.waitForTimeout(300);
+    const dropdownVisible = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const dropdown = lb?.shadowRoot?.querySelector('.results-dropdown') as HTMLElement | null;
+        return dropdown ? !dropdown.hidden : false;
+    });
+    expect(dropdownVisible).toBe(false);
+});
+
+test('ArrowUp from first item wraps to last; Escape closes dropdown (Issue #8)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [GEO_RESULT_MANNERHEIMINTIE, { ...GEO_RESULT_MANNERHEIMINTIE, number: '2' }],
+                query: 'Manner',
+                resultCount: 2,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Manner');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+
+    await expect(secPage.locator('.results-dropdown')).toBeVisible({ timeout: 5_000 });
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').focus();
+    // ArrowDown to first, then ArrowUp should wrap to last (index 1)
+    await secPage.keyboard.press('ArrowDown');
+    await secPage.keyboard.press('ArrowUp');
+
+    const lastIsFocused = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const items = lb?.shadowRoot?.querySelectorAll('.result-item');
+        if (!items || items.length < 2) return false;
+        return items[items.length - 1].classList.contains('focused');
+    });
+    expect(lastIsFocused).toBe(true);
+
+    // Escape closes dropdown
+    await secPage.keyboard.press('Escape');
+    await secPage.waitForTimeout(200);
+    const dropdownVisible = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const dropdown = lb?.shadowRoot?.querySelector('.results-dropdown') as HTMLElement | null;
+        return dropdown ? !dropdown.hidden : false;
+    });
+    expect(dropdownVisible).toBe(false);
+});
+
+// -------------------------------------------------------------------------
+// Tests — Issue #3: Coordinate format improvements
+// -------------------------------------------------------------------------
+
+test('DDM coordinates entered without degree symbol are accepted (Issue #3)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder(/60/).fill('60 10.1914N 24 56.3027E');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+
+    await secPage.waitForTimeout(500);
+    const errorVisible = await secPage.locator('.inline-error:not([hidden])').isVisible().catch(() => false);
+    expect(errorVisible).toBe(false);
+});
+
+test('DMS coordinates entered without degree symbol are accepted (Issue #3)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder(/60/).fill('60 10 11.49N 24 56 18.16E');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+
+    await secPage.waitForTimeout(500);
+    const errorVisible = await secPage.locator('.inline-error:not([hidden])').isVisible().catch(() => false);
+    expect(errorVisible).toBe(false);
+});
+
+test('format selector converts DDM coordinate to DD on click (Issue #3)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    // Enter a valid DDM coordinate
+    await secPage.getByPlaceholder(/60/).fill("60°10.1914'N 024°56.3027'E");
+    await secPage.waitForTimeout(200);
+
+    // Click the DD format button inside the shadow DOM
+    await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const ddBtn = lb?.shadowRoot?.querySelector('.coord-format-btn[data-format="DD"]') as HTMLElement | null;
+        ddBtn?.click();
+    });
+
+    await secPage.waitForTimeout(200);
+
+    const inputValue = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const input = lb?.shadowRoot?.querySelector('.coords-input') as HTMLInputElement | null;
+        return input?.value ?? '';
+    });
+
+    // DD format should contain decimal degrees without degree/prime symbols
+    expect(inputValue).toMatch(/^\d+\.\d+/);
+    expect(inputValue).not.toContain('°');
+
+    // Reset format for other tests
+    await secPage.evaluate(() => localStorage.removeItem('idispatch:coordFormat'));
+});
+
+test('format selector DD button is keyboard-accessible (Issue #3)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    // Focus the DD button and activate it via Enter key
+    await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const ddBtn = lb?.shadowRoot?.querySelector('.coord-format-btn[data-format="DD"]') as HTMLElement | null;
+        ddBtn?.focus();
+    });
+
+    await secPage.keyboard.press('Enter');
+    await secPage.waitForTimeout(200);
+
+    const ddIsActive = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
+        const ddBtn = lb?.shadowRoot?.querySelector('.coord-format-btn[data-format="DD"]');
+        return ddBtn?.classList.contains('active') ?? false;
+    });
+    expect(ddIsActive).toBe(true);
+
+    // Reset format for other tests
+    await secPage.evaluate(() => localStorage.removeItem('idispatch:coordFormat'));
+});
+
+// -------------------------------------------------------------------------
+// Tests — Issue #5: Road name without number
+// -------------------------------------------------------------------------
+
+test('road name without number returns result and places marker (Issue #5)', async ({ page, context }) => {
+    await mockLayers(context);
+    await mockTiles(context);
+    await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
+        route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                results: [
+                    {
+                        type: 'address',
+                        name: { fi: 'Mannerheimintie', sv: 'Mannerheimvägen' },
+                        // number is absent (road name result)
+                        municipality: { code: '091', name: { fi: 'Helsinki', sv: 'Helsingfors' } },
+                        coordinates: { latitude: 60.169857, longitude: 24.938379 },
+                    },
+                    {
+                        type: 'address',
+                        name: { fi: 'Mannerheimintie', sv: 'Mannerheimvägen' },
+                        municipality: { code: '091', name: { fi: 'Helsinki', sv: 'Helsingfors' } },
+                        coordinates: { latitude: 60.180000, longitude: 24.940000 },
+                    },
+                ],
+                query: 'Mannerheimintie',
+                resultCount: 2,
+            }),
+        })
+    );
+
+    await loginViaKeycloak(page);
+    const secPage = await openSecondaryWindow(page, context);
+
+    await secPage.getByPlaceholder('Search address (geocoding)...').fill('Mannerheimintie');
+    await secPage.getByRole('button', { name: 'Lookup' }).click();
+
+    await expect(secPage.locator('.results-dropdown')).toBeVisible({ timeout: 5_000 });
+
+    // First result has no number — should display just the road name
+    const firstResultName = await secPage.locator('.result-name').first().textContent();
+    expect(firstResultName?.trim()).toBe('Mannerheimintie');
+
+    // Clicking it should place a marker
+    await secPage.locator('.result-item').first().click();
+    await secPage.waitForTimeout(500);
+
+    const featureCount = await secPage.evaluate(() => {
+        const shell = document.querySelector('idispatch-app-shell');
+        const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
+        const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar') as any;
+        return lb?.markerFeatureCount ?? -1;
+    });
+    expect(featureCount).toBe(1);
+});
+
 test('GIS Server timeout shows timeout message; coordinate entry still works', async ({ page, context }) => {
     test.setTimeout(30_000);
 
