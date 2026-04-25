@@ -1,0 +1,4 @@
+FROM quay.io/keycloak/keycloak:26.0.0
+# Realm JSON is baked in so no bind mount is needed at runtime.
+# start-dev --import-realm picks it up from this location at startup.
+COPY keycloak-test-realm.json /opt/keycloak/data/import/idispatchx-realm.json

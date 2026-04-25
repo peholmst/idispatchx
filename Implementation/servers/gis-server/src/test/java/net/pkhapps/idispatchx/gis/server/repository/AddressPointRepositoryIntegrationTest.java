@@ -23,17 +23,18 @@ class AddressPointRepositoryIntegrationTest extends IntegrationTestBase {
                        ('049', 'Espoo', 'Esbo')
                 """);
 
+        // Use high-precision coordinates to match real NLS data.
         dsl.execute("""
                 INSERT INTO gis.address_point (id, number, name_fi, name_sv, municipality_code, location)
                 VALUES
                   (1, '5', 'Mannerheimintie', 'Mannerheimvägen', '091',
-                   ST_SetSRID(ST_MakePoint(24.9384, 60.1699), 4326)),
+                   ST_SetSRID(ST_MakePoint(24.93840123456, 60.16990123456), 4326)),
                   (2, '10', 'Mannerheimintie', 'Mannerheimvägen', '091',
-                   ST_SetSRID(ST_MakePoint(24.9390, 60.1710), 4326)),
+                   ST_SetSRID(ST_MakePoint(24.93900123456, 60.17100123456), 4326)),
                   (3, '1', 'Esplanadi', null, '091',
-                   ST_SetSRID(ST_MakePoint(24.9450, 60.1680), 4326)),
+                   ST_SetSRID(ST_MakePoint(24.94500123456, 60.16800123456), 4326)),
                   (4, '2', 'Tapiontie', null, '049',
-                   ST_SetSRID(ST_MakePoint(24.8010, 60.2100), 4326))
+                   ST_SetSRID(ST_MakePoint(24.80100123456, 60.21000123456), 4326))
                 """);
     }
 

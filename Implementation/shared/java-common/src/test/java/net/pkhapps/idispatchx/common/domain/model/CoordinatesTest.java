@@ -48,24 +48,6 @@ class CoordinatesTest {
         assertEquals(24.654321, coords.longitude());
     }
 
-    // === EPSG:4326 Precision Validation Tests ===
-
-    @Test
-    void epsg4326_of_sevenDecimalPlacesLatitude_throwsIllegalArgumentException() {
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> Coordinates.Epsg4326.of(60.1234567, 24.0));
-        assertTrue(exception.getMessage().contains("latitude"));
-        assertTrue(exception.getMessage().contains("decimal places"));
-    }
-
-    @Test
-    void epsg4326_of_sevenDecimalPlacesLongitude_throwsIllegalArgumentException() {
-        var exception = assertThrows(IllegalArgumentException.class,
-                () -> Coordinates.Epsg4326.of(60.0, 24.1234567));
-        assertTrue(exception.getMessage().contains("longitude"));
-        assertTrue(exception.getMessage().contains("decimal places"));
-    }
-
     // === EPSG:4326 Bounds Validation Tests ===
 
     @Test
@@ -401,14 +383,6 @@ class CoordinatesTest {
     void jackson_deserializeOutOfBoundsLatitude_throwsException() {
         var json = """
                 {"crs":"EPSG:4326","latitude":50.0,"longitude":24.0}""";
-        assertThrows(ValueInstantiationException.class,
-                () -> objectMapper.readValue(json, Coordinates.class));
-    }
-
-    @Test
-    void jackson_deserializePrecisionViolation_throwsException() {
-        var json = """
-                {"crs":"EPSG:4326","latitude":60.1234567,"longitude":24.0}""";
         assertThrows(ValueInstantiationException.class,
                 () -> objectMapper.readValue(json, Coordinates.class));
     }

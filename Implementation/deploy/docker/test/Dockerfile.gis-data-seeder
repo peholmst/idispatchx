@@ -1,0 +1,24 @@
+FROM eclipse-temurin:25-jre
+# Build context is a staging directory created by start.sh containing:
+#   importer.tar.gz  — GIS Data Importer distribution
+#   municipalities/  — NLS municipality code list
+#   gml/             — NLS GML ZIP files (L33xx map sheets)
+COPY importer.tar.gz /tmp/importer.tar.gz
+RUN tar -xzf /tmp/importer.tar.gz -C /opt/ \
+    && mv /opt/gis-data-importer-* /opt/gis-data-importer \
+    && rm /tmp/importer.tar.gz
+COPY municipalities/ /data/municipalities/
+COPY gml/ /data/gml/
+
+ENV GIS_DB_URL=jdbc:postgresql://gis-db:5432/gisdb \
+    GIS_DB_USER=postgres \
+    GIS_DB_PASSWORD=testpassword
+
+CMD ["/bin/bash", "-c", \
+  "JAVA_OPTS='-Xmx1g' bash /opt/gis-data-importer/gis-data-importer.sh \
+    --municipalities /data/municipalities/codelist_kunta_1_20260101.json \
+    --input-dir /data/gml \
+    --db-url ${GIS_DB_URL} \
+    --db-user ${GIS_DB_USER} \
+    --db-password ${GIS_DB_PASSWORD} \
+    --truncate"]

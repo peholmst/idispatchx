@@ -92,6 +92,7 @@ public final class GeocodeService {
             log.info("Geocode search completed: resultCount={}", merged.size());
             return SearchResponse.of(merged, query);
         } catch (RuntimeException e) {
+            log.error("Geocoding search failed", e);
             throw new DatabaseUnavailableException("Geocoding search failed", e);
         }
     }

@@ -40,10 +40,16 @@ public abstract class IntegrationTestBase {
         config.setUsername(POSTGRES.getUsername());
         config.setPassword(POSTGRES.getPassword());
         config.setMaximumPoolSize(5);
+        // Mirror DataSourceProvider: pg_trgm is installed into the gis schema because Flyway
+        // sets search_path=gis during migrations. Include gis so the extension is resolvable.
+        config.setConnectionInitSql("SET search_path TO gis, public");
         dataSource = new HikariDataSource(config);
 
+        // Mirror FlywayMigrator: defaultSchema puts schema history and extensions in gis.
         Flyway.configure()
                 .dataSource(dataSource)
+                .defaultSchema("gis")
+                .createSchemas(true)
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
