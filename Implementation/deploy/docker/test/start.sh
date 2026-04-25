@@ -16,6 +16,11 @@ TILE_DIR="${REPO_DIR}/SampleData/tiles"
 
 cd "${IMPL_DIR}"
 
+# Always build the GIS Data Importer — the compose stack bind-mounts its dist tarball
+# for the gis-data-seeder, so it must exist even when tile fixtures are already present.
+echo "==> Building GIS Data Importer..."
+./mvnw package -pl tools/gis-data-importer -am -DskipTests -q
+
 # Generate tiles if not present (SampleData/tiles/ is gitignored)
 if [ ! -d "${TILE_DIR}/maastokartta" ] || [ ! -d "${TILE_DIR}/taustakartta" ]; then
     echo "==> Tile fixtures not found — generating (this may take a few minutes)..."
