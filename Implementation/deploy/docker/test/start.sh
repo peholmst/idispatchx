@@ -11,10 +11,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMPL_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 COMPOSE_FILE="${SCRIPT_DIR}/../docker-compose-test.yml"
 
+REPO_DIR="$(cd "${IMPL_DIR}/.." && pwd)"
+TILE_DIR="${REPO_DIR}/SampleData/tiles"
+
 cd "${IMPL_DIR}"
 
-echo "==> Building GIS Data Importer..."
-./mvnw package -pl tools/gis-data-importer -am -DskipTests -q
+# Generate tiles if not present (SampleData/tiles/ is gitignored)
+if [ ! -d "${TILE_DIR}/maastokartta" ] || [ ! -d "${TILE_DIR}/taustakartta" ]; then
+    echo "==> Tile fixtures not found — generating (this may take a few minutes)..."
+    bash "${SCRIPT_DIR}/generate-tiles.sh"
+fi
 
 echo "==> Building GIS Server JAR..."
 ./mvnw package -pl servers/gis-server -am -DskipTests -q

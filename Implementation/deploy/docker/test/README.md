@@ -9,7 +9,7 @@ Provides a single-host Docker environment with:
 - GIS Server (single replica)
 - Keycloak (OIDC provider)
 - PostGIS database (seeded with NLS GML geocoding data)
-- Map tiles bind-mounted from `SampleData/tiles/`
+- Map tiles bind-mounted from `SampleData/tiles/` (generated locally, not committed to git)
 
 ## Prerequisites
 
@@ -21,12 +21,34 @@ Provides a single-host Docker environment with:
 Run from the `Implementation/` directory:
 
 ```bash
-# Start all services (builds images, seeds data, waits for healthy)
+# Start all services (generates tiles if needed, builds images, seeds data, waits for healthy)
 ./deploy/docker/test/start.sh
 
 # Stop all services and remove the test DB volume
 ./deploy/docker/test/stop.sh
 ```
+
+`start.sh` automatically generates tiles the first time it runs.
+To regenerate tiles manually (e.g. after adding new rasters):
+
+```bash
+./deploy/docker/test/generate-tiles.sh
+```
+
+## Tile Fixtures
+
+Tiles are generated locally from PNG rasters in `SampleData/rasters/` and written to
+`SampleData/tiles/` (which is gitignored due to its size — ~500 MB).
+
+`start.sh` detects if tiles are missing and runs `generate-tiles.sh` automatically.
+Generation takes a few minutes and requires ~4 GB of heap for the taustakartta layer.
+
+**Tile layers:**
+
+| Layer           | Zoom levels    | Resolution        |
+|-----------------|----------------|-------------------|
+| `maastokartta`  | 6–8, 10–11, 13 | 128m → 1m/px      |
+| `taustakartta`  | 7–12, 14       | 64m → 0.5m/px     |
 
 ## Services and Ports
 
@@ -44,15 +66,6 @@ Keycloak admin console: http://localhost:8180 (admin / admin).
 
 The NLS L33xx GML sheets cover south-west Finland — a part of the city of **Pargas** (Parainen).
 
-**Tile layers:**
-
-| Layer           | Zoom levels | Resolution        |
-|-----------------|-------------|-------------------|
-| `maastokartta`  | 6–8, 10–11, 13 | 128m → 1m/px  |
-| `taustakartta`  | 7–12, 14    | 64m → 0.5m/px     |
-
-Tiles are pre-generated from the PNG rasters in `SampleData/rasters/` and committed to `SampleData/tiles/`.
-
 ## Running the Dispatcher Client Against the Test Stack
 
 From `Implementation/clients/dispatcher-client/`:
@@ -61,7 +74,8 @@ From `Implementation/clients/dispatcher-client/`:
 VITE_CONFIG_URL=/config.test-gis.json npm run dev
 ```
 
-This uses `src/public/config.test-gis.json`, which points to the Keycloak and GIS Server instances started by the test stack.
+This uses `src/public/config.test-gis.json`, which points to the Keycloak and GIS Server
+instances started by the test stack.
 
 ## Manual API Testing
 
@@ -100,14 +114,8 @@ curl http://localhost:8080/health
 ### Additional rasters
 
 1. Place new PNG + PGW pairs under `SampleData/rasters/<layer>/`.
-2. Re-run the tile importer (from `Implementation/`):
+2. Re-run tile generation (from `Implementation/`):
    ```bash
-   JAVA_OPTS="-Xmx4g" bash tools/gis-data-importer/target/gis-data-importer-1.0.0-SNAPSHOT/gis-data-importer.sh \
-     --tile-dir ../SampleData/tiles \
-     --tile-layer <layer-name> \
-     --tiles $(find ../SampleData/rasters/<layer-name> -name "*.png" | tr '\n' ' ')
+   ./deploy/docker/test/generate-tiles.sh
    ```
-3. Commit the new tiles in `SampleData/tiles/`.
-
-> **Note on repository size:** The zoom-14 taustakartta tiles are numerous (0.5 m/px).
-> Consider Git LFS for `SampleData/tiles/` if the repository grows too large.
+3. Restart the stack: `./deploy/docker/test/stop.sh && ./deploy/docker/test/start.sh`
