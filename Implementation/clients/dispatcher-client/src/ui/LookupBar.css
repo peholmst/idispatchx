@@ -42,10 +42,6 @@
     border-color: #f48771;
 }
 
-.coords-input {
-    max-width: 220px;
-    flex: 0 0 auto;
-}
 
 .btn {
     padding: 3px 10px;
@@ -170,39 +166,6 @@
     font-style: italic;
 }
 
-/* Coordinate format selector */
-.coord-format-group {
-    display: inline-flex;
-    border: 1px solid #555555;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.coord-format-btn {
-    padding: 2px 6px;
-    font-size: 10px;
-    font-family: inherit;
-    background: #3a3d41;
-    color: var(--color-text-muted);
-    border: none;
-    border-right: 1px solid #555555;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.coord-format-btn:last-child {
-    border-right: none;
-}
-
-.coord-format-btn.active {
-    background: #0e4579;
-    color: #4daafc;
-}
-
-.coord-format-btn:hover:not(.active) {
-    background: #4a4d51;
-}
 
 /* Keyboard-focused dropdown item */
 .result-item.focused {

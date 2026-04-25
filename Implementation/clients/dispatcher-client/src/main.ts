@@ -19,6 +19,7 @@ import { LauncherPage } from './ui/LauncherPage.ts';
 import { PrimaryWindow } from './ui/PrimaryWindow.ts';
 import { SecondaryWindow } from './ui/SecondaryWindow.ts';
 import { LookupBar } from './ui/LookupBar.ts';
+import { CoordInput } from './ui/CoordInput.ts';
 import { WINDOW_TYPE_KEY } from './ui/windowType.ts';
 import type { WindowType } from './ui/windowType.ts';
 
@@ -30,6 +31,7 @@ customElements.define(LauncherPage.TAG, LauncherPage);
 customElements.define(PrimaryWindow.TAG, PrimaryWindow);
 customElements.define(SecondaryWindow.TAG, SecondaryWindow);
 customElements.define(LookupBar.TAG, LookupBar);
+customElements.define(CoordInput.TAG, CoordInput);
 customElements.define(AppShell.TAG, AppShell);
 
 async function boot(): Promise<void> {

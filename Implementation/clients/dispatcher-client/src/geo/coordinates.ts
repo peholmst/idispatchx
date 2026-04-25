@@ -161,8 +161,8 @@ function tryParseDD(raw: string): { lat: number; lon: number } | null {
     const m = s.match(re);
     if (!m) return null;
 
-    // Reject if degree/minute/second symbols are present
-    if (s.includes('°') || s.includes("'") || s.includes('"')) return null;
+    // Reject if minute or second symbols are present — those indicate DDM or DMS
+    if (s.includes("'") || s.includes('"')) return null;
 
     const [, d1pre, n1, d1post, d2pre, n2, d2post] = m;
 

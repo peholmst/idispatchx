@@ -438,10 +438,10 @@ async function getLookupBarHandle(page: Page) {
 }
 
 // -------------------------------------------------------------------------
-// Tests — Issue #1: Font family
+// Tests — issue #45, item 1: Font family
 // -------------------------------------------------------------------------
 
-test('toolbar and lookup bar use the design-system font (Issue #1)', async ({ page, context }) => {
+test('toolbar and lookup bar use the design-system font (issue #45, item 1)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await loginViaKeycloak(page);
@@ -458,10 +458,10 @@ test('toolbar and lookup bar use the design-system font (Issue #1)', async ({ pa
 });
 
 // -------------------------------------------------------------------------
-// Tests — Issue #2: Internationalised toolbar labels
+// Tests — issue #45, item 2: Internationalised toolbar labels
 // -------------------------------------------------------------------------
 
-test('toolbar labels switch to Finnish when Finnish locale is active (Issue #2)', async ({ page, context }) => {
+test('toolbar labels switch to Finnish when Finnish locale is active (issue #45, item 2)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await loginViaKeycloak(page);
@@ -486,10 +486,10 @@ test('toolbar labels switch to Finnish when Finnish locale is active (Issue #2)'
 });
 
 // -------------------------------------------------------------------------
-// Tests — Issue #6: Street number in dropdown
+// Tests — issue #45, item 6: Street number in dropdown
 // -------------------------------------------------------------------------
 
-test('address result shows street number alongside name in dropdown (Issue #6)', async ({ page, context }) => {
+test('address result shows street number alongside name in dropdown (issue #45, item 6)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
@@ -520,10 +520,10 @@ test('address result shows street number alongside name in dropdown (Issue #6)',
 });
 
 // -------------------------------------------------------------------------
-// Tests — Issue #7: Marker persistence
+// Tests — issue #45, item 7: Marker persistence
 // -------------------------------------------------------------------------
 
-test('marker persists after map pan (Issue #7)', async ({ page, context }) => {
+test('marker persists after map pan (issue #45, item 7)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
@@ -584,7 +584,7 @@ test('marker persists after map pan (Issue #7)', async ({ page, context }) => {
     expect(featureCountAfter).toBe(1);
 });
 
-test('marker persists after map zoom (Issue #7)', async ({ page, context }) => {
+test('marker persists after map zoom (issue #45, item 7)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
@@ -630,7 +630,7 @@ test('marker persists after map zoom (Issue #7)', async ({ page, context }) => {
     expect(featureCountAfter).toBe(1);
 });
 
-test('clicking Clear removes the marker (Issue #7)', async ({ page, context }) => {
+test('clicking Clear removes the marker (issue #45, item 7)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
@@ -672,10 +672,10 @@ test('clicking Clear removes the marker (Issue #7)', async ({ page, context }) =
 });
 
 // -------------------------------------------------------------------------
-// Tests — Issue #8: Keyboard navigation
+// Tests — issue #45, item 8: Keyboard navigation
 // -------------------------------------------------------------------------
 
-test('ArrowDown highlights first result; Enter selects it (Issue #8)', async ({ page, context }) => {
+test('ArrowDown highlights first result; Enter selects it (issue #45, item 8)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
@@ -726,7 +726,7 @@ test('ArrowDown highlights first result; Enter selects it (Issue #8)', async ({ 
     expect(dropdownVisible).toBe(false);
 });
 
-test('ArrowUp from first item wraps to last; Escape closes dropdown (Issue #8)', async ({ page, context }) => {
+test('ArrowUp from first item wraps to last; Escape closes dropdown (issue #45, item 8)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>
@@ -778,10 +778,10 @@ test('ArrowUp from first item wraps to last; Escape closes dropdown (Issue #8)',
 });
 
 // -------------------------------------------------------------------------
-// Tests — Issue #3: Coordinate format improvements
+// Tests — issue #45, item 3: Coordinate format improvements
 // -------------------------------------------------------------------------
 
-test('DDM coordinates entered without degree symbol are accepted (Issue #3)', async ({ page, context }) => {
+test('DDM coordinates entered without degree symbol are accepted (issue #45, item 3)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await loginViaKeycloak(page);
@@ -795,7 +795,7 @@ test('DDM coordinates entered without degree symbol are accepted (Issue #3)', as
     expect(errorVisible).toBe(false);
 });
 
-test('DMS coordinates entered without degree symbol are accepted (Issue #3)', async ({ page, context }) => {
+test('DMS coordinates entered without degree symbol are accepted (issue #45, item 3)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await loginViaKeycloak(page);
@@ -809,7 +809,7 @@ test('DMS coordinates entered without degree symbol are accepted (Issue #3)', as
     expect(errorVisible).toBe(false);
 });
 
-test('format selector converts DDM coordinate to DD on click (Issue #3)', async ({ page, context }) => {
+test('format selector converts DDM coordinate to DD on click (issue #45, item 3)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await loginViaKeycloak(page);
@@ -819,12 +819,13 @@ test('format selector converts DDM coordinate to DD on click (Issue #3)', async 
     await secPage.getByPlaceholder(/60/).fill("60°10.1914'N 024°56.3027'E");
     await secPage.waitForTimeout(200);
 
-    // Click the DD format button inside the shadow DOM
+    // Click the DD format button inside the CoordInput shadow DOM
     await secPage.evaluate(() => {
         const shell = document.querySelector('idispatch-app-shell');
         const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
         const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
-        const ddBtn = lb?.shadowRoot?.querySelector('.coord-format-btn[data-format="DD"]') as HTMLElement | null;
+        const ci = lb?.shadowRoot?.querySelector('idispatch-coord-input');
+        const ddBtn = ci?.shadowRoot?.querySelector('.format-btn[data-format="DD"]') as HTMLElement | null;
         ddBtn?.click();
     });
 
@@ -834,19 +835,21 @@ test('format selector converts DDM coordinate to DD on click (Issue #3)', async 
         const shell = document.querySelector('idispatch-app-shell');
         const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
         const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
-        const input = lb?.shadowRoot?.querySelector('.coords-input') as HTMLInputElement | null;
+        const ci = lb?.shadowRoot?.querySelector('idispatch-coord-input');
+        const input = ci?.shadowRoot?.querySelector('.input') as HTMLInputElement | null;
         return input?.value ?? '';
     });
 
-    // DD format should contain decimal degrees without degree/prime symbols
+    // DD format should contain decimal degrees; no minutes (') or seconds (") symbols
     expect(inputValue).toMatch(/^\d+\.\d+/);
-    expect(inputValue).not.toContain('°');
+    expect(inputValue).not.toContain("'");
+    expect(inputValue).not.toContain('"');
 
     // Reset format for other tests
     await secPage.evaluate(() => localStorage.removeItem('idispatch:coordFormat'));
 });
 
-test('format selector DD button is keyboard-accessible (Issue #3)', async ({ page, context }) => {
+test('format selector DD button is keyboard-accessible (issue #45, item 3)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await loginViaKeycloak(page);
@@ -857,7 +860,8 @@ test('format selector DD button is keyboard-accessible (Issue #3)', async ({ pag
         const shell = document.querySelector('idispatch-app-shell');
         const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
         const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
-        const ddBtn = lb?.shadowRoot?.querySelector('.coord-format-btn[data-format="DD"]') as HTMLElement | null;
+        const ci = lb?.shadowRoot?.querySelector('idispatch-coord-input');
+        const ddBtn = ci?.shadowRoot?.querySelector('.format-btn[data-format="DD"]') as HTMLElement | null;
         ddBtn?.focus();
     });
 
@@ -868,7 +872,8 @@ test('format selector DD button is keyboard-accessible (Issue #3)', async ({ pag
         const shell = document.querySelector('idispatch-app-shell');
         const sw = shell?.shadowRoot?.querySelector('idispatch-secondary-window');
         const lb = sw?.shadowRoot?.querySelector('idispatch-lookup-bar');
-        const ddBtn = lb?.shadowRoot?.querySelector('.coord-format-btn[data-format="DD"]');
+        const ci = lb?.shadowRoot?.querySelector('idispatch-coord-input');
+        const ddBtn = ci?.shadowRoot?.querySelector('.format-btn[data-format="DD"]');
         return ddBtn?.classList.contains('active') ?? false;
     });
     expect(ddIsActive).toBe(true);
@@ -878,10 +883,10 @@ test('format selector DD button is keyboard-accessible (Issue #3)', async ({ pag
 });
 
 // -------------------------------------------------------------------------
-// Tests — Issue #5: Road name without number
+// Tests — issue #45, item 5: Road name without number
 // -------------------------------------------------------------------------
 
-test('road name without number returns result and places marker (Issue #5)', async ({ page, context }) => {
+test('road name without number returns result and places marker (issue #45, item 5)', async ({ page, context }) => {
     await mockLayers(context);
     await mockTiles(context);
     await context.route(`${GIS_URL}/api/v1/geocode/**`, route =>

@@ -4,6 +4,7 @@ package net.pkhapps.idispatchx.gis.server.service.geocode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Merges, deduplicates, and limits scored geocoding results.
@@ -75,7 +76,7 @@ final class ResultMerger {
     private boolean sameStreetAndNumber(AddressResult a, AddressResult b) {
         var nameA = a.name().anyValue().orElse("");
         var nameB = b.name().anyValue().orElse("");
-        return nameA.equalsIgnoreCase(nameB) && a.number().equals(b.number());
+        return nameA.equalsIgnoreCase(nameB) && Objects.equals(a.number(), b.number());
     }
 
     private boolean isProximityDuplicate(List<LocationResult> accepted, LocationResult candidate) {
