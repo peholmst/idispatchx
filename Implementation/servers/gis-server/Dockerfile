@@ -9,7 +9,6 @@
 #   docker build -t idispatchx/gis-server -f servers/gis-server/Dockerfile .
 
 FROM eclipse-temurin:25-jre
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY servers/gis-server/target/gis-server-exec.jar app.jar

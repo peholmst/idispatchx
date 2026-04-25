@@ -28,6 +28,8 @@ public final class DatabaseConnection implements AutoCloseable {
         LOG.info("Running Flyway migrations on {}", dbUrl);
         Flyway.configure()
                 .dataSource(dataSource)
+                .defaultSchema("gis")
+                .createSchemas(true)
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
