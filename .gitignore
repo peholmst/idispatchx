@@ -20,3 +20,6 @@
 
 # Keys
 *.pem
+
+# Generated tile fixtures (run Implementation/deploy/docker/test/generate-tiles.sh to create)
+SampleData/tiles/

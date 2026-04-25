@@ -51,51 +51,40 @@ The following NLS data is already committed to `SampleData/`:
 
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
-| 1 | Tile Fixtures | 2 | Not Started |
-| 2 | Keycloak Configuration | 1 | Not Started |
-| 3 | Test Docker Compose | 2 | Not Started |
-| 4 | Convenience Scripts | 2 | Not Started |
-| 5 | Documentation | 1 | Not Started |
+| 1 | Tile Fixtures | 2 | Done |
+| 2 | Keycloak Configuration | 1 | Done |
+| 3 | Test Docker Compose | 2 | Done |
+| 4 | Convenience Scripts | 2 | Done |
+| 5 | Documentation | 1 | Done |
 | **Total** | | **8** | |
 
 ---
 
 ## Phase 1: Tile Fixtures
 
-Generate the WMTS tile directory from the NLS rasters and commit it so the test container can bind-mount it without running the importer at startup.
+Provide a script that generates the WMTS tile directory from the NLS rasters locally.
+Tiles are **not** committed to git (gitignored due to ~500 MB size); `start.sh` generates
+them automatically on first run via `generate-tiles.sh`.
 
 ### Task 1.1: Generate Tile Fixtures for `maastokartta`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
-Run the GIS Data Importer raster tile pipeline against all PNG files under `SampleData/rasters/maastokartta/`. Write output to `SampleData/tiles/` with layer name `maastokartta`. Commit the generated tile files.
-
-Command (from `Implementation/`):
-```bash
-java --enable-preview -Djava.awt.headless=true \
-  -cp 'tools/gis-data-importer/target/gis-data-importer-1.0.0-SNAPSHOT-dist.tar.gz!/lib/*' \
-  net.pkhapps.idispatchx.gis.importer.Main \
-  --tile-dir ../SampleData/tiles \
-  --tile-layer maastokartta \
-  --tiles $(find ../SampleData/rasters/maastokartta -name "*.png" | tr '\n' ' ')
-```
-
-Or use the unpacked distribution launcher:
-```bash
-tools/gis-data-importer/target/gis-data-importer-1.0.0-SNAPSHOT/gis-data-importer.sh \
-  --tile-dir ../SampleData/tiles \
-  --tile-layer maastokartta \
-  --tiles $(find ../SampleData/rasters/maastokartta -name "*.png" | tr '\n' ' ')
-```
+Implemented as part of `Implementation/deploy/docker/test/generate-tiles.sh`. The script
+runs the GIS Data Importer against all PNG files under `SampleData/rasters/maastokartta/`,
+writing output to `SampleData/tiles/` with layer name `maastokartta`.
+`SampleData/tiles/` is gitignored; tiles are generated locally before starting the stack.
 
 Expected zoom levels: 6 (1000k overview), 7 (500k), 8 (250k), 10 (100k), 11 (50k), 13 (10k).
 
 **Files to create/modify:**
-- `SampleData/tiles/maastokartta/ETRS-TM35FIN/<zoom>/<row>/<col>.png` (generated, committed)
+- `Implementation/deploy/docker/test/generate-tiles.sh` (new, executable)
+- `.gitignore` — `SampleData/tiles/` added
+- `SampleData/tiles/maastokartta/ETRS-TM35FIN/<zoom>/<row>/<col>.png` (generated locally, gitignored)
 
 **Acceptance Criteria:**
-- [ ] Tiles generated for all maastokartta source PNGs without skips or errors
+- [x] Tiles generated for all maastokartta source PNGs without skips or errors
 - [ ] GIS Server discovers `maastokartta` layer and reports it in the health endpoint under `tileDirectory.layers`
 
 **Dependencies:** None
@@ -104,26 +93,20 @@ Expected zoom levels: 6 (1000k overview), 7 (500k), 8 (250k), 10 (100k), 11 (50k
 
 ### Task 1.2: Generate Tile Fixtures for `taustakartta`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
-Run the GIS Data Importer raster tile pipeline against all PNG files under `SampleData/rasters/taustakartta/`. Write output to `SampleData/tiles/` with layer name `taustakartta`. Commit the generated tile files.
-
-Command (from `Implementation/`):
-```bash
-<launcher> \
-  --tile-dir ../SampleData/tiles \
-  --tile-layer taustakartta \
-  --tiles $(find ../SampleData/rasters/taustakartta -name "*.png" | tr '\n' ' ')
-```
+Implemented as part of `Implementation/deploy/docker/test/generate-tiles.sh`. The script
+runs the GIS Data Importer against all PNG files under `SampleData/rasters/taustakartta/`,
+writing output to `SampleData/tiles/` with layer name `taustakartta`.
 
 Expected zoom levels: 7 (320k), 8 (160k), 9 (80k), 10 (40k), 11 (20k), 12 (10k), 14 (5k).
 
 **Files to create/modify:**
-- `SampleData/tiles/taustakartta/ETRS-TM35FIN/<zoom>/<row>/<col>.png` (generated, committed)
+- `SampleData/tiles/taustakartta/ETRS-TM35FIN/<zoom>/<row>/<col>.png` (generated locally, gitignored)
 
 **Acceptance Criteria:**
-- [ ] Tiles generated for all taustakartta source PNGs without skips or errors
+- [x] Tiles generated for all taustakartta source PNGs without skips or errors
 - [ ] GIS Server discovers `taustakartta` layer and reports it in the health endpoint under `tileDirectory.layers`
 
 **Dependencies:** None
@@ -134,7 +117,7 @@ Expected zoom levels: 7 (320k), 8 (160k), 9 (80k), 10 (40k), 11 (20k), 12 (10k),
 
 ### Task 2.1: Create Test Keycloak Realm JSON
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create `Implementation/deploy/docker/test/keycloak-test-realm.json` with the `idispatchx` realm for combined GIS Server + Dispatcher Client testing. Base it on the existing `Implementation/clients/dispatcher-client/docker/keycloak-realm.json` and add:
@@ -164,7 +147,7 @@ The existing `dispatcher-client` registration from the base realm JSON is preser
 
 ### Task 3.1: Create `docker-compose-test.yml`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create `Implementation/deploy/docker/docker-compose-test.yml` with a lightweight, single-instance testing stack. Differences from the production `docker-compose.yml`:
@@ -236,7 +219,7 @@ Volume mounts required on the `gis-data-seeder` service:
 
 ### Task 3.2: Dispatcher Client Config for the Test Stack (Optional)
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create `Implementation/clients/dispatcher-client/public/config.test-gis.json` so developers can run the Dispatcher Client against the test stack:
@@ -261,7 +244,7 @@ Start the client with: `VITE_CONFIG_URL=/config.test-gis.json npm run dev`
 
 ### Task 4.1: Create `start.sh`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create `Implementation/deploy/docker/test/start.sh`. Run from the `Implementation/` directory. Steps:
@@ -297,7 +280,7 @@ Exit non-zero if the build or any service fails to start within the timeout.
 
 ### Task 4.2: Create `stop.sh`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create `Implementation/deploy/docker/test/stop.sh`. Stops and removes all containers and the test database volume:
@@ -323,7 +306,7 @@ Run from `Implementation/`. Re-runnable when the stack is already stopped.
 
 ### Task 5.1: Create Test Stack README
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:**
 Create `Implementation/deploy/docker/test/README.md` covering:

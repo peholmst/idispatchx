@@ -1,0 +1,14 @@
+{
+  "oidc": {
+    "issuer": "http://localhost:8180/realms/idispatchx",
+    "clientId": "dispatcher-client",
+    "redirectUri": "http://localhost:5173/",
+    "scopes": ["openid", "profile"],
+    "postLogoutRedirectUri": "http://localhost:5173/"
+  },
+  "session": {
+    "idleTimeoutSeconds": 900,
+    "maxLifetimeSeconds": 28800
+  },
+  "gisServerUrl": "http://localhost:8080"
+}
