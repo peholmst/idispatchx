@@ -79,7 +79,7 @@ services:
       GIS_DB_URL: jdbc:postgresql://gis-db:5432/gisdb
       GIS_DB_USER: postgres
       GIS_DB_PASSWORD: testpassword
-      GIS_OIDC_ISSUER: http://keycloak:8080/realms/idispatchx
+      GIS_OIDC_ISSUER: http://localhost:8180/realms/idispatchx
       GIS_OIDC_JWKS_URL: http://keycloak:8080/realms/idispatchx/protocol/openid-connect/certs
       GIS_OIDC_CLIENT_ID: gis-server
     ports:
