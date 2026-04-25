@@ -21,8 +21,9 @@ Eight bugs were reported in the address lookup feature of the secondary dispatch
 | 5 | Coordinate entry improvements | 2 |
 | 6 | Keyboard navigation | 1 |
 | 7 | GIS Server: road name search | 2 |
-| 8 | Map view reset fix | 1 |
-| 9 | Playwright tests | 1 |
+| 8 | Playwright tests | 1 |
+
+> **Note — Issue #4 (map view resets):** This bug takes several minutes to reproduce and requires deeper root-cause analysis. It has been moved to [issue #48](https://github.com/peholmst/iDispatchX/issues/48) and is **not** in scope for this plan.
 
 ---
 
@@ -270,6 +271,7 @@ Eight bugs were reported in the address lookup feature of the secondary dispatch
 - Clicking a format button when the input is empty or invalid does not change the input.
 - The selected format persists after a page reload.
 - Coordinate entry and lookup still work in all three formats.
+- The format buttons are keyboard-accessible: they are reachable via Tab, and the active button can be changed with Space or Enter.
 
 **Dependencies:** Task 5.1.
 
@@ -368,43 +370,9 @@ Eight bugs were reported in the address lookup feature of the secondary dispatch
 
 ---
 
-## Phase 8 — Map View Reset Fix
+## Phase 8 — Playwright Tests
 
-### Task 8.1 — Prevent map view from resetting (Issue #4)
-
-**Status:** Not Started
-
-**Root cause (suspected):** When `SecondaryWindow.connectedCallback()` fires, the map container element is freshly appended to the shadow DOM and has no rendered size yet. OpenLayers initialises the map immediately and records the container dimensions as zero. When the browser renders the layout and the container gets its actual size, OL may fire an internal resize event that causes the view to animate back to its initial `center` and `zoom`. Additionally, calling `setSource()` on the tile layer may internally trigger a view update in some OL versions.
-
-**Fix:**
-
-1. After `this.#initMap(mapEl, lookupBarEl)`, call `this.#olMap.updateSize()` in a `requestAnimationFrame` callback to ensure OL measures the real container size on the next paint.
-
-2. Attach a `ResizeObserver` to `mapEl` that calls `this.#olMap.updateSize()` whenever the container changes size (handles window resize, layout preset changes, etc.).
-
-3. Store the resize observer and disconnect it in `disconnectedCallback()`.
-
-**Files to modify:**
-- `Implementation/clients/dispatcher-client/src/ui/SecondaryWindow.ts`
-  - After `this.#initMap(...)`, schedule `requestAnimationFrame(() => this.#olMap?.updateSize())`.
-  - Add `#mapResizeObserver: ResizeObserver | null` field.
-  - After `#initMap`, create and attach a `ResizeObserver` on `mapEl` that calls `updateSize()`.
-  - In `disconnectedCallback()`, call `this.#mapResizeObserver?.disconnect()`.
-
-**Note:** If the root cause turns out to be different (e.g. a bug in tile loading resetting the view), the fix may need to be revisited. A Playwright test that verifies the view centre and zoom persist after a delay is the best way to catch a regression.
-
-**Acceptance criteria:**
-- After the secondary window opens and tiles load, the zoom level and map centre selected by the user are not reset.
-- Moving to a different map position and waiting 5 seconds does not reset the view.
-- Resizing the window does not reset the view.
-
-**Dependencies:** None.
-
----
-
-## Phase 9 — Playwright Tests
-
-### Task 9.1 — Add and update Playwright tests to verify all fixes
+### Task 8.1 — Add and update Playwright tests to verify all fixes
 
 **Status:** Not Started
 
@@ -425,8 +393,8 @@ Eight bugs were reported in the address lookup feature of the secondary dispatch
 | DDM coordinates entered without degree symbol are accepted | Issue #3 | tiles |
 | DMS coordinates entered without degree symbol are accepted | Issue #3 | tiles |
 | Format selector switches coordinate from DDM to DD format | Issue #3 | tiles |
+| Format selector is keyboard-accessible (Tab + Enter activates DD) | Issue #3 | tiles |
 | Road name without number returns result and places marker | Issue #5 | geocode: address result, no number |
-| Map view does not reset after 5-second wait | Issue #4 | layers, tiles |
 
 **Note on font check (Issue #1):** Use `page.evaluate()` to read `getComputedStyle(element).fontFamily` inside the shadow DOM and assert it contains `"Segoe UI"` or `system-ui`.
 
@@ -436,7 +404,7 @@ Eight bugs were reported in the address lookup feature of the secondary dispatch
 - All 13 new tests pass.
 - All previously passing tests still pass.
 
-**Dependencies:** All tasks in phases 2–8.
+**Dependencies:** All tasks in phases 2–7.
 
 ---
 
@@ -449,15 +417,12 @@ Eight bugs were reported in the address lookup feature of the secondary dispatch
 3. **Phase 5** (coordinate improvements) — Task 5.1 first, then 5.2.
 4. **Phase 6** (keyboard nav) — independent.
 5. **Phase 7** (GIS Server) — Task 7.1 (server), then 7.2 (client verification).
-6. **Phase 8** (map reset) — independent.
-7. **Phase 9** (tests) — after all fixes are in place.
+6. **Phase 8** (tests) — after all fixes are in place.
 
 ### Parallelisation
 
-Phases 2, 3, 4, 6, and 8 are entirely independent and can be worked on in parallel. Phase 7 requires the GIS Server Docker test stack (see [GIS-Server-Docker-Testing-Plan.md](GIS-Server-Docker-Testing-Plan.md)) for integration-level verification.
+Phases 2, 3, 4, and 6 are entirely independent and can be worked on in parallel. Phase 7 requires the GIS Server Docker test stack (see [GIS-Server-Docker-Testing-Plan.md](GIS-Server-Docker-Testing-Plan.md)) for integration-level verification.
 
 ### No spec changes needed for
 
 - Issue #1 (font): purely a CSS implementation gap; no spec update needed.
-- Issue #6 (street number display): the API spec already includes `number` in the response; the bug is in the rendering code only.
-- Issue #4 (map reset): an OL initialisation issue; no spec update needed.
