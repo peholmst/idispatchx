@@ -213,7 +213,7 @@ The importer JAR and sample data are bind-mounted into the container.
 - [ ] `docker compose -f docker-compose-test.yml up` starts all services without errors
 - [ ] GIS Server health endpoint returns `{ "status": "UP" }` with database and tileDirectory components healthy
 - [ ] Both `maastokartta` and `taustakartta` layers appear in the health response
-- [ ] `GET /api/v1/geocode?q=<road-name>` returns results from the seeded GML data after the data-seeder completes
+- [ ] `GET /api/v1/geocode/search?q=<road-name>` returns results from the seeded GML data after the data-seeder completes
 - [ ] `gis-data-seeder` exits with code 0
 
 **Dependencies:** Tasks 1.1, 1.2, 2.1
@@ -232,7 +232,7 @@ Create `Implementation/clients/dispatcher-client/public/config.test-gis.json` so
 Start the client with: `VITE_CONFIG_URL=/config.test-gis.json npm run dev`
 
 **Files to create/modify:**
-- `Implementation/clients/dispatcher-client/public/config.test-gis.json` (new)
+- `Implementation/clients/dispatcher-client/src/public/config.test-gis.json` (new — must be under `src/` because Vite's `root` is set to `src`)
 
 **Acceptance Criteria:**
 - [ ] Dispatcher Client starts against the test stack and authenticates via the test Keycloak
