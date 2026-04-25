@@ -12,10 +12,13 @@ import java.nio.file.Path;
  */
 public final class WorldFileParser {
 
-    private static final double MIN_EASTING = 43_547.79;
-    private static final double MAX_EASTING = 764_796.72;
-    private static final double MIN_NORTHING = 6_522_236.87;
-    private static final double MAX_NORTHING = 7_795_461.19;
+    // Raster product sheets from NLS can start further west/north than Finland's exact EPSG:3067
+    // bounds (43,547–764,796 easting), so these bounds are wider than the operational coordinate
+    // bounds defined in the Internationalization NFR.
+    private static final double MIN_EASTING = -100_000.0;
+    private static final double MAX_EASTING = 900_000.0;
+    private static final double MIN_NORTHING = 6_400_000.0;
+    private static final double MAX_NORTHING = 8_000_000.0;
 
     private WorldFileParser() {
     }
