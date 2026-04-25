@@ -60,6 +60,9 @@ public final class DataSourceProvider implements AutoCloseable {
         hikariConfig.setMaxLifetime(MAX_LIFETIME_MS);
         hikariConfig.setConnectionTestQuery(CONNECTION_TEST_QUERY);
         hikariConfig.setPoolName("gis-server-pool");
+        // pg_trgm is installed into the gis schema (Flyway defaultSchema sets search_path=gis
+        // during migrations). Include gis in the search_path so similarity() and % are resolved.
+        hikariConfig.setConnectionInitSql("SET search_path TO gis, public");
 
         // PostgreSQL specific settings
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
