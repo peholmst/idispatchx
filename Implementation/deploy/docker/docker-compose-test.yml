@@ -10,6 +10,10 @@
 # Tile data is bind-mounted from SampleData/tiles/ (pre-generated; see Task 1.1/1.2).
 # Geocoding data is seeded at startup by the gis-data-seeder one-shot container.
 
+# Explicit project name prevents Docker from using the directory name ("docker"),
+# which would clash with the production docker-compose.yml in the same directory.
+name: idispatchx-test
+
 services:
 
   # --------------------------------------------------------------------------
@@ -17,7 +21,7 @@ services:
   # --------------------------------------------------------------------------
   keycloak:
     image: quay.io/keycloak/keycloak:26.0.0
-    command: ["start-dev", "--import-realm"]
+    command: ["start-dev", "--import-realm", "--health-enabled=true"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -26,11 +30,11 @@ services:
     ports:
       - "8180:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/idispatchx/.well-known/openid-configuration || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready || exit 1"]
       interval: 15s
       timeout: 10s
-      retries: 10
-      start_period: 60s
+      retries: 12
+      start_period: 90s
 
   # --------------------------------------------------------------------------
   # GIS Database (PostGIS)
