@@ -80,6 +80,7 @@ services:
       GIS_DB_USER: postgres
       GIS_DB_PASSWORD: testpassword
       GIS_OIDC_ISSUER: http://keycloak:8080/realms/idispatchx
+      GIS_OIDC_JWKS_URL: http://keycloak:8080/realms/idispatchx/protocol/openid-connect/certs
       GIS_OIDC_CLIENT_ID: gis-server
     ports:
       - "8080:8080"
