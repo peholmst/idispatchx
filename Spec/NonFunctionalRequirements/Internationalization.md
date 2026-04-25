@@ -25,12 +25,14 @@ All EPSG:4326 coordinates in the system must adhere to the following rules:
   * Longitude: 19.08° to 31.59° E
 * Coordinates outside these bounds must be rejected by the system.
 
-All EPSG:3067 coordinates in the system must adhere to the following rules:
+All EPSG:3067 coordinates used for **operational data** (geocoding results, incident locations, unit positions) must adhere to the following rules:
 
 * **Bounds:** Coordinates must fall within the projected bounds of the EPSG:3067 coverage area (Finland):
   * Easting: 43,547.79 to 764,796.72 m
   * Northing: 6,522,236.87 to 7,795,461.19 m
 * Coordinates outside these bounds must be rejected by the system.
+
+**Exception — raster source files:** NLS raster products (overview maps, background maps) use sheet extents that can extend beyond Finland's exact EPSG:3067 bounds. The world files (.pgw) of these source images may contain upper-left corner coordinates outside the operational bounds above. The GIS Data Importer must accept such coordinates; the operational bounds do not apply to raster source file georeferencing.
 
 ### Coordinate Display and Entry Formats
 

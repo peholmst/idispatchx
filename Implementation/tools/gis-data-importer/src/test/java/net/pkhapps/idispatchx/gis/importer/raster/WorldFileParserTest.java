@@ -102,8 +102,8 @@ class WorldFileParserTest {
 
     @Test
     void parse_eastingOutOfBounds_throwsException() throws IOException {
-        // Easting way too small
-        var file = createWorldFile("0.5", "0.0", "0.0", "-0.5", "0.25", "6677999.75");
+        // Easting well below MIN_EASTING (-100,000 m): center X = -200000.25 → ulCornerX ≈ -200000.5
+        var file = createWorldFile("0.5", "0.0", "0.0", "-0.5", "-200000.25", "6677999.75");
         var ex = assertThrows(IllegalArgumentException.class, () -> WorldFileParser.parse(file));
         assertTrue(ex.getMessage().contains("easting"));
     }

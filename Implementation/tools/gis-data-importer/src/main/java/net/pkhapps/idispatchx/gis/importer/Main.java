@@ -8,13 +8,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * CLI entry point for the GIS Data Importer.
@@ -39,6 +43,7 @@ public final class Main {
         // Vector import args
         var gmlPaths = new ArrayList<Path>();
         Path gmlInputDir = null;
+        Path zipExtractDir = null;  // temp dir for extracted zip contents, cleaned up after import
         Path municipalitiesFile = null;
         String dbUrl = null;
         String dbUser = null;
@@ -199,7 +204,7 @@ public final class Main {
             }
         }
 
-        // Scan GML input directory for XML files
+        // Scan GML input directory for XML and ZIP files
         if (gmlInputDir != null) {
             if (!Files.isDirectory(gmlInputDir)) {
                 LOG.error("GML input directory does not exist: {}", gmlInputDir);
@@ -213,6 +218,51 @@ public final class Main {
                 LOG.error("Cannot read GML input directory: {}", e.getMessage());
                 System.exit(1);
             }
+            // Also extract GML from any ZIP files in the same directory
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(gmlInputDir, "*.zip")) {
+                for (var zipPath : stream) {
+                    if (zipExtractDir == null) {
+                        zipExtractDir = Files.createTempDirectory("gis-importer-zip-");
+                        LOG.info("Extracting ZIP contents to temp dir: {}", zipExtractDir);
+                    }
+                    extractXmlFromZip(zipPath, zipExtractDir, gmlPaths);
+                }
+            } catch (IOException e) {
+                LOG.error("Cannot read ZIP files from GML input directory: {}", e.getMessage());
+                System.exit(1);
+            }
+        }
+
+        // Handle ZIP files passed directly via --input
+        {
+            var extracted = new ArrayList<Path>();
+            var remaining = new ArrayList<Path>();
+            for (var p : gmlPaths) {
+                var name = p.getFileName().toString().toLowerCase();
+                if (name.endsWith(".zip")) {
+                    remaining.add(p); // will be processed below
+                } else {
+                    extracted.add(p);
+                }
+            }
+            for (var zipPath : remaining) {
+                if (zipExtractDir == null) {
+                    try {
+                        zipExtractDir = Files.createTempDirectory("gis-importer-zip-");
+                        LOG.info("Extracting ZIP contents to temp dir: {}", zipExtractDir);
+                    } catch (IOException e) {
+                        LOG.error("Cannot create temp directory for ZIP extraction: {}", e.getMessage());
+                        System.exit(1);
+                    }
+                }
+                try {
+                    extractXmlFromZip(zipPath, zipExtractDir, extracted);
+                } catch (IOException e) {
+                    LOG.error("Cannot extract ZIP file {}: {}", zipPath, e.getMessage());
+                    System.exit(1);
+                }
+            }
+            gmlPaths = extracted;
         }
 
         // Scan tile input directory for PNG files
@@ -270,7 +320,43 @@ public final class Main {
             runTileImport(tileDir, tileLayer, tilePaths, truncate);
         }
 
+        if (zipExtractDir != null) {
+            deleteDirectoryTree(zipExtractDir);
+        }
+
         System.exit(0);
+    }
+
+    private static void extractXmlFromZip(Path zipPath, Path destDir, List<Path> xmlPaths) throws IOException {
+        LOG.info("Extracting XML from ZIP: {}", zipPath.getFileName());
+        try (InputStream fis = Files.newInputStream(zipPath);
+             ZipInputStream zis = new ZipInputStream(fis)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                var entryName = entry.getName();
+                if (!entry.isDirectory() && entryName.toLowerCase().endsWith(".xml")) {
+                    var destFile = destDir.resolve(Path.of(entryName).getFileName());
+                    Files.copy(zis, destFile, StandardCopyOption.REPLACE_EXISTING);
+                    xmlPaths.add(destFile);
+                    LOG.debug("Extracted: {} -> {}", entryName, destFile);
+                }
+                zis.closeEntry();
+            }
+        }
+    }
+
+    private static void deleteDirectoryTree(Path dir) {
+        try (var walk = Files.walk(dir)) {
+            walk.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    Files.delete(p);
+                } catch (IOException e) {
+                    LOG.warn("Could not delete temp file {}: {}", p, e.getMessage());
+                }
+            });
+        } catch (IOException e) {
+            LOG.warn("Could not clean up temp dir {}: {}", dir, e.getMessage());
+        }
     }
 
     static String readPasswordFromFile(Path file) throws IOException {
