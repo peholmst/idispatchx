@@ -43,7 +43,7 @@ The following NLS data is already committed to `SampleData/`:
 - `maastokartta` — topographic map (NLS maastokartta), 8 zoom levels (6–7 + 8 + 10–11 + 13)
 - `taustakartta` — background map (NLS taustakartta), 7 zoom levels (7–12 + 14)
 
-**GML coverage**: the L33xx map sheets cover a region in northern-central Finland (same area as the rasters).
+**GML coverage**: the L33xx map sheets cover south-west Finland, specifically a part of the city of Pargas (same area as the rasters).
 
 ---
 
@@ -200,11 +200,25 @@ Create `Implementation/deploy/docker/docker-compose-test.yml` with a lightweight
 - PostgreSQL superuser used for both DB init and GIS Server connection (Flyway can then CREATE EXTENSION as needed)
 
 **Data seeder details:**
-The `gis-data-seeder` container runs after `gis-server` reports healthy. It uses the GIS Data Importer JAR to import:
-1. Municipality names: `SampleData/municipalities/codelist_kunta_1_20260101.json`
-2. GML features: all `.zip` files under `SampleData/maastotietokanta/`
+The `gis-data-seeder` container runs after `gis-server` reports healthy. It uses the GIS Data Importer JAR (bind-mounted from the build output) and the `SampleData/` directory (bind-mounted read-only) to import vector geocoding data into PostGIS. The effective command inside the container is:
 
-The importer JAR and sample data are bind-mounted into the container.
+```
+java --enable-preview -Djava.awt.headless=true -jar /app/gis-data-importer.jar \
+  --municipalities /data/municipalities/codelist_kunta_1_20260101.json \
+  --input-dir /data/maastotietokanta/avoin/etrs89/gml/L3/L33 \
+  --db-url jdbc:postgresql://gis-db:5432/gisdb \
+  --db-user postgres \
+  --db-password testpassword \
+  --truncate
+```
+
+`--input-dir` points directly at the leaf directory containing the `.zip` files so that both XML and ZIP entries are scanned. `--truncate` ensures the seeder is idempotent (safe to re-run).
+
+Volume mounts required on the `gis-data-seeder` service:
+- `../../../SampleData:/data:ro` — sample data read-only
+- `../../../Implementation/tools/gis-data-importer/target/gis-data-importer-1.0.0-SNAPSHOT-dist.tar.gz` → extract to image, or mount the unpacked jar as `/app/gis-data-importer.jar`
+
+> **Note:** The GIS Data Importer JAR must be pre-built before starting the test stack (`./mvnw package -pl tools/gis-data-importer -am -DskipTests`). `start.sh` (Task 4.1) handles this.
 
 **Files to create/modify:**
 - `Implementation/deploy/docker/docker-compose-test.yml` (new)
@@ -346,7 +360,7 @@ Create `Implementation/deploy/docker/test/README.md` covering:
 Using the PostgreSQL superuser (`POSTGRES_USER=postgres`) for both the DB and the GIS Server connection lets Flyway's `CREATE EXTENSION` statements in V1 succeed without a separate init script. Test-only; not permitted in production.
 
 **Note on GML ZIP files:**
-The GIS Data Importer now supports ZIP-compressed GML files (both via `--input <file>.zip` and via `--input-dir` scanning). The data-seeder passes the zip files directly.
+The GIS Data Importer supports ZIP-compressed GML files via `--input-dir` scanning (also `--input <file>.zip` for individual files). The data-seeder's `--input-dir` must point to the leaf directory containing the `.zip` files (`maastotietokanta/avoin/etrs89/gml/L3/L33`), not a parent directory, since the scan is not recursive.
 
 **Note on tile directory size:**
 The 5k taustakartta tiles (zoom 14, 0.5 m/px) will produce the most tiles due to their fine resolution. The commit may be large; consider using Git LFS for `SampleData/tiles/` if repository size becomes a concern.
