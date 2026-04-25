@@ -13,6 +13,8 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -214,6 +216,10 @@ public final class NamedPlaceRepository {
         return results;
     }
 
+    private static double roundToSixDecimalPlaces(double value) {
+        return BigDecimal.valueOf(value).setScale(6, RoundingMode.HALF_UP).doubleValue();
+    }
+
     private @Nullable Municipality mapMunicipality(Record record, String municipalityCode,
                                                     net.pkhapps.idispatchx.gis.database.jooq.tables.Municipality m) {
         var code = MunicipalityCode.of(municipalityCode);
@@ -254,7 +260,10 @@ public final class NamedPlaceRepository {
                 return null;
             }
             var multilingualName = names.isEmpty() ? MultilingualName.empty() : MultilingualName.of(names);
-            var coordinates = Coordinates.Epsg4326.of(latitude, longitude);
+            // ST_X/ST_Y return full double precision; round to match domain constraint
+            var coordinates = Coordinates.Epsg4326.of(
+                    roundToSixDecimalPlaces(latitude),
+                    roundToSixDecimalPlaces(longitude));
 
             return new NamedPlaceSearchResult(
                     karttanimiId,

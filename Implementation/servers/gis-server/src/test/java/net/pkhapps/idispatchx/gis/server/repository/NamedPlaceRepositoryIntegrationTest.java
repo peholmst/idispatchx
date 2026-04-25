@@ -26,17 +26,19 @@ class NamedPlaceRepositoryIntegrationTest extends IntegrationTestBase {
         // Kallio: karttanimi_id=1, two language entries (fi + sv)
         // Kamppi: karttanimi_id=2, one entry (fi only)
         // Lapinkylä: karttanimi_id=3, in Rovaniemi
+        // Use high-precision coordinates (>6 decimal places) to match real NLS data and ensure
+        // the repository rounds them correctly before constructing Coordinates.Epsg4326.
         dsl.execute("""
                 INSERT INTO gis.named_place (id, name, language, place_class, karttanimi_id, municipality_code, location)
                 VALUES
                   (1, 'Kallio',  'fi', 540, 1, '091',
-                   ST_SetSRID(ST_MakePoint(24.9500, 60.1850), 4326)),
+                   ST_SetSRID(ST_MakePoint(24.95012345678, 60.18509876543), 4326)),
                   (2, 'Berget',  'sv', 540, 1, '091',
-                   ST_SetSRID(ST_MakePoint(24.9500, 60.1850), 4326)),
+                   ST_SetSRID(ST_MakePoint(24.95012345678, 60.18509876543), 4326)),
                   (3, 'Kamppi',  'fi', 540, 2, '091',
-                   ST_SetSRID(ST_MakePoint(24.9320, 60.1680), 4326)),
+                   ST_SetSRID(ST_MakePoint(24.93201234567, 60.16801234567), 4326)),
                   (4, 'Lapinkylä', 'fi', 590, 3, '564',
-                   ST_SetSRID(ST_MakePoint(25.7300, 66.5000), 4326))
+                   ST_SetSRID(ST_MakePoint(25.73001234567, 66.50001234567), 4326))
                 """);
     }
 
