@@ -13,8 +13,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 
@@ -178,9 +176,9 @@ public final class AddressPointRepository {
             }
         }
 
-        // Extract coordinates — ST_X/ST_Y return full double precision; round to match domain constraint
-        var latitude = roundToSixDecimalPlaces(record.get("lat", Double.class));
-        var longitude = roundToSixDecimalPlaces(record.get("lon", Double.class));
+        // Extract coordinates
+        var latitude = record.get("lat", Double.class);
+        var longitude = record.get("lon", Double.class);
         var coordinates = Coordinates.Epsg4326.of(latitude, longitude);
 
         // Get similarity score
@@ -190,9 +188,5 @@ public final class AddressPointRepository {
         }
 
         return new AddressSearchResult(id, number, streetName, municipality, coordinates, similarityScore);
-    }
-
-    private static double roundToSixDecimalPlaces(double value) {
-        return BigDecimal.valueOf(value).setScale(6, RoundingMode.HALF_UP).doubleValue();
     }
 }

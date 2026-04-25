@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.math.BigDecimal;
 
 /**
  * A sealed interface representing geographical coordinates in a known Coordinate Reference System (CRS).
@@ -45,7 +44,6 @@ public sealed interface Coordinates permits Coordinates.Epsg4326, Coordinates.Ep
      * Validation rules (from NFR Internationalization):
      * <ul>
      *   <li>Values must be finite (not NaN or Infinity)</li>
-     *   <li>Maximum 6 decimal places precision</li>
      *   <li>Latitude bounds: 58.84° to 70.09° N (inclusive)</li>
      *   <li>Longitude bounds: 19.08° to 31.59° E (inclusive)</li>
      * </ul>
@@ -59,20 +57,17 @@ public sealed interface Coordinates permits Coordinates.Epsg4326, Coordinates.Ep
         private static final double MAX_LATITUDE = 70.09;
         private static final double MIN_LONGITUDE = 19.08;
         private static final double MAX_LONGITUDE = 31.59;
-        private static final int MAX_DECIMAL_PLACES = 6;
 
         /**
          * Compact constructor that validates latitude and longitude.
          *
          * @param latitude  the latitude in decimal degrees
          * @param longitude the longitude in decimal degrees
-         * @throws IllegalArgumentException if values are not finite, exceed precision, or are out of bounds
+         * @throws IllegalArgumentException if values are not finite or are out of bounds
          */
         public Epsg4326 {
             requireFinite(latitude, "latitude");
             requireFinite(longitude, "longitude");
-            requireMaxDecimalPlaces(latitude, "latitude");
-            requireMaxDecimalPlaces(longitude, "longitude");
             requireInRange(latitude, MIN_LATITUDE, MAX_LATITUDE, "latitude");
             requireInRange(longitude, MIN_LONGITUDE, MAX_LONGITUDE, "longitude");
         }
@@ -83,20 +78,12 @@ public sealed interface Coordinates permits Coordinates.Epsg4326, Coordinates.Ep
          * @param latitude  the latitude in decimal degrees
          * @param longitude the longitude in decimal degrees
          * @return the coordinate instance
-         * @throws IllegalArgumentException if values are not finite, exceed precision, or are out of bounds
+         * @throws IllegalArgumentException if values are not finite or are out of bounds
          */
         @JsonCreator
         public static Epsg4326 of(@JsonProperty("latitude") double latitude,
                                   @JsonProperty("longitude") double longitude) {
             return new Epsg4326(latitude, longitude);
-        }
-
-        private static void requireMaxDecimalPlaces(double value, String name) {
-            var scale = BigDecimal.valueOf(value).stripTrailingZeros().scale();
-            if (scale > MAX_DECIMAL_PLACES) {
-                throw new IllegalArgumentException(
-                        name + " must have at most " + MAX_DECIMAL_PLACES + " decimal places, got " + value);
-            }
         }
 
         @Override

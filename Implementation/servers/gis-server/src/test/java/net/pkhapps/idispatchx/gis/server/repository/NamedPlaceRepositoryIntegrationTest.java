@@ -26,8 +26,7 @@ class NamedPlaceRepositoryIntegrationTest extends IntegrationTestBase {
         // Kallio: karttanimi_id=1, two language entries (fi + sv)
         // Kamppi: karttanimi_id=2, one entry (fi only)
         // Lapinkylä: karttanimi_id=3, in Rovaniemi
-        // Use high-precision coordinates (>6 decimal places) to match real NLS data and ensure
-        // the repository rounds them correctly before constructing Coordinates.Epsg4326.
+        // Use high-precision coordinates to match real NLS data.
         dsl.execute("""
                 INSERT INTO gis.named_place (id, name, language, place_class, karttanimi_id, municipality_code, location)
                 VALUES

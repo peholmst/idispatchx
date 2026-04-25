@@ -23,8 +23,7 @@ class AddressPointRepositoryIntegrationTest extends IntegrationTestBase {
                        ('049', 'Espoo', 'Esbo')
                 """);
 
-        // Use high-precision coordinates (>6 decimal places) to match real NLS data and ensure
-        // the repository rounds them correctly before constructing Coordinates.Epsg4326.
+        // Use high-precision coordinates to match real NLS data.
         dsl.execute("""
                 INSERT INTO gis.address_point (id, number, name_fi, name_sv, municipality_code, location)
                 VALUES
