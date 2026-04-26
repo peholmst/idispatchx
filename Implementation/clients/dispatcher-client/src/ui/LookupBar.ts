@@ -151,7 +151,7 @@ export class LookupBar extends HTMLElement {
         });
 
         coordInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && e.composedPath()[0] instanceof HTMLInputElement) {
                 e.preventDefault();
                 this.#triggerLookup();
             }
