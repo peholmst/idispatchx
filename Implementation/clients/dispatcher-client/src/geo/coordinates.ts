@@ -72,12 +72,20 @@ function applyDirection(value: number, dir: string): number {
 function tryParseDMS(raw: string): { lat: number; lon: number } | null {
     const s = normalise(raw);
 
-    // Matches one DMS token with optional leading/trailing direction letter.
+    // Require at least one anchoring indicator so plain decimal-degree text is not
+    // mistaken for DMS. A degree symbol, prime, quote, or direction letter suffices.
+    if (!s.includes('°') && !s.includes("'") && !s.includes('"') && !/[NSEW]/i.test(s)) {
+        return null;
+    }
+
+    // Between degrees and minutes: either ° (with optional spaces) or ≥1 space.
+    // Between minutes and seconds: either ' (with optional spaces) or ≥1 space.
+    // This prevents ambiguous re-parsing of decimal-degree numbers as DMS components.
     const token =
         '([NSEW])?\\s*' +
-        '(\\d+)\\s*°\\s*' +
-        '(\\d+)\\s*\'\\s*' +
-        '(\\d+(?:\\.\\d+)?)\\s*"\\s*' +
+        '(\\d+)(?:\\s*°\\s*|\\s+)' +
+        '(\\d+)(?:\\s*\'\\s*|\\s+)' +
+        '(\\d+(?:\\.\\d+)?)\\s*"?\\s*' +
         '([NSEW])?';
 
     const re = new RegExp(
@@ -103,10 +111,18 @@ function tryParseDMS(raw: string): { lat: number; lon: number } | null {
 function tryParseDDM(raw: string): { lat: number; lon: number } | null {
     const s = normalise(raw);
 
+    // Require at least one anchoring indicator so plain decimal-degree text is not
+    // mistaken for DDM. A degree symbol, prime, or direction letter suffices.
+    if (!s.includes('°') && !s.includes("'") && !/[NSEW]/i.test(s)) {
+        return null;
+    }
+
+    // Between degrees and minutes: either ° (with optional spaces) or ≥1 space.
+    // This prevents ambiguous re-parsing of decimal-degree numbers as DDM components.
     const token =
         '([NSEW])?\\s*' +
-        '(\\d+)\\s*°\\s*' +
-        '(\\d+(?:\\.\\d+)?)\\s*\'\\s*' +
+        '(\\d+)(?:\\s*°\\s*|\\s+)' +
+        '(\\d+(?:\\.\\d+)?)\\s*\'?\\s*' +
         '([NSEW])?';
 
     const re = new RegExp(
@@ -145,8 +161,8 @@ function tryParseDD(raw: string): { lat: number; lon: number } | null {
     const m = s.match(re);
     if (!m) return null;
 
-    // Reject if degree/minute/second symbols are present
-    if (s.includes('°') || s.includes("'") || s.includes('"')) return null;
+    // Reject if minute or second symbols are present — those indicate DDM or DMS
+    if (s.includes("'") || s.includes('"')) return null;
 
     const [, d1pre, n1, d1post, d2pre, n2, d2post] = m;
 

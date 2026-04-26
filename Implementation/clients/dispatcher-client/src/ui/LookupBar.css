@@ -9,6 +9,7 @@
     position: relative;
     box-sizing: border-box;
     width: 100%;
+    font-family: var(--font-family-ui);
 }
 
 .form-label {
@@ -41,10 +42,6 @@
     border-color: #f48771;
 }
 
-.coords-input {
-    max-width: 220px;
-    flex: 0 0 auto;
-}
 
 .btn {
     padding: 3px 10px;
@@ -167,4 +164,20 @@
     font-size: var(--font-size-sm);
     color: #777777;
     font-style: italic;
+}
+
+
+/* Keyboard-focused dropdown item */
+.result-item.focused {
+    background: #0e4579;
+    color: var(--color-text-primary);
+}
+
+.result-item.focused .result-type {
+    background: #1a5a9a;
+    color: #aaccee;
+}
+
+.result-item.focused .result-municipality {
+    color: #aaccee;
 }

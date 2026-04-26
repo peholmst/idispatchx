@@ -5,6 +5,7 @@ import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
 import net.pkhapps.idispatchx.common.domain.model.Municipality;
 import net.pkhapps.idispatchx.common.domain.model.MunicipalityCode;
 import net.pkhapps.idispatchx.gis.server.repository.InterpolatedAddressResult;
+import net.pkhapps.idispatchx.gis.server.repository.RoadNamePoint;
 import net.pkhapps.idispatchx.gis.server.repository.RoadSegmentRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class RoadSegmentSearcherTest {
@@ -70,6 +73,52 @@ class RoadSegmentSearcherTest {
                 .thenReturn(Optional.of(interpolated));
 
         var results = searcher.searchAddress("Mannerheimintie", 5, null);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void searchByName_found_returnsSingleResultWithNullNumber() {
+        var searcher = new RoadSegmentSearcher(repository);
+        var point = new RoadNamePoint(
+                MultilingualName.ofFinnishFields("Mannerheimintie", "Mannerheimvägen", null, null, null),
+                MUNICIPALITY, COORDS, 0.95);
+
+        when(repository.findRepresentativePointsByName("Mannerheimintie", 5, null))
+                .thenReturn(List.of(point));
+
+        var results = searcher.searchByName("Mannerheimintie", 5, null);
+
+        assertEquals(1, results.size());
+        var scored = results.getFirst();
+        assertEquals(0.85, scored.score());
+        assertInstanceOf(AddressResult.class, scored.result());
+
+        var addr = (AddressResult) scored.result();
+        assertNull(addr.number());
+        assertEquals(AddressSource.ROAD_SEGMENT, addr.source());
+    }
+
+    @Test
+    void searchByName_notFound_returnsEmptyList() {
+        var searcher = new RoadSegmentSearcher(repository);
+        when(repository.findRepresentativePointsByName("NoSuchRoad", 5, null))
+                .thenReturn(List.of());
+
+        var results = searcher.searchByName("NoSuchRoad", 5, null);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    void searchByName_nullMunicipality_returnsEmptyList() {
+        var searcher = new RoadSegmentSearcher(repository);
+        var point = new RoadNamePoint(
+                MultilingualName.ofFinnishFields("Mannerheimintie", null, null, null, null),
+                null, COORDS, 0.9);
+
+        when(repository.findRepresentativePointsByName("Mannerheimintie", 5, null))
+                .thenReturn(List.of(point));
+
+        var results = searcher.searchByName("Mannerheimintie", 5, null);
         assertTrue(results.isEmpty());
     }
 }

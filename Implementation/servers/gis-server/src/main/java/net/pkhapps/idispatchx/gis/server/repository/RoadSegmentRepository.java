@@ -15,9 +15,11 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static net.pkhapps.idispatchx.gis.database.jooq.Tables.MUNICIPALITY;
 import static net.pkhapps.idispatchx.gis.database.jooq.Tables.ROAD_SEGMENT;
@@ -166,6 +168,134 @@ public final class RoadSegmentRepository {
 
         log.debug("Found {} road segments matching query '{}'", searchResults.size(), query);
         return searchResults;
+    }
+
+    /**
+     * Finds one representative point per unique road name by fuzzy name matching.
+     * <p>
+     * Returns the midpoint of the first matching segment for each unique
+     * (road name, municipality) combination, ordered by similarity score.
+     *
+     * @param streetName   the road name to search for
+     * @param limit        maximum number of unique road names to return
+     * @param municipality optional municipality filter
+     * @return list of representative points, one per unique road name
+     * @throws NullPointerException     if streetName is null
+     * @throws IllegalArgumentException if limit is less than 1 or streetName is blank
+     */
+    public List<RoadNamePoint> findRepresentativePointsByName(String streetName, int limit,
+                                                               @Nullable MunicipalityCode municipality) {
+        Objects.requireNonNull(streetName, "streetName must not be null");
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be at least 1, got " + limit);
+        }
+        if (streetName.isBlank()) {
+            throw new IllegalArgumentException("streetName must not be blank");
+        }
+
+        log.debug("Finding representative points by name: streetName='{}', limit={}, municipality={}",
+                streetName, limit, municipality);
+
+        Field<Double> similarityFi = DSL.function("similarity",
+                Double.class, ROAD_SEGMENT.NAME_FI, DSL.val(streetName));
+        Field<Double> similaritySv = DSL.function("similarity",
+                Double.class, ROAD_SEGMENT.NAME_SV, DSL.val(streetName));
+        Field<Double> maxSimilarity = DSL.greatest(
+                DSL.coalesce(similarityFi, DSL.val(0.0)),
+                DSL.coalesce(similaritySv, DSL.val(0.0))
+        );
+
+        Condition nameMatchesFi = DSL.condition("{0} % {1}", ROAD_SEGMENT.NAME_FI, DSL.val(streetName));
+        Condition nameMatchesSv = DSL.condition("{0} % {1}", ROAD_SEGMENT.NAME_SV, DSL.val(streetName));
+        Condition nameMatches = nameMatchesFi.or(nameMatchesSv);
+
+        Condition whereCondition = nameMatches;
+        if (municipality != null) {
+            whereCondition = whereCondition.and(
+                    ROAD_SEGMENT.MUNICIPALITY_CODE.eq(municipality.code()));
+        }
+
+        Field<Double> midpointX = DSL.field(
+                "ST_X(ST_LineInterpolatePoint({0}, 0.5))", Double.class, ROAD_SEGMENT.GEOMETRY);
+        Field<Double> midpointY = DSL.field(
+                "ST_Y(ST_LineInterpolatePoint({0}, 0.5))", Double.class, ROAD_SEGMENT.GEOMETRY);
+
+        // Fetch more than needed so we have enough after deduplication
+        var records = dsl.select(
+                        ROAD_SEGMENT.NAME_FI,
+                        ROAD_SEGMENT.NAME_SV,
+                        ROAD_SEGMENT.NAME_SMN,
+                        ROAD_SEGMENT.NAME_SMS,
+                        ROAD_SEGMENT.NAME_SME,
+                        ROAD_SEGMENT.MUNICIPALITY_CODE,
+                        MUNICIPALITY.NAME_FI.as("m_name_fi"),
+                        MUNICIPALITY.NAME_SV.as("m_name_sv"),
+                        MUNICIPALITY.NAME_SMN.as("m_name_smn"),
+                        MUNICIPALITY.NAME_SMS.as("m_name_sms"),
+                        MUNICIPALITY.NAME_SME.as("m_name_sme"),
+                        midpointX.as("lon"),
+                        midpointY.as("lat"),
+                        maxSimilarity.as("similarity")
+                )
+                .from(ROAD_SEGMENT)
+                .leftJoin(MUNICIPALITY)
+                .on(ROAD_SEGMENT.MUNICIPALITY_CODE.eq(MUNICIPALITY.MUNICIPALITY_CODE))
+                .where(whereCondition)
+                .orderBy(maxSimilarity.desc())
+                .limit(limit * 5)
+                .fetch();
+
+        Set<String> seen = new HashSet<>();
+        List<RoadNamePoint> points = new ArrayList<>();
+
+        for (var record : records) {
+            if (points.size() >= limit) break;
+
+            var nameFi = record.get(ROAD_SEGMENT.NAME_FI);
+            var nameSv = record.get(ROAD_SEGMENT.NAME_SV);
+            var muniCode = record.get(ROAD_SEGMENT.MUNICIPALITY_CODE);
+
+            var dedupKey = nameFi + "|" + nameSv + "|" + muniCode;
+            if (!seen.add(dedupKey)) continue;
+
+            var roadName = MultilingualName.ofFinnishFields(
+                    nameFi,
+                    nameSv,
+                    record.get(ROAD_SEGMENT.NAME_SMN),
+                    record.get(ROAD_SEGMENT.NAME_SMS),
+                    record.get(ROAD_SEGMENT.NAME_SME)
+            );
+
+            var muni = buildMunicipality(
+                    muniCode,
+                    record.get("m_name_fi", String.class),
+                    record.get("m_name_sv", String.class),
+                    record.get("m_name_smn", String.class),
+                    record.get("m_name_sms", String.class),
+                    record.get("m_name_sme", String.class)
+            );
+
+            Double lon = record.get("lon", Double.class);
+            Double lat = record.get("lat", Double.class);
+
+            if (lon == null || lat == null) {
+                log.warn("Midpoint coordinates are null for road: {}", roadName.anyValue().orElse("?"));
+                continue;
+            }
+
+            double roundedLat = roundToDecimalPlaces(lat, COORDINATE_DECIMAL_PLACES);
+            double roundedLon = roundToDecimalPlaces(lon, COORDINATE_DECIMAL_PLACES);
+
+            points.add(new RoadNamePoint(
+                    roadName,
+                    muni,
+                    Coordinates.Epsg4326.of(roundedLat, roundedLon),
+                    record.get("similarity", Double.class)
+            ));
+        }
+
+        log.debug("Found {} representative points for street name '{}'", points.size(), streetName);
+        return points;
     }
 
     /**

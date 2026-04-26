@@ -19,16 +19,21 @@
 
 1. Dispatcher issues the Lookup Address command and enters a search query.
    * The search query is free-form text (e.g., street address, place name, road intersection).
+   * The search query may be a road name without a street number; in this case the system returns a representative result for the road.
 2. System sends the search query to the GIS Server geocoding service.
 3. GIS Server returns a list of matching locations.
 4. System displays the list of matching locations to the dispatcher.
    * Each result shows the location name(s), municipality, and location type (address, place, intersection).
+   * For address results, the street number is shown alongside the street name when one is present.
    * Results are displayed in the dispatcher's preferred language where available.
 5. Dispatcher selects a location from the list.
+   * The dispatcher may click a result with the mouse.
+   * The dispatcher may also navigate the list with the up/down arrow keys and confirm the selection with Enter. (See [UX Guidelines: Keyboard Navigation](../../UXDesigns/Dispatcher-Client-UX-Guidelines.md).)
 6. System centers the map view on the selected location's coordinates.
 7. System places a temporary marker on the map at the selected location.
    * The marker is purely visual and is not persisted.
-   * The marker remains visible until the dispatcher performs another lookup, clears it, or pans the map away.
+   * The marker remains visible until the dispatcher performs another lookup or clears it explicitly via the Clear Lookup command.
+   * The marker remains visible when the dispatcher pans or zooms the map.
 
 ## Alternative Flow A: Single Match
 
@@ -46,6 +51,9 @@
 ## Alternative Flow C: Lookup by Coordinates
 
 1. Dispatcher enters coordinates directly in any supported format (DD, DDM, or DMS per [NFR: Internationalization](../../NonFunctionalRequirements/Internationalization.md)).
+   * The dispatcher may switch between DD, DDM, and DMS formats using a format selector control. When switching formats, any parseable coordinate value in the input is converted automatically to the new format.
+   * The degree symbol (`°`) is not required; the parser accepts entries without it (e.g. `60.17, 24.94` for DD, `60 10.1914N 24 56.3027E` for DDM, or `60 10 11.49N 24 56 18.16E` for DMS).
+   * The coordinate entry component is shared across call detail and incident detail forms (future use).
 2. System validates that coordinates are within Finland bounds (latitude 58.84 to 70.09, longitude 19.08 to 31.59).
 3. If valid, System centers the map view on the coordinates and places a temporary marker.
 4. If invalid, System displays an error indicating the coordinates are outside the supported area.
@@ -54,6 +62,7 @@
 
 1. Dispatcher issues a Clear Lookup command.
 2. System removes the temporary marker from the map view.
+   * Clicking Clear is the only explicit way to remove the marker; panning or zooming the map does not remove it.
 3. Map view remains at its current position.
 
 ## Exceptions

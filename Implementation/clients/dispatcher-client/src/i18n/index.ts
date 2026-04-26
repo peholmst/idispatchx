@@ -35,6 +35,11 @@ export type TranslationKey =
     | 'lookup.addressPlaceholder'
     | 'lookup.coordsLabel'
     | 'lookup.coordsPlaceholder'
+    | 'lookup.coordsPlaceholder.DD'
+    | 'lookup.coordsPlaceholder.DDM'
+    | 'lookup.coordsPlaceholder.DMS'
+    | 'lookup.toolbar.base'
+    | 'lookup.toolbar.layers'
     | 'lookup.button'
     | 'lookup.clear'
     | 'lookup.noResults'
@@ -76,6 +81,11 @@ const EN: Translations = {
     'lookup.addressPlaceholder':    'Search address (geocoding)...',
     'lookup.coordsLabel':           'Coordinates',
     'lookup.coordsPlaceholder':     'e.g. 60°10.220′N 024°56.380′E',
+    'lookup.coordsPlaceholder.DD':  'e.g. 60.170278N 024.939722E',
+    'lookup.coordsPlaceholder.DDM': 'e.g. 60°10.220′N 024°56.380′E',
+    'lookup.coordsPlaceholder.DMS': 'e.g. 60°10′13.2″N 024°56′22.8″E',
+    'lookup.toolbar.base':          'Base:',
+    'lookup.toolbar.layers':        'Layers:',
     'lookup.button':                'Lookup',
     'lookup.clear':                 'Clear',
     'lookup.noResults':             'No locations found',
@@ -110,6 +120,11 @@ const FI: Translations = {
     'lookup.addressPlaceholder':    'Hae osoitetta...',
     'lookup.coordsLabel':           'Koordinaatit',
     'lookup.coordsPlaceholder':     'esim. 60°10.220′P 024°56.380′I',
+    'lookup.coordsPlaceholder.DD':  'esim. 60.170278P 024.939722I',
+    'lookup.coordsPlaceholder.DDM': 'esim. 60°10.220′P 024°56.380′I',
+    'lookup.coordsPlaceholder.DMS': 'esim. 60°10′13.2″P 024°56′22.8″I',
+    'lookup.toolbar.base':          'Pohjakartta:',
+    'lookup.toolbar.layers':        'Tasot:',
     'lookup.button':                'Hae',
     'lookup.clear':                 'Tyhjennä',
     'lookup.noResults':             'Sijainteja ei löydy',
@@ -144,6 +159,11 @@ const SV: Translations = {
     'lookup.addressPlaceholder':    'Sök adress...',
     'lookup.coordsLabel':           'Koordinater',
     'lookup.coordsPlaceholder':     't.ex. 60°10.220′N 024°56.380′E',
+    'lookup.coordsPlaceholder.DD':  't.ex. 60.170278N 024.939722E',
+    'lookup.coordsPlaceholder.DDM': 't.ex. 60°10.220′N 024°56.380′E',
+    'lookup.coordsPlaceholder.DMS': 't.ex. 60°10′13.2″N 024°56′22.8″E',
+    'lookup.toolbar.base':          'Bakgrundskarta:',
+    'lookup.toolbar.layers':        'Lager:',
     'lookup.button':                'Sök',
     'lookup.clear':                 'Rensa',
     'lookup.noResults':             'Inga platser hittades',

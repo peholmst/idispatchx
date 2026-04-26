@@ -58,9 +58,9 @@ class LocationResultTest {
     }
 
     @Test
-    void addressResult_nullNumber_throwsNullPointerException() {
-        assertThrows(NullPointerException.class,
-                () -> new AddressResult(STREET_NAME, null, HELSINKI, COORDS, AddressSource.ADDRESS_POINT));
+    void addressResult_nullNumber_createsRoadNameResult() {
+        var result = new AddressResult(STREET_NAME, null, HELSINKI, COORDS, AddressSource.ADDRESS_POINT);
+        assertNull(result.number());
     }
 
     @Test
