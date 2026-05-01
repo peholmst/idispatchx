@@ -52,6 +52,7 @@ Each plan follows a consistent structure:
 | [GIS-Server-ADR-Compliance-Plan.md](GIS-Server-ADR-Compliance-Plan.md) | Plan to bring the GIS Server into compliance with ADR-0002, -0003, -0004, -0007, -0009 |
 | [GIS-Server-Docker-Testing-Plan.md](GIS-Server-Docker-Testing-Plan.md) | Plan to run GIS Server in Docker for manual testing, with real NLS sample data (issue #38) |
 | [GIS-Server-Implementation-Plan.md](GIS-Server-Implementation-Plan.md) | Implementation plan for the GIS Server REST API |
+| [Map-View-Reset-Fix-Plan-48.md](Map-View-Reset-Fix-Plan-48.md) | Plan to fix map view reset on OIDC token refresh in secondary window (issue #48) |
 
 ## Creating New Plans
 

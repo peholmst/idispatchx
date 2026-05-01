@@ -28,6 +28,7 @@ export class AppShell extends HTMLElement {
     #http: HttpClient | null = null;
     #gisServerUrl = '';
     #warningBanner: HTMLDivElement | null = null;
+    #renderedStatusKind: AuthStatus['kind'] | null = null;
     // BroadcastChannel used by dispatcher windows (primary/secondary) to receive
     // session events from the launcher — notably sign-out propagation.
     #sessionChannel: BroadcastChannel | null = null;
@@ -114,6 +115,10 @@ export class AppShell extends HTMLElement {
             if (this.#windowType !== 'launcher') {
                 this.#openSessionChannel();
             }
+            // Token refresh keeps kind === 'authenticated'. The window element
+            // already holds a live authState reference so no re-render is needed —
+            // avoiding a full map reset on each token rotation.
+            if (this.#renderedStatusKind === 'authenticated') return;
         } else if (status.kind === 'expired' || status.kind === 'unauthenticated') {
             this.#sessionManager!.stop();
             this.#dismissWarningBanner();
@@ -146,6 +151,7 @@ export class AppShell extends HTMLElement {
     }
 
     #renderStatus(status: AuthStatus): void {
+        this.#renderedStatusKind = status.kind;
         // Remove any existing authenticated view or login screen
         for (const tag of [
             LoginScreen.TAG,
