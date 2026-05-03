@@ -37,7 +37,7 @@ public abstract class CommandHandler<C extends Command, R> {
      * @param command the command to handle
      * @return the result of handling the command
      */
-    public final R handle(C command) {
+    final R handle(C command) {
         Objects.requireNonNull(command, "command must not be null");
 
         var lockScope = determineLockScope(command);
