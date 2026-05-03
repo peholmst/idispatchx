@@ -40,7 +40,7 @@ class FileBasedCommandLogAdapterTest {
 
         var lines = Files.readAllLines(tempDir.resolve("commands.log"));
         assertEquals(1, lines.size());
-        var parts = lines.getFirst().split("\\|", -1);
+        var parts = lines.getFirst().split("\t", -1);
         assertEquals(5, parts.length);
         assertEquals("2026-05-03T12:00:00Z", parts[0]);
         assertEquals(commandId.value(), parts[1]);
@@ -65,7 +65,7 @@ class FileBasedCommandLogAdapterTest {
 
         var lines = Files.readAllLines(tempDir.resolve("commands.log"));
         assertEquals(1, lines.size());
-        var parts = lines.getFirst().split("\\|", -1);
+        var parts = lines.getFirst().split("\t", -1);
         assertEquals(5, parts.length);
         assertEquals("SYSTEM", parts[2]);
         assertEquals("", parts[3]);

@@ -18,9 +18,9 @@ public record UserId(String value) {
     public static final UserId SYSTEM = new UserId("SYSTEM");
 
     /**
-     * Maximum allowed length, matching the length of a UUID string representation.
+     * Maximum allowed length, matching the maximum length of an email address per RFC 5321.
      */
-    static final int MAX_LENGTH = 36;
+    static final int MAX_LENGTH = 254;
 
     /**
      * Creates a UserId with validation.

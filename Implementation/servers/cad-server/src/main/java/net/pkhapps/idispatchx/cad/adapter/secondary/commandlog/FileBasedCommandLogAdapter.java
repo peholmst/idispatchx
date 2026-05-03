@@ -18,8 +18,8 @@ import java.time.Instant;
  * File-based implementation of {@link CommandLogPort} that writes commands to an append-only
  * text file with size-based rotation.
  * <p>
- * Each entry is written as a single pipe-delimited line:
- * {@code <ISO-8601 timestamp>|<commandId>|<userId>|<ipAddress or empty>|<commandType>}
+ * Each entry is written as a single tab-delimited line:
+ * {@code <ISO-8601 timestamp>\t<commandId>\t<userId>\t<ipAddress or empty>\t<commandType>}
  * <p>
  * When the current log file reaches the configured maximum size, it is renamed to
  * {@code <baseFileName>.<timestamp-millis>} and a new file is started. This class is
@@ -107,10 +107,10 @@ public final class FileBasedCommandLogAdapter implements CommandLogPort, AutoClo
     private static String formatEntry(CommandLogEntry entry) {
         String ip = entry.ipAddress() != null ? entry.ipAddress().value() : "";
         return entry.timestamp().toString()
-                + "|" + entry.commandId().value()
-                + "|" + entry.userId().value()
-                + "|" + ip
-                + "|" + entry.commandType();
+                + "\t" + entry.commandId().value()
+                + "\t" + entry.userId().value()
+                + "\t" + ip
+                + "\t" + entry.commandType();
     }
 
     private static BufferedWriter openForAppend(Path path) throws IOException {
