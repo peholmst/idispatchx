@@ -31,7 +31,7 @@ The serialization layer translates `DomainEvent` objects to and from bytes. Both
 
 ### Task 1.1 — Add Jackson dependencies
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Add `jackson-datatype-jsr310` (required for `Instant` serialization) and `jackson-dataformat-smile` (required for binary format) to the build.
 
@@ -50,7 +50,7 @@ The serialization layer translates `DomainEvent` objects to and from bytes. Both
 
 ### Task 1.2 — Implement `DomainEventSerializer`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Define the serialization contract and its two implementations. The interface handles single WAL entries (sequence number + event). To keep Jackson annotations out of the domain model, use Jackson mixin annotations applied at the adapter level.
 
@@ -123,7 +123,7 @@ Concrete event classes are registered with `mapper.registerSubtypes(Class<?>...)
 
 ### Task 1.3 — Unit tests for `DomainEventSerializer`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Test both implementations with a test-only `DomainEvent` record defined inside the test class. This avoids depending on domain model implementation.
 
@@ -146,7 +146,7 @@ Concrete event classes are registered with `mapper.registerSubtypes(Class<?>...)
 
 ### Task 2.1 — Define `WalFormat` and `CorruptionMode` enums, and `WalConfig`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Create the configuration types for the WAL adapter.
 
@@ -194,7 +194,7 @@ Follow the `ConfigLoader`-based builder pattern used by `CommandLogConfig`.
 
 ### Task 2.2 — Define `WalReplayException`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Add the exception thrown on corrupt WAL entries in STRICT mode.
 
@@ -213,7 +213,7 @@ Match the structure of `WalWriteException`: constructors for `(String message)` 
 
 ### Task 2.3 — Implement `FileBasedWalAdapter`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Implement `WalPort` using segmented files on disk. Segmented files enable O(1) truncation: deleting an entire segment file removes all its entries without rewriting the remaining log.
 
@@ -302,7 +302,7 @@ Match the structure of `WalWriteException`: constructors for `(String message)` 
 
 ### Task 2.4 — Tests for `FileBasedWalAdapter`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Unit and integration tests using JUnit 5 `@TempDir`.
 
@@ -330,7 +330,7 @@ Match the structure of `WalWriteException`: constructors for `(String message)` 
 
 ### Task 3.1 — Define `SnapshotConfig`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Configuration record for the snapshot adapter. Format must be consistent with the WAL.
 
@@ -353,7 +353,7 @@ Follow the `ConfigLoader`-based builder pattern.
 
 ### Task 3.2 — Implement `FileBasedSnapshotAdapter`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Implement `SnapshotPort` using the same `ObjectMapper` as the WAL serializer, ensuring format consistency.
 
@@ -417,7 +417,7 @@ Temporary files during write: append `.tmp` suffix before rename (e.g. `snapshot
 
 ### Task 3.3 — Tests for `FileBasedSnapshotAdapter`
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Integration tests using `@TempDir`.
 
@@ -441,7 +441,7 @@ Temporary files during write: append `.tmp` suffix before rename (e.g. `snapshot
 
 ### Task 4.1 — WAL + Snapshot startup/replay integration test
 
-**Status:** Not Started
+**Status:** Done
 
 **Description:** Exercise the full startup sequence from Technical Design §11.1: write events to WAL → create snapshot → truncate WAL → simulate startup (load snapshot + replay remaining WAL entries) → verify reconstructed state.
 
