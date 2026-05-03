@@ -41,7 +41,6 @@ public final class IdempotentCommandDispatcher {
      * @param command the command to execute
      * @return the result, either replayed from cache or from fresh execution
      */
-    @SuppressWarnings("unchecked")
     public <C extends Command, R> R dispatch(CommandHandler<C, R> handler, C command) {
         Objects.requireNonNull(handler, "handler must not be null");
         Objects.requireNonNull(command, "command must not be null");
@@ -55,15 +54,7 @@ public final class IdempotentCommandDispatcher {
                 command.getClass().getSimpleName()
         ));
 
-        // Return cached result if this command was already successfully processed
-        var cached = (java.util.Optional<R>) idempotencyTracker.get(command.commandId());
-        if (cached.isPresent()) {
-            return cached.get();
-        }
-
-        // Execute; cache only on success so failed commands remain retryable
-        R result = handler.handle(command);
-        idempotencyTracker.store(command.commandId(), result);
-        return result;
+        // Execute at most once per commandId; concurrent duplicates block until the first completes
+        return idempotencyTracker.executeOnce(command.commandId(), () -> handler.handle(command));
     }
 }

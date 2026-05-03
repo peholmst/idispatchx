@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,5 +64,51 @@ class IdempotencyTrackerTest {
     void close_shutsDownCleanly() {
         var tracker = new IdempotencyTracker(Duration.ofMinutes(5), Instant::now);
         assertDoesNotThrow(tracker::close);
+    }
+
+    @Test
+    void executeOnce_callsSupplierExactlyOnceForConcurrentDuplicates() throws Exception {
+        try (var tracker = new IdempotencyTracker(Duration.ofMinutes(5), Instant::now)) {
+            var id = CommandId.generate();
+            var executionCount = new AtomicInteger(0);
+            var startLatch = new CountDownLatch(1);
+
+            // Supplier blocks until startLatch released so both threads enter executeOnce first
+            var blockingSupplier = (java.util.function.Supplier<String>) () -> {
+                try {
+                    startLatch.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                executionCount.incrementAndGet();
+                return "result";
+            };
+
+            var t1 = new Thread(() -> tracker.executeOnce(id, blockingSupplier));
+            var t2 = new Thread(() -> tracker.executeOnce(id, blockingSupplier));
+            t1.start();
+            t2.start();
+            Thread.sleep(20); // let both threads reach executeOnce
+            startLatch.countDown();
+            t1.join(5000);
+            t2.join(5000);
+
+            assertEquals(1, executionCount.get());
+            assertEquals("result", tracker.get(id).orElseThrow());
+        }
+    }
+
+    @Test
+    void executeOnce_allowsRetryAfterSupplierThrows() {
+        try (var tracker = new IdempotencyTracker(Duration.ofMinutes(5), Instant::now)) {
+            var id = CommandId.generate();
+
+            assertThrows(RuntimeException.class,
+                    () -> tracker.executeOnce(id, () -> { throw new RuntimeException("fail"); }));
+
+            // Command is not cached — retry should execute the supplier again
+            var result = tracker.executeOnce(id, () -> "recovered");
+            assertEquals("recovered", result);
+        }
     }
 }
