@@ -27,6 +27,11 @@ public record CommandLogEntry(
         String commandType
 ) {
 
+    /**
+     * Maximum allowed length for the command type name.
+     */
+    static final int MAX_COMMAND_TYPE_LENGTH = 100;
+
     public CommandLogEntry {
         Objects.requireNonNull(commandId, "commandId must not be null");
         Objects.requireNonNull(userId, "userId must not be null");
@@ -34,6 +39,18 @@ public record CommandLogEntry(
         Objects.requireNonNull(commandType, "commandType must not be null");
         if (commandType.isBlank()) {
             throw new IllegalArgumentException("commandType must not be blank");
+        }
+        if (commandType.length() > MAX_COMMAND_TYPE_LENGTH) {
+            throw new IllegalArgumentException(
+                    "commandType exceeds maximum length of " + MAX_COMMAND_TYPE_LENGTH + " characters");
+        }
+        for (int i = 0; i < commandType.length(); i++) {
+            char c = commandType.charAt(i);
+            boolean legal = i == 0 ? Character.isJavaIdentifierStart(c) : Character.isJavaIdentifierPart(c);
+            if (!legal) {
+                throw new IllegalArgumentException(
+                        "commandType contains character illegal in a Java class name: '" + c + "'");
+            }
         }
     }
 }

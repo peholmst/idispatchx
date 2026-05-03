@@ -1,6 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.commandlog;
 
 import net.pkhapps.idispatchx.cad.port.secondary.commandlog.CommandLogEntry;
+import net.pkhapps.idispatchx.cad.port.secondary.commandlog.CommandLogException;
 import net.pkhapps.idispatchx.cad.port.secondary.commandlog.CommandLogPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,7 @@ public final class FileBasedCommandLogAdapter implements CommandLogPort, AutoClo
             writer.flush();
             rotateIfNeeded();
         } catch (IOException e) {
-            log.error("Failed to write command log entry for command {}", entry.commandId(), e);
+            throw new CommandLogException("Failed to write command log entry for command " + entry.commandId(), e);
         }
     }
 
@@ -93,10 +94,14 @@ public final class FileBasedCommandLogAdapter implements CommandLogPort, AutoClo
         writer.close();
 
         Path rotated = config.logDirectory().resolve(config.baseFileName() + "." + Instant.now().toEpochMilli());
-        Files.move(currentFile, rotated);
-        log.info("Command log rotated: {} -> {}", currentFile, rotated);
-
-        writer = openForAppend(currentFile);
+        try {
+            Files.move(currentFile, rotated);
+            log.info("Command log rotated: {} -> {}", currentFile, rotated);
+        } catch (IOException e) {
+            log.error("Failed to rename command log during rotation; continuing to write to existing file", e);
+        } finally {
+            writer = openForAppend(currentFile);
+        }
     }
 
     private static String formatEntry(CommandLogEntry entry) {

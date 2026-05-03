@@ -13,17 +13,43 @@ import java.util.Objects;
 public record IPAddress(String value) {
 
     /**
+     * Maximum allowed length (covers the longest valid IPv6 address with zone identifier).
+     */
+    static final int MAX_LENGTH = 45;
+
+    /**
      * Creates an IPAddress with validation.
      *
      * @param value the IP address string
      * @throws NullPointerException     if value is null
-     * @throws IllegalArgumentException if value is blank
+     * @throws IllegalArgumentException if value is blank, too long, or contains illegal characters
      */
     public IPAddress {
         Objects.requireNonNull(value, "value must not be null");
         if (value.isBlank()) {
             throw new IllegalArgumentException("value must not be blank");
         }
+        if (value.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException(
+                    "value exceeds maximum length of " + MAX_LENGTH + " characters");
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (!isLegalChar(value.charAt(i))) {
+                throw new IllegalArgumentException(
+                        "value contains character illegal in an IP address: '" + value.charAt(i) + "'");
+            }
+        }
+    }
+
+    private static boolean isLegalChar(char c) {
+        return (c >= '0' && c <= '9')
+                || (c >= 'a' && c <= 'f')
+                || (c >= 'A' && c <= 'F')
+                || c == '.' || c == ':'
+                || c == '%'              // zone ID separator
+                || (c >= 'g' && c <= 'z')  // zone ID interface name
+                || (c >= 'G' && c <= 'Z')
+                || c == '-' || c == '_'; // zone ID interface name
     }
 
     /**

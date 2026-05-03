@@ -18,6 +18,18 @@ class IPAddressTest {
     }
 
     @Test
+    void constructor_rejectsTooLongValue() {
+        String tooLong = "a".repeat(IPAddress.MAX_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, () -> new IPAddress(tooLong));
+    }
+
+    @Test
+    void constructor_rejectsIllegalCharacters() {
+        assertThrows(IllegalArgumentException.class, () -> new IPAddress("192.168.1.1<script>"));
+        assertThrows(IllegalArgumentException.class, () -> new IPAddress("'; DROP TABLE"));
+    }
+
+    @Test
     void constructor_acceptsIPv4() {
         var ip = new IPAddress("192.168.1.1");
         assertEquals("192.168.1.1", ip.value());

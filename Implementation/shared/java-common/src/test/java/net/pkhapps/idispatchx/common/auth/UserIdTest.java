@@ -18,6 +18,18 @@ class UserIdTest {
     }
 
     @Test
+    void constructor_rejectsTooLongValue() {
+        String tooLong = "a".repeat(UserId.MAX_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, () -> new UserId(tooLong));
+    }
+
+    @Test
+    void constructor_rejectsIllegalCharacters() {
+        assertThrows(IllegalArgumentException.class, () -> new UserId("user<script>"));
+        assertThrows(IllegalArgumentException.class, () -> new UserId("user\ninjection"));
+    }
+
+    @Test
     void constructor_acceptsValidValue() {
         var userId = new UserId("user@example.com");
         assertEquals("user@example.com", userId.value());
