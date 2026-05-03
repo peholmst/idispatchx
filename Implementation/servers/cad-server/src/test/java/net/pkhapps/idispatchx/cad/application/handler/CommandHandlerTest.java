@@ -7,6 +7,9 @@ import net.pkhapps.idispatchx.cad.domain.event.EventId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalWriteException;
+import net.pkhapps.idispatchx.common.auth.IPAddress;
+import net.pkhapps.idispatchx.common.auth.UserId;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +42,7 @@ class CommandHandlerTest {
     @Test
     void handle_writesEventToWalBeforeApplyingMutation() {
         var handler = new TestCommandHandler(walPort, lockManager, mutationApplied);
-        var command = new TestCommand(CommandId.generate(), "test-123");
+        var command = new TestCommand(CommandId.generate(), "test-123", UserId.SYSTEM, null);
 
         var result = handler.handle(command);
 
@@ -53,7 +56,7 @@ class CommandHandlerTest {
     void handle_doesNotApplyMutationIfWalWriteFails() {
         walPort.failOnWrite = true;
         var handler = new TestCommandHandler(walPort, lockManager, mutationApplied);
-        var command = new TestCommand(CommandId.generate(), "test-123");
+        var command = new TestCommand(CommandId.generate(), "test-123", UserId.SYSTEM, null);
 
         assertThrows(WalWriteException.class, () -> handler.handle(command));
 
@@ -73,7 +76,7 @@ class CommandHandlerTest {
         // First command holds lock while second waits
         var thread1 = new Thread(() -> {
             try {
-                handler.handle(new TestCommand(CommandId.generate(), "same-id"));
+                handler.handle(new TestCommand(CommandId.generate(), "same-id", UserId.SYSTEM, null));
             } finally {
                 latch.countDown();
             }
@@ -82,7 +85,7 @@ class CommandHandlerTest {
         var thread2 = new Thread(() -> {
             try {
                 Thread.sleep(10); // Ensure thread1 gets lock first
-                handler.handle(new TestCommand(CommandId.generate(), "same-id"));
+                handler.handle(new TestCommand(CommandId.generate(), "same-id", UserId.SYSTEM, null));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } finally {
@@ -108,7 +111,7 @@ class CommandHandlerTest {
         var stateObservedDuringWalWrite = new AtomicInteger(-1);
 
         var handlerThread = new Thread(() -> {
-            handler.handle(new TestCommand(CommandId.generate(), "test"));
+            handler.handle(new TestCommand(CommandId.generate(), "test", UserId.SYSTEM, null));
         });
 
         handlerThread.start();
@@ -129,7 +132,7 @@ class CommandHandlerTest {
 
     // --- Test doubles ---
 
-    record TestCommand(CommandId commandId, String targetId) implements Command {
+    record TestCommand(CommandId commandId, String targetId, UserId userId, @Nullable IPAddress ipAddress) implements Command {
     }
 
     record TestEvent(EventId eventId, Instant timestamp, CommandId causedBy,
