@@ -6,6 +6,7 @@ import net.pkhapps.idispatchx.cad.adapter.secondary.wal.SmileDomainEventSerializ
 import net.pkhapps.idispatchx.cad.adapter.secondary.wal.WalFormat;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import net.pkhapps.idispatchx.cad.port.secondary.snapshot.OperationalState;
+import net.pkhapps.idispatchx.cad.port.secondary.snapshot.SnapshotReadException;
 import net.pkhapps.idispatchx.cad.port.secondary.snapshot.SnapshotWriteException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -100,7 +101,7 @@ class FileBasedSnapshotAdapterTest {
 
     @ParameterizedTest
     @EnumSource(WalFormat.class)
-    void allSnapshotsCorrupt_returnsEmpty(WalFormat format) throws IOException {
+    void allSnapshotsCorrupt_throwsSnapshotReadException(WalFormat format) throws IOException {
         var adapter = createAdapter(format);
         adapter.createSnapshot(OperationalState.empty(), new SequenceNumber(10));
 
@@ -108,7 +109,7 @@ class FileBasedSnapshotAdapterTest {
         Path file = tempDir.resolve(String.format("snapshot-%016d%s", 10, ext));
         Files.writeString(file, "CORRUPT", java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
 
-        assertTrue(adapter.loadLatestSnapshot().isEmpty());
+        assertThrows(SnapshotReadException.class, () -> adapter.loadLatestSnapshot());
     }
 
     // -------------------------------------------------------------------------

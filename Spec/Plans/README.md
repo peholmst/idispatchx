@@ -49,7 +49,6 @@ Each plan follows a consistent structure:
 | File | Description |
 |------|-------------|
 | [Address-Lookup-Fixes-Plan-45.md](Address-Lookup-Fixes-Plan-45.md) | Plan to fix 8 address-lookup bugs in the secondary dispatcher window (issue #45) |
-| [CAD-Server-WAL-Snapshot-Implementation-Plan.md](CAD-Server-WAL-Snapshot-Implementation-Plan.md) | Plan to implement WalPort and SnapshotPort file-based adapters with JSON and SMILE formats (issue #72) |
 | [GIS-Server-ADR-Compliance-Plan.md](GIS-Server-ADR-Compliance-Plan.md) | Plan to bring the GIS Server into compliance with ADR-0002, -0003, -0004, -0007, -0009 |
 | [GIS-Server-Docker-Testing-Plan.md](GIS-Server-Docker-Testing-Plan.md) | Plan to run GIS Server in Docker for manual testing, with real NLS sample data (issue #38) |
 | [GIS-Server-Implementation-Plan.md](GIS-Server-Implementation-Plan.md) | Implementation plan for the GIS Server REST API |

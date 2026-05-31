@@ -131,15 +131,13 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
 
         long firstSeq = currentSeq.get() + 1;
         long lastSeq = firstSeq + events.size() - 1;
-        long positionBefore;
-        try {
-            positionBefore = currentChannel.position();
-        } catch (IOException e) {
-            throw new WalWriteException("Failed to determine WAL position for batch starting at seq=" + firstSeq, e);
-        }
+        // positionBefore is captured after maybeRolloverBeforeWrite() so that, if a segment
+        // rollover occurs, the offset refers to the new segment rather than the closed one.
+        long positionBefore = -1;
 
         try {
             maybeRolloverBeforeWrite();
+            positionBefore = currentChannel.position();
             for (DomainEvent event : events) {
                 long seq = currentSeq.incrementAndGet();
                 appendEntry(new WalEntry(new SequenceNumber(seq), event));
@@ -148,11 +146,13 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
         } catch (IOException e) {
             // Rollback: truncate the channel back to the pre-batch position.
             currentSeq.set(firstSeq - 1);
-            try {
-                currentChannel.truncate(positionBefore);
-                currentChannel.position(positionBefore);
-            } catch (IOException truncateEx) {
-                log.error("Failed to roll back WAL batch starting at seq={}", firstSeq, truncateEx);
+            if (positionBefore >= 0) {
+                try {
+                    currentChannel.truncate(positionBefore);
+                    currentChannel.position(positionBefore);
+                } catch (IOException truncateEx) {
+                    log.error("Failed to roll back WAL batch starting at seq={}", firstSeq, truncateEx);
+                }
             }
             throw new WalWriteException("Failed to write WAL batch starting at seq=" + firstSeq, e);
         }
@@ -347,7 +347,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
                     if (entry.sequenceNumber().value() > skipUpToSeq) {
                         consumer.accept(entry.event());
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     handleReplayError("Failed to deserialize WAL entry in segment "
                             + segment.getFileName(), e, null);
                 }
@@ -385,7 +385,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
                     if (entry.sequenceNumber().value() > skipUpToSeq) {
                         consumer.accept(entry.event());
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     handleReplayError("Failed to deserialize WAL entry in binary segment "
                             + segment.getFileName() + " at entry " + entryIndex, e, null);
                 }

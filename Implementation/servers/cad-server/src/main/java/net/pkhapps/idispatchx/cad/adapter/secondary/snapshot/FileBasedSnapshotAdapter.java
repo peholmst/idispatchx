@@ -101,6 +101,9 @@ public final class FileBasedSnapshotAdapter implements SnapshotPort {
     @Override
     public Optional<Snapshot> loadLatestSnapshot() {
         List<Path> snapshots = listSnapshots();
+        if (snapshots.isEmpty()) {
+            return Optional.empty();
+        }
         // Try newest first; fall back to older if corrupt.
         for (Path path : snapshots) {
             try {
@@ -112,7 +115,10 @@ public final class FileBasedSnapshotAdapter implements SnapshotPort {
                 log.warn("Snapshot {} is corrupt and will be skipped: {}", path.getFileName(), e.getMessage());
             }
         }
-        return Optional.empty();
+        // Snapshot files exist but none could be deserialized — surface the failure rather than
+        // silently treating it as "no snapshot", which could cause unsafe startup after WAL truncation.
+        throw new SnapshotReadException(
+                "All " + snapshots.size() + " snapshot file(s) are corrupt; cannot load any");
     }
 
     @Override

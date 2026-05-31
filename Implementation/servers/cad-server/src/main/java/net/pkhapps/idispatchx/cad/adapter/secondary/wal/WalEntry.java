@@ -7,9 +7,9 @@ import java.util.Objects;
 
 /**
  * An internal record pairing a WAL sequence number with its domain event.
- * Not part of the public port API.
+ * Part of the adapter layer; not part of the port API.
  */
-record WalEntry(SequenceNumber sequenceNumber, DomainEvent event) {
+public record WalEntry(SequenceNumber sequenceNumber, DomainEvent event) {
 
     WalEntry {
         Objects.requireNonNull(sequenceNumber, "sequenceNumber must not be null");
