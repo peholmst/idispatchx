@@ -128,6 +128,12 @@ public final class Call extends Entity<CallId> {
         if (effectiveOutcome == null) {
             throw new IllegalStateException("outcome must be set before ending a call");
         }
+        if ((effectiveOutcome == CallOutcome.INCIDENT_CREATED || effectiveOutcome == CallOutcome.ATTACHED_TO_INCIDENT)
+                && incidentId == null) {
+            throw new IllegalStateException(
+                    "outcome " + effectiveOutcome + " requires incidentId to already be set; "
+                    + "use attach/create commands to link the call before ending it");
+        }
         var effectiveRationale = outcomeRationale != null ? outcomeRationale : this.outcomeRationale;
         if (effectiveOutcome.requiresRationale() && effectiveRationale == null) {
             throw new IllegalStateException("outcome " + effectiveOutcome + " requires an outcomeRationale");

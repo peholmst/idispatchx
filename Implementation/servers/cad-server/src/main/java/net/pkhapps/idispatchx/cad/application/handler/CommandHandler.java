@@ -24,7 +24,7 @@ import java.util.Objects;
 public abstract class CommandHandler<C extends Command, R> {
 
     protected final WalPort walPort;
-    private final EntityLockManager lockManager;
+    protected final EntityLockManager lockManager;
 
     protected CommandHandler(WalPort walPort, EntityLockManager lockManager) {
         this.walPort = Objects.requireNonNull(walPort, "walPort must not be null");

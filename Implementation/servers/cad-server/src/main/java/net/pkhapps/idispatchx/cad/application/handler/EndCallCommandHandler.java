@@ -54,7 +54,8 @@ public class EndCallCommandHandler extends CommandHandler<EndCallCommand, Void> 
 
         var pending = call.prepareEnd(command.outcome(), command.outcomeRationale());
 
-        // Rebuild event with causedBy and authoritative timestamp from ClockPort
+        // Use the authoritative ClockPort timestamp; apply THIS event (not the prepared one)
+        // so live state and WAL-replayed state use the same callEnded value.
         var callEnded = clock.now();
         var origEvent = pending.event();
         var event = new CallEndedEvent(
@@ -63,7 +64,7 @@ public class EndCallCommandHandler extends CommandHandler<EndCallCommand, Void> 
                 origEvent.outcomeRationale(), origEvent.incidentId());
 
         return new PendingMutation<>(event, () -> {
-            pending.applyMutation().run();
+            call.applyEvent(event);
             // Schedule archival for unlinked calls; failure must not block the command
             if (call.incidentId() == null) {
                 try {

@@ -60,16 +60,33 @@ class CallTest {
     }
 
     @Test
-    void prepareEnd_doesNotRequireRationaleForIncidentCreated() {
-        // First attach to incident
-        var attachPending = call.prepareAttachToIncident(INCIDENT_ID, Instant.now());
-        attachPending.applyMutation().run();
-        // Can now end with outcome ATTACHED_TO_INCIDENT — no rationale needed
-        // But wait, AttachToIncident sets outcome to ATTACHED_TO_INCIDENT, not INCIDENT_CREATED
-        // Let's test with a non-rationale-requiring outcome
-        var call2 = Call.create(new CallId(NanoIdGenerator.generate()), DISPATCHER, Instant.now(),
-                null, null, null, null).call();
-        var endPending = call2.prepareEnd(CallOutcome.INCIDENT_CREATED, null);
+    void prepareEnd_doesNotRequireRationaleForIncidentCreated_whenIncidentAlreadyLinked() {
+        // INCIDENT_CREATED does not require rationale, but DOES require incidentId to be set
+        call.applyEvent(new CallUpdatedEvent(
+                net.pkhapps.idispatchx.cad.domain.event.EventId.generate(), Instant.now(), null,
+                DISPATCHER, CALL_ID, null, null, null, null,
+                CallOutcome.INCIDENT_CREATED, null, INCIDENT_ID));
+        var endPending = call.prepareEnd(null, null);
+        assertNotNull(endPending);
+    }
+
+    @Test
+    void prepareEnd_rejectsIncidentCreatedOutcomeWithoutIncidentId() {
+        assertThrows(IllegalStateException.class,
+                () -> call.prepareEnd(CallOutcome.INCIDENT_CREATED, null));
+    }
+
+    @Test
+    void prepareEnd_rejectsAttachedToIncidentOutcomeWithoutIncidentId() {
+        assertThrows(IllegalStateException.class,
+                () -> call.prepareEnd(CallOutcome.ATTACHED_TO_INCIDENT, null));
+    }
+
+    @Test
+    void prepareEnd_allowsAttachedToIncidentOutcomeWhenIncidentIsLinked() {
+        call.prepareAttachToIncident(INCIDENT_ID, Instant.now()).applyMutation().run();
+        // outcome is now ATTACHED_TO_INCIDENT and incidentId is set — should succeed
+        var endPending = call.prepareEnd(null, null);
         assertNotNull(endPending);
     }
 

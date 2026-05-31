@@ -22,6 +22,13 @@ import java.util.Objects;
  * <p>
  * Cross-aggregate: writes {@code CallDetachedFromIncidentEvent} and
  * {@code IncidentLogEntryAddedEvent} as a single WAL batch.
+ * <p>
+ * Locking strategy: {@code determineLockScope} uses a best-effort pre-read to include the
+ * incident lock when an {@code incidentId} is already visible. If a concurrent attach races
+ * between scope determination and actual execution, {@code prepareBatchExecution} acquires
+ * the incident lock explicitly (re-entrant if already held) and holds it through
+ * {@code applyMutation} to ensure the incident's log-entry list is never modified without
+ * the lock being held.
  */
 public class DetachCallFromIncidentCommandHandler
         extends CommandHandler<DetachCallFromIncidentCommand, Void> {
@@ -42,9 +49,9 @@ public class DetachCallFromIncidentCommandHandler
 
     @Override
     protected LockScope determineLockScope(DetachCallFromIncidentCommand command) {
-        // Read call state without a lock to determine what locks are needed.
-        // If the call has an incidentId, include the incident lock so that the log entry
-        // can be safely appended inside prepareBatchExecution() under both locks.
+        // Best-effort pre-read: include the incident lock if already visible.
+        // If the incidentId changes between this read and prepareBatchExecution(),
+        // the incident lock is acquired explicitly inside prepareBatchExecution().
         var callOpt = callRepository.findById(command.callId());
         if (callOpt.isEmpty()) {
             return LockScope.of("call", command.callId().value());
@@ -68,29 +75,43 @@ public class DetachCallFromIncidentCommandHandler
             throw new IllegalStateException("call is ENDED: " + command.callId());
         }
 
-        // prepareDetachFromIncident validates outcome == ATTACHED_TO_INCIDENT
+        // Validates outcome == ATTACHED_TO_INCIDENT and that incidentId is set
         var callPending = call.prepareDetachFromIncident();
         var formerIncidentId = call.incidentId();
 
-        var incident = incidentRepository.findById(formerIncidentId)
-                .orElseThrow(() -> new NoSuchElementException("incident not found: " + formerIncidentId));
+        // Acquire the incident lock explicitly. If determineLockScope() already included
+        // it (the common case), this is re-entrant and a no-op. If a concurrent attach
+        // raced between scope determination and now, this ensures we hold the lock before
+        // touching the incident's log entries.
+        var incidentLockHandle = lockManager.acquire(
+                LockScope.of("incident", formerIncidentId.value()));
+        try {
+            var incident = incidentRepository.findById(formerIncidentId)
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "incident not found: " + formerIncidentId));
 
-        var now = clock.now();
-        var logEntryId = new IncidentLogEntryId(NanoIdGenerator.generate());
-        var logPending = incident.prepareAddCallDetachedLogEntry(
-                logEntryId, now, command.userId(), command.callId());
+            var now = clock.now();
+            var logEntryId = new IncidentLogEntryId(NanoIdGenerator.generate());
+            var logPending = incident.prepareAddCallDetachedLogEntry(
+                    logEntryId, now, command.userId(), command.callId());
 
-        var callEvent = new CallDetachedFromIncidentEvent(
-                EventId.generate(), now, command.commandId(), command.userId(),
-                command.callId(), formerIncidentId);
-        var logEvent = new IncidentLogEntryAddedEvent(
-                EventId.generate(), now, command.commandId(), command.userId(),
-                formerIncidentId, logPending.event().logEntry());
+            var callEvent = new CallDetachedFromIncidentEvent(
+                    EventId.generate(), now, command.commandId(), command.userId(),
+                    command.callId(), formerIncidentId);
+            var logEvent = new IncidentLogEntryAddedEvent(
+                    EventId.generate(), now, command.commandId(), command.userId(),
+                    formerIncidentId, logPending.event().logEntry());
 
-        return new PendingBatchMutation<>(List.of(callEvent, logEvent), () -> {
-            callPending.applyMutation().run();
-            logPending.applyMutation().run();
-        });
+            return new PendingBatchMutation<>(List.of(callEvent, logEvent), () -> {
+                try (incidentLockHandle) {
+                    callPending.applyMutation().run();
+                    logPending.applyMutation().run();
+                }
+            });
+        } catch (Exception e) {
+            incidentLockHandle.close();
+            throw e;
+        }
     }
 
     @Override
