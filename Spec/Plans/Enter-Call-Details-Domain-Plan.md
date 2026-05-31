@@ -288,22 +288,19 @@ Define Incident identifiers, the state enum, and the priority value object.
 **Description:**
 Implement the `IncidentLogEntry` value object per [Domain: Incident](../Domain/Incident.md).
 
-Per the domain spec, the `dispatcher` field is optional on all log entry types:
-- For **automatic** entries, `dispatcher` is set when the change was triggered by a dispatcher action
-  (e.g., a dispatcher-issued command that causes an automatic state change); it is null when the
-  change was triggered by the system alone.
-- For **manual** entries, `dispatcher` is always present since a dispatcher authored the entry.
+The `dispatcher` field is **never null** on any log entry type. Use `UserId.SYSTEM` when the
+change was triggered by the system alone (no human dispatcher involved).
 
 **Package:** `net.pkhapps.idispatchx.cad.domain.model.incident`
 
 **Files to Create:**
 - `IncidentLogEntryId.java` — record wrapping Nano ID string
 - `IncidentLogEntry.java` — sealed interface with two record implementations:
-  - `AutomaticEntry(IncidentLogEntryId id, Instant logTimestamp, @Nullable UserId dispatcher, JsonNode changeData)` — system-generated; `changeData` is a structured JSON object; `dispatcher` is set when a dispatcher action triggered this entry
-  - `ManualEntry(IncidentLogEntryId id, Instant logTimestamp, UserId dispatcher, Description description)` — dispatcher-authored; `dispatcher` is always required
+  - `AutomaticEntry(IncidentLogEntryId id, Instant logTimestamp, UserId dispatcher, JsonNode changeData)` — system-generated; `changeData` is a structured JSON object; use `UserId.SYSTEM` when the system alone triggered this entry
+  - `ManualEntry(IncidentLogEntryId id, Instant logTimestamp, UserId dispatcher, Description description)` — dispatcher-authored; `dispatcher` is always the human user
 
 **Acceptance Criteria:**
-- [ ] `AutomaticEntry` has an optional `@Nullable UserId dispatcher` field
+- [ ] `AutomaticEntry.dispatcher` is non-null; callers pass `UserId.SYSTEM` for system-only changes
 - [ ] `ManualEntry` requires a non-null `dispatcher` user ID and a non-null `description`
 - [ ] `description` max 1000 UTF-8 characters enforced via `Description` value object
 - [ ] Entries are immutable records
@@ -338,8 +335,8 @@ is out of scope.
 
 **Prepare methods to implement:**
 - `static IncidentCreationResult create(IncidentId, Instant, @Nullable IncidentType, @Nullable IncidentPriority, @Nullable Location, @Nullable Description)` — factory; creates incident in state `NEW`
-- `PendingMutation<IncidentLogEntryAddedEvent> prepareAddCallLinkedLogEntry(IncidentLogEntryId, Instant, @Nullable UserId dispatcher, CallId)` — adds automatic log entry recording call linkage; validates incident is not in `ENDED` state
-- `PendingMutation<IncidentLogEntryAddedEvent> prepareAddCallDetachedLogEntry(IncidentLogEntryId, Instant, @Nullable UserId dispatcher, CallId)` — adds automatic log entry recording call detachment
+- `PendingMutation<IncidentLogEntryAddedEvent> prepareAddCallLinkedLogEntry(IncidentLogEntryId, Instant, UserId dispatcher, CallId)` — adds automatic log entry recording call linkage; validates incident is not in `ENDED` state; callers pass `UserId.SYSTEM` when system-triggered
+- `PendingMutation<IncidentLogEntryAddedEvent> prepareAddCallDetachedLogEntry(IncidentLogEntryId, Instant, UserId dispatcher, CallId)` — adds automatic log entry recording call detachment; callers pass `UserId.SYSTEM` when system-triggered
 - `void applyEvent(DomainEvent)` — for WAL replay
 
 **Acceptance Criteria:**
@@ -379,6 +376,13 @@ Define the `IncidentRepository` interface with the minimal query methods needed 
 ## Phase 4: Commands and Domain Events
 
 Command objects and domain events for all call operations and incident creation from call.
+
+> **Prerequisite — extend `DomainEvent` interface:** Before creating any event records, add a
+> `UserId causedByUser()` method to the `DomainEvent` interface
+> (`net.pkhapps.idispatchx.cad.domain.event.DomainEvent`). All command-driven events set this to
+> the command's `userId`; system-generated events (if any arise in future work) use
+> `UserId.SYSTEM`. This field is distinct from `causedBy()` (which carries the `CommandId`) and
+> replaces the need for any per-event user field such as `receivingDispatcher`.
 
 ### Task 4.1: Call Commands
 
@@ -441,17 +445,19 @@ Define domain events for all call state changes. All events implement `DomainEve
 **Package:** `net.pkhapps.idispatchx.cad.domain.event`
 
 **Files to Create:**
-- `CallCreatedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `receivingDispatcher`, `callStarted`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`
-- `CallUpdatedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`, `@Nullable CallOutcome outcome`, `@Nullable Description outcomeRationale` — includes all mutable fields that may have changed
+- `CallCreatedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `callStarted`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description` — `receivingDispatcher` is omitted; use `causedByUser()` from the `DomainEvent` interface instead
+- `CallUpdatedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`, `@Nullable CallOutcome outcome`, `@Nullable Description outcomeRationale`, `@Nullable IncidentId incidentId` — `incidentId` is set when the update links the call to an incident (e.g. in `CreateIncidentFromCallCommandHandler`); null for ordinary field updates
 - `CallEndedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `callEnded`, `outcome`, `@Nullable Description outcomeRationale`, `@Nullable IncidentId incidentId`
 - `CallAttachedToIncidentEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `incidentId`
 - `CallDetachedFromIncidentEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `formerIncidentId`
 
-**Note on `causedBy`:** Per the `DomainEvent` interface, `causedBy` is of type `@Nullable CommandId` (from `net.pkhapps.idispatchx.cad.domain.command.CommandId`), not `UserId`. It links the event back to the command that triggered it for idempotency tracking.
+**Note on `causedBy` vs `causedByUser`:** `causedBy` is `@Nullable CommandId` — it links to the command for idempotency tracking. `causedByUser()` (from the `DomainEvent` interface extension) carries the `UserId` of the acting user; set this to the command's `userId` in every event constructor.
 
 **Acceptance Criteria:**
-- [ ] Each event implements the `DomainEvent` interface (`eventId()`, `timestamp()`, `causedBy()`)
-- [ ] `causedBy` is `@Nullable CommandId`, not `UserId`
+- [ ] Each event implements the `DomainEvent` interface (`eventId()`, `timestamp()`, `causedBy()`, `causedByUser()`)
+- [ ] `causedBy` is `@Nullable CommandId`; `causedByUser` is `UserId` (non-null; use `UserId.SYSTEM` for system-only events)
+- [ ] `CallCreatedEvent` does **not** have a `receivingDispatcher` field; the receiving dispatcher is recovered via `causedByUser()` on replay
+- [ ] `CallUpdatedEvent` includes `@Nullable IncidentId incidentId` for WAL replay of incident-linking updates
 - [ ] Events are immutable records
 - [ ] Optional fields use `@Nullable T` for record components
 - [ ] `PhoneNumber` used in place of any caller-specific phone type
@@ -475,8 +481,8 @@ Define the domain events for incident creation and log entry addition.
 - `IncidentLogEntryAddedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `incidentId`, `logEntry` (a snapshot of the complete `IncidentLogEntry`)
 
 **Acceptance Criteria:**
-- [ ] Each event implements the `DomainEvent` interface (`eventId()`, `timestamp()`, `causedBy()`)
-- [ ] `causedBy` is `@Nullable CommandId`
+- [ ] Each event implements the `DomainEvent` interface (`eventId()`, `timestamp()`, `causedBy()`, `causedByUser()`)
+- [ ] `causedBy` is `@Nullable CommandId`; `causedByUser` is `UserId` (non-null)
 - [ ] Events are immutable records
 - [ ] `IncidentPriority` enum used (not raw String)
 - [ ] `Description` used for description field
@@ -653,11 +659,11 @@ starting implementation.
 - [ ] Returns `404` if call or incident not found
 - [ ] Rejects if call is in `ENDED` state (409)
 - [ ] Rejects if incident is in `ENDED` state (409)
-- [ ] Rejects if call already has `outcome = INCIDENT_CREATED` (409)
+- [ ] Rejects if call already has `outcome = INCIDENT_CREATED` or `outcome = ATTACHED_TO_INCIDENT` or `incidentId != null` (409)
 - [ ] Both `CallAttachedToIncidentEvent` and `IncidentLogEntryAddedEvent` written as a batch to WAL before either mutation is applied
-- [ ] `IncidentLogEntryAddedEvent` carries the `AutomaticEntry` with `dispatcher` set to the issuing dispatcher's `UserId`
+- [ ] `IncidentLogEntryAddedEvent` carries an `AutomaticEntry` with `dispatcher` set to the issuing dispatcher's `UserId`
 - [ ] Locks on call and incident acquired in deterministic order (sorted by ID string to prevent deadlocks)
-- [ ] Unit tests: verify both events in WAL batch, verify rejections
+- [ ] Unit tests: verify both events in WAL batch, verify all rejection cases including already-linked call
 
 **Dependencies:** Tasks 2.3, 3.3, 4.3, 4.4, 5.1, 5.2
 
@@ -708,14 +714,14 @@ Handle `CreateIncidentFromCallCommand`: locate source call, validate preconditio
 2. Reject if call already has `outcome = INCIDENT_CREATED` or `outcome = ATTACHED_TO_INCIDENT` (409)
 3. Generate new `IncidentId` using Nano ID
 4. If `location` is absent in command and call has a `location`, copy call location to incident (independent copy)
-5. Write as a batch: `IncidentCreatedEvent`, `CallUpdatedEvent` (setting `outcome = INCIDENT_CREATED`, `incidentId`), `IncidentLogEntryAddedEvent` (recording call linkage; `dispatcher` set to issuing dispatcher's `UserId`)
+5. Write as a batch: `IncidentCreatedEvent`, `CallUpdatedEvent` (setting `outcome = INCIDENT_CREATED` and `incidentId` — both fields required for correct WAL replay), `IncidentLogEntryAddedEvent` (recording call linkage; `dispatcher` set to issuing dispatcher's `UserId`)
 6. Apply mutations: add incident to `IncidentRepository`, update call in `CallRepository`
 7. Return new `IncidentId`
 
 **Acceptance Criteria:**
 - [ ] Returns `404` if source call not found
 - [ ] Rejects if call is in `ENDED` state (409)
-- [ ] Rejects if call already linked to an incident (409)
+- [ ] Rejects if call already linked to an incident: `outcome = INCIDENT_CREATED` or `outcome = ATTACHED_TO_INCIDENT` or `incidentId != null` (409)
 - [ ] `incidentCreated` timestamp from `ClockPort`
 - [ ] Call location is copied to incident when no location provided in command (independent copy — same value, no reference sharing)
 - [ ] All three events written as a single WAL batch before any mutation

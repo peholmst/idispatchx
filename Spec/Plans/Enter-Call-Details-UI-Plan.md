@@ -61,12 +61,12 @@ Define TypeScript types for all CAD Server entities and events used in this UC.
   - `IncidentState`, `IncidentPriority` (string literal unions)
   - `IncidentSummary` (as returned in GET /api/v1/incidents list)
   - `Incident` (full incident object)
-  - `IncidentLogEntry` (automatic and manual variants as discriminated union on `entry_type`)
+  - `IncidentLogEntry` (automatic and manual variants as discriminated union on `entryType`)
   - WebSocket event payload types: `CallCreatedPayload`, `CallUpdatedPayload`, `CallEndedPayload`, `CallAttachedToIncidentPayload`, `CallDetachedFromIncidentPayload`, `IncidentCreatedPayload`, `IncidentLogEntryAddedPayload`
 
 **Acceptance Criteria:**
 - [ ] All types match the JSON representations in the API design exactly
-- [ ] Discriminated unions use the `type` literal field for Location, and `entry_type` for log entries
+- [ ] Discriminated unions use the `type` literal field for Location, and `entryType` for log entries
 - [ ] `IncidentPriority` type covers all five values (`A`, `B`, `C`, `D`, `N`)
 - [ ] Types are exported from a single barrel file
 

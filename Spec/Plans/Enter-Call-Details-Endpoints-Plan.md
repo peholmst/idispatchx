@@ -48,6 +48,8 @@ Implement `CallController` with all call management endpoints.
 - `CallController.java` — registers routes with Javalin
 - `CallDtos.java` — request and response record classes
 
+**ADR-0004 compliance:** The controller must support a configurable context path (reverse proxy / URL prefix). Do not hardcode `/api/v1` as a literal string; use whatever path-prefix configuration mechanism the Javalin bootstrap already establishes for the application.
+
 **Command dispatch:** All mutating endpoints must call `IdempotentCommandDispatcher.dispatch(handler, command)` rather than invoking a `CommandHandler` directly. `CommandHandler.handle()` is package-private and cannot be called from this package. The dispatcher handles idempotency and audit logging transparently — controllers do not call `CommandLogPort` directly.
 
 Each command record must be populated with `userId` (from the JWT) and `@Nullable ipAddress` (from the HTTP request) before dispatch.
@@ -93,6 +95,8 @@ Implement the portions of `IncidentController` needed for this UC: creating inci
 and reading incident summaries (for call attachment UI and vicinity check).
 
 **Package:** `net.pkhapps.idispatchx.cad.adapter.primary.rest.dispatcher`
+
+**ADR-0004 compliance:** Same as Task 8.1 — use the application's configurable context path, not a hardcoded prefix.
 
 **Command dispatch:** Same as Task 8.1 — mutating endpoints use `IdempotentCommandDispatcher.dispatch()`; commands are populated with `userId` and `@Nullable ipAddress` from the request.
 
