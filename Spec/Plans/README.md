@@ -49,6 +49,9 @@ Each plan follows a consistent structure:
 | File | Description |
 |------|-------------|
 | [Address-Lookup-Fixes-Plan-45.md](Address-Lookup-Fixes-Plan-45.md) | Plan to fix 8 address-lookup bugs in the secondary dispatcher window (issue #45) |
+| [Enter-Call-Details-Domain-Plan.md](Enter-Call-Details-Domain-Plan.md) | Domain model, commands, handlers, and WAL for UC-Enter-Call-Details (issue #23) |
+| [Enter-Call-Details-Endpoints-Plan.md](Enter-Call-Details-Endpoints-Plan.md) | REST and WebSocket endpoints for UC-Enter-Call-Details (issue #23) |
+| [Enter-Call-Details-UI-Plan.md](Enter-Call-Details-UI-Plan.md) | Dispatcher Client UI for UC-Enter-Call-Details (issue #23) |
 | [GIS-Server-ADR-Compliance-Plan.md](GIS-Server-ADR-Compliance-Plan.md) | Plan to bring the GIS Server into compliance with ADR-0002, -0003, -0004, -0007, -0009 |
 | [GIS-Server-Docker-Testing-Plan.md](GIS-Server-Docker-Testing-Plan.md) | Plan to run GIS Server in Docker for manual testing, with real NLS sample data (issue #38) |
 | [GIS-Server-Implementation-Plan.md](GIS-Server-Implementation-Plan.md) | Implementation plan for the GIS Server REST API |
