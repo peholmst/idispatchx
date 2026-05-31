@@ -126,7 +126,12 @@ class IdempotentCommandDispatcherTest {
 
     record TestCommand(CommandId commandId, UserId userId, @Nullable IPAddress ipAddress) implements Command {}
 
-    record TestEvent(EventId eventId, Instant timestamp, @Nullable CommandId causedBy) implements DomainEvent {}
+    record TestEvent(EventId eventId, Instant timestamp, @Nullable CommandId causedBy) implements DomainEvent {
+        @Override
+        public UserId causedByUser() {
+            return UserId.SYSTEM;
+        }
+    }
 
     static class CountingCommandHandler extends CommandHandler<TestCommand, String> {
         final AtomicInteger invocationCount = new AtomicInteger(0);

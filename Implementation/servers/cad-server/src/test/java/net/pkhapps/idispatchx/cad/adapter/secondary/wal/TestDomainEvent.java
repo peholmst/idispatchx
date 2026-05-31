@@ -3,6 +3,7 @@ package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 import net.pkhapps.idispatchx.cad.domain.command.CommandId;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.event.EventId;
+import net.pkhapps.idispatchx.common.auth.UserId;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
@@ -23,6 +24,11 @@ public record TestDomainEvent(
         Objects.requireNonNull(eventId, "eventId must not be null");
         Objects.requireNonNull(timestamp, "timestamp must not be null");
         Objects.requireNonNull(payload, "payload must not be null");
+    }
+
+    @Override
+    public UserId causedByUser() {
+        return UserId.SYSTEM;
     }
 
     public static TestDomainEvent of(String payload) {

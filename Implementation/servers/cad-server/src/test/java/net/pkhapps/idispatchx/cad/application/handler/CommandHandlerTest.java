@@ -137,6 +137,10 @@ class CommandHandlerTest {
 
     record TestEvent(EventId eventId, Instant timestamp, CommandId causedBy,
                      String targetId) implements DomainEvent {
+        @Override
+        public UserId causedByUser() {
+            return UserId.SYSTEM;
+        }
     }
 
     static class RecordingWalPort implements WalPort {

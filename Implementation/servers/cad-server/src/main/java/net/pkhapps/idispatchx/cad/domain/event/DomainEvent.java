@@ -1,6 +1,7 @@
 package net.pkhapps.idispatchx.cad.domain.event;
 
 import net.pkhapps.idispatchx.cad.domain.command.CommandId;
+import net.pkhapps.idispatchx.common.auth.UserId;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
@@ -28,4 +29,11 @@ public interface DomainEvent {
      * May be null for system-generated events.
      */
     @Nullable CommandId causedBy();
+
+    /**
+     * Returns the user who triggered this event.
+     * Command-driven events carry the command's {@code userId}.
+     * System-generated events use {@link UserId#SYSTEM}.
+     */
+    UserId causedByUser();
 }
