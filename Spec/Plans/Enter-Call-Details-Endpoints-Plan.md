@@ -48,6 +48,10 @@ Implement `CallController` with all call management endpoints.
 - `CallController.java` — registers routes with Javalin
 - `CallDtos.java` — request and response record classes
 
+**Command dispatch:** All mutating endpoints must call `IdempotentCommandDispatcher.dispatch(handler, command)` rather than invoking a `CommandHandler` directly. `CommandHandler.handle()` is package-private and cannot be called from this package. The dispatcher handles idempotency and audit logging transparently — controllers do not call `CommandLogPort` directly.
+
+Each command record must be populated with `userId` (from the JWT) and `@Nullable ipAddress` (from the HTTP request) before dispatch.
+
 **Endpoints:**
 
 | Method | Path | Handler |
@@ -63,6 +67,8 @@ Implement `CallController` with all call management endpoints.
 **Acceptance Criteria:**
 - [ ] All endpoints require `Dispatcher` role (write) or `Observer` role (GET only); reject with 403 otherwise
 - [ ] All mutating endpoints require `X-Command-Id` header (UUID v4); reject with 400 if missing or malformed
+- [ ] All mutating endpoints dispatch via `IdempotentCommandDispatcher`; no direct `CommandHandler.handle()` calls
+- [ ] Each command is constructed with `userId` (from JWT) and `ipAddress` (from HTTP request, nullable)
 - [ ] `POST /api/v1/calls`: all body fields optional; responds 201 with `callId`, `state`, `receivingDispatcher`, `callStarted`
 - [ ] `PATCH /api/v1/calls/{callId}`: partial update; 200 on success; 404 if not found; 409 if `ENDED`
 - [ ] `POST /api/v1/calls/{callId}/end`: 200 on success; 400 if outcome missing; 400 if rationale missing; 409 if already ended
@@ -88,6 +94,8 @@ and reading incident summaries (for call attachment UI and vicinity check).
 
 **Package:** `net.pkhapps.idispatchx.cad.adapter.primary.rest.dispatcher`
 
+**Command dispatch:** Same as Task 8.1 — mutating endpoints use `IdempotentCommandDispatcher.dispatch()`; commands are populated with `userId` and `@Nullable ipAddress` from the request.
+
 **Files to Create:**
 - `IncidentController.java` — registers routes with Javalin (partial; will be extended in future issues)
 - `IncidentDtos.java` — request and response record classes
@@ -110,6 +118,7 @@ error message rather than treating the field as required. This preserves the end
 future implementation of UC-Create-Incident.
 
 **Acceptance Criteria:**
+- [ ] `POST /api/v1/incidents` dispatched via `IdempotentCommandDispatcher`; command populated with `userId` and `ipAddress`
 - [ ] `POST /api/v1/incidents` with `sourceCallId`: creates incident from call; responds 201 with `incidentId`; 404 if call not found; 409 if call ended or already linked
 - [ ] `POST /api/v1/incidents` without `sourceCallId`: responds 501 (not yet implemented); does **not** respond 400
 - [ ] `GET /api/v1/incidents`: returns incident summaries with `callIds` field listing linked call IDs

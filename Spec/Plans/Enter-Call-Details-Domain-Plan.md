@@ -112,16 +112,18 @@ Implement self-validating domain primitives needed by both the Call and Incident
 
 **Files to Create:**
 - `CallId.java` — record wrapping Nano ID string (21 URL-safe chars)
-- `UserId.java` — record wrapping a string (OIDC `sub` claim); non-null, non-empty
 - `CallerName.java` — record wrapping String; max 100 characters
 - `PhoneNumber.java` — record wrapping String; E.164 format as specified in [Domain: Call](../Domain/Call.md); generic name because phone numbers may be needed in other contexts in the future
 - `Description.java` — record wrapping String; max 1000 UTF-8 characters; used for call descriptions, outcome rationales, incident descriptions, and incident log entry text
+
+**Note:** Do **not** create `UserId.java`. Use `net.pkhapps.idispatchx.common.auth.UserId` from the `java-common` module. This class is already fully implemented (with validation and the `SYSTEM` constant for system-originated commands).
 
 **Acceptance Criteria:**
 - [ ] `PhoneNumber` accepts valid E.164 numbers with and without leading `+`; rejects non-digits, numbers exceeding 15 digits
 - [ ] `CallerName` rejects values exceeding 100 characters
 - [ ] `Description` rejects values exceeding 1000 UTF-8 characters
-- [ ] `CallId` and `UserId` reject null and empty strings
+- [ ] `CallId` rejects null and empty/invalid Nano ID strings
+- [ ] `UserId` is imported from `net.pkhapps.idispatchx.common.auth.UserId`; no local copy is created
 - [ ] Unit tests cover valid and invalid values for each primitive
 
 **Dependencies:** None
@@ -388,14 +390,17 @@ Define command objects for all call operations.
 **Package:** `net.pkhapps.idispatchx.cad.domain.command`
 
 **Files to Create:**
-- `CreateCallCommand.java` — record; `commandId`, `issuedBy` (UserId), `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`
-- `UpdateCallDetailsCommand.java` — record; `commandId`, `issuedBy`, `callId`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`, `@Nullable CallOutcome outcome`, `@Nullable Description outcomeRationale`
-- `EndCallCommand.java` — record; `commandId`, `issuedBy`, `callId`, `@Nullable CallOutcome outcome`, `@Nullable Description outcomeRationale`
-- `AttachCallToIncidentCommand.java` — record; `commandId`, `issuedBy`, `callId`, `incidentId`
-- `DetachCallFromIncidentCommand.java` — record; `commandId`, `issuedBy`, `callId`
+- `CreateCallCommand.java` — record; `commandId`, `userId` (UserId from `common.auth`), `@Nullable IPAddress ipAddress`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`
+- `UpdateCallDetailsCommand.java` — record; `commandId`, `userId`, `@Nullable IPAddress ipAddress`, `callId`, `@Nullable CallerName callerName`, `@Nullable PhoneNumber callerPhoneNumber`, `@Nullable Location location`, `@Nullable Description description`, `@Nullable CallOutcome outcome`, `@Nullable Description outcomeRationale`
+- `EndCallCommand.java` — record; `commandId`, `userId`, `@Nullable IPAddress ipAddress`, `callId`, `@Nullable CallOutcome outcome`, `@Nullable Description outcomeRationale`
+- `AttachCallToIncidentCommand.java` — record; `commandId`, `userId`, `@Nullable IPAddress ipAddress`, `callId`, `incidentId`
+- `DetachCallFromIncidentCommand.java` — record; `commandId`, `userId`, `@Nullable IPAddress ipAddress`, `callId`
+
+**Note:** `userId` and `ipAddress` are required by the `Command` interface (from issue #71/#73). The REST controller sets `userId` from the authenticated JWT and `ipAddress` from the HTTP request; they are consumed by `IdempotentCommandDispatcher` for audit logging.
 
 **Acceptance Criteria:**
-- [ ] Each command implements the `Command` sealed interface (`commandId()`, `issuedBy()`)
+- [ ] Each command implements the `Command` interface (`commandId()`, `userId()`, `ipAddress()`)
+- [ ] `userId` is `net.pkhapps.idispatchx.common.auth.UserId`; `ipAddress` is `net.pkhapps.idispatchx.common.auth.IPAddress`
 - [ ] Optional fields use `@Nullable T` (not `Optional<T>`)
 - [ ] `PhoneNumber` used for caller phone numbers (not `CallerPhoneNumber`)
 - [ ] `Description` used for call description and outcome rationale (not separate types)
@@ -414,10 +419,10 @@ Define the command for creating an incident from a call.
 **Package:** `net.pkhapps.idispatchx.cad.domain.command`
 
 **Files to Create:**
-- `CreateIncidentFromCallCommand.java` — record; `commandId`, `issuedBy`, `sourceCallId`, `@Nullable IncidentType incidentType`, `@Nullable IncidentPriority incidentPriority`, `@Nullable Location location`, `@Nullable Description description`
+- `CreateIncidentFromCallCommand.java` — record; `commandId`, `userId` (UserId from `common.auth`), `@Nullable IPAddress ipAddress`, `sourceCallId`, `@Nullable IncidentType incidentType`, `@Nullable IncidentPriority incidentPriority`, `@Nullable Location location`, `@Nullable Description description`
 
 **Acceptance Criteria:**
-- [ ] Implements `Command` interface
+- [ ] Implements `Command` interface (`commandId()`, `userId()`, `ipAddress()`)
 - [ ] `sourceCallId` is required (non-null)
 - [ ] `IncidentPriority` enum used (not a raw String)
 - [ ] `Description` used for description field
@@ -442,8 +447,11 @@ Define domain events for all call state changes. All events implement `DomainEve
 - `CallAttachedToIncidentEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `incidentId`
 - `CallDetachedFromIncidentEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `callId`, `formerIncidentId`
 
+**Note on `causedBy`:** Per the `DomainEvent` interface, `causedBy` is of type `@Nullable CommandId` (from `net.pkhapps.idispatchx.cad.domain.command.CommandId`), not `UserId`. It links the event back to the command that triggered it for idempotency tracking.
+
 **Acceptance Criteria:**
-- [ ] Each event implements the `DomainEvent` sealed interface
+- [ ] Each event implements the `DomainEvent` interface (`eventId()`, `timestamp()`, `causedBy()`)
+- [ ] `causedBy` is `@Nullable CommandId`, not `UserId`
 - [ ] Events are immutable records
 - [ ] Optional fields use `@Nullable T` for record components
 - [ ] `PhoneNumber` used in place of any caller-specific phone type
@@ -467,7 +475,8 @@ Define the domain events for incident creation and log entry addition.
 - `IncidentLogEntryAddedEvent.java` — record; `eventId`, `timestamp`, `causedBy`, `incidentId`, `logEntry` (a snapshot of the complete `IncidentLogEntry`)
 
 **Acceptance Criteria:**
-- [ ] Each event implements `DomainEvent`
+- [ ] Each event implements the `DomainEvent` interface (`eventId()`, `timestamp()`, `causedBy()`)
+- [ ] `causedBy` is `@Nullable CommandId`
 - [ ] Events are immutable records
 - [ ] `IncidentPriority` enum used (not raw String)
 - [ ] `Description` used for description field
@@ -596,6 +605,11 @@ schedule archival if call is not linked to an incident.
 invoke `ArchivePort.scheduleUnlinkedCallArchival(callId)`. Per the Availability NFR, if `ArchivePort`
 is unavailable, this must not prevent the call from being ended — log the failure and continue.
 
+**Note on ArchivePort:** `ArchivePort` does not yet exist. As part of this task, create it as a new
+secondary port interface in `net.pkhapps.idispatchx.cad.port.secondary.archive` with a single method
+`void scheduleUnlinkedCallArchival(CallId callId)`. The actual archival implementation is out of scope;
+provide a no-op stub that logs a warning.
+
 **Acceptance Criteria:**
 - [ ] Returns `404` equivalent if call not found
 - [ ] Rejects if call already in `ENDED` state (409)
@@ -621,6 +635,14 @@ atomically (call update + incident log entry), apply mutations.
 Per the technical design, this is a cross-aggregate operation. The handler must acquire locks on both
 the call and the incident (in a deterministic order via `EntityLockManager`), then write both events
 as a batch to the WAL.
+
+**Note on batch WAL writes:** `CommandHandler.handle()` is `final` and calls `walPort.write()` for a
+single event. Cross-aggregate handlers that need `walPort.writeBatch()` cannot use that method as-is.
+Before implementing Tasks 6.4–6.6, extend `CommandHandler` to support batch operations — for example,
+by adding an overrideable `protected LockScope determineLockScope(C command)` / `protected List<DomainEvent>
+prepareEvents(C command)` pattern, or by making `walPort` accessible (e.g., `protected`) to
+subclasses that need to call `writeBatch` themselves. Align this with the technical design before
+starting implementation.
 
 **Package:** `net.pkhapps.idispatchx.cad.application.handler`
 
@@ -714,25 +736,36 @@ JSON serialization/deserialization for all new domain events, and WAL replay han
 **Status:** Not Started
 
 **Description:**
-Implement Jackson-based JSON serialization and deserialization for all new domain events. Each event
-type needs a unique `type` discriminator field in the JSON envelope. Location variants must also be
-serialized using their `type` discriminator (per the REST API specification's `exact_address`,
-`road_intersection`, `named_place`, `relative_location` values).
+Register the new domain event types with the existing WAL serialization infrastructure and add
+Jackson support for the `Location` sealed interface.
+
+The WAL adapter uses `WalMapperFactory` (in `net.pkhapps.idispatchx.cad.adapter.secondary.wal`)
+which configures Jackson with `@JsonTypeInfo(Id.CLASS)` via a mixin on `DomainEvent`. New event
+types serialize and deserialize automatically once their record classes exist on the classpath and
+are passed to `WalMapperFactory.buildJson()` / `buildSmile()` at configuration time.
+
+The `Location` sealed interface (Task 1.1) requires a polymorphic Jackson mapping. Add a mixin or
+`@JsonSubTypes` registration in `WalMapperFactory` so each variant serializes with a `"type"`
+discriminator matching the REST API format (`exact_address`, `road_intersection`, `named_place`,
+`relative_location`).
 
 **Package:** `net.pkhapps.idispatchx.cad.adapter.secondary.wal`
 
 **Files to Create or Modify:**
-- `EventSerializer.java` — serialize any `DomainEvent` to JSON; add handling for new event types
-- `EventDeserializer.java` — deserialize JSON to the correct `DomainEvent` subtype; add handling for new event types
-- `LocationSerializer.java` — serialize/deserialize `Location` sealed interface with type discriminator
+- `WalMapperFactory.java` — add `Location` mixin (or `@JsonSubTypes`) so all four `Location`
+  variants serialize with the correct `"type"` discriminator; register `IncidentPriority` as
+  a single-letter string value
+
+**Note:** There is no `EventSerializer.java` or `EventDeserializer.java` to create. New event
+record types are picked up automatically via Jackson's `@type` (FQN) mechanism already in place.
 
 **Acceptance Criteria:**
-- [ ] Each event type has a unique `type` discriminator value in the JSON
+- [ ] All new event types round-trip through the WAL without data loss
 - [ ] All optional fields serialize as `null` (not omitted) for deterministic round-trips
-- [ ] Location variants serialize with `"type"` field matching REST API format
+- [ ] `Location` variants serialize with `"type"` field matching REST API format
 - [ ] `IncidentPriority` serializes as its single-letter string value (`"A"`, `"B"`, etc.)
-- [ ] Round-trip tests: serialize event → deserialize → compare with original
-- [ ] Integration test: write event to WAL, replay WAL, verify event received
+- [ ] Round-trip tests: serialize event → deserialize → compare with original for each new event type
+- [ ] Integration test: write event to `FileBasedWalAdapter`, replay, verify event received
 
 **Dependencies:** Tasks 4.3, 4.4
 
