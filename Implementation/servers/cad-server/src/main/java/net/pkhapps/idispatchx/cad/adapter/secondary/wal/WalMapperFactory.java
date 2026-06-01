@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
+import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntry;
 import net.pkhapps.idispatchx.cad.domain.model.shared.location.Location;
 
 import java.util.List;
@@ -35,6 +36,14 @@ final class WalMapperFactory {
             @JsonSubTypes.Type(value = Location.RelativeLocation.class, name = "relative_location")
     })
     private interface LocationMixin {
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = IncidentLogEntry.AutomaticEntry.class, name = "automatic"),
+            @JsonSubTypes.Type(value = IncidentLogEntry.ManualEntry.class, name = "manual")
+    })
+    private interface IncidentLogEntryMixin {
     }
 
     /** Document shape stored per WAL entry: {seq, event}. */
@@ -77,6 +86,7 @@ final class WalMapperFactory {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.addMixIn(DomainEvent.class, DomainEventMixin.class);
         mapper.addMixIn(Location.class, LocationMixin.class);
+        mapper.addMixIn(IncidentLogEntry.class, IncidentLogEntryMixin.class);
         if (!eventTypes.isEmpty()) {
             mapper.registerSubtypes(eventTypes.toArray(new Class[0]));
         }

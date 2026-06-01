@@ -3,6 +3,7 @@ package net.pkhapps.idispatchx.cad.application.handler;
 import net.pkhapps.idispatchx.cad.domain.command.CommandId;
 import net.pkhapps.idispatchx.cad.port.secondary.clock.ClockPort;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -27,6 +28,13 @@ import java.util.function.Supplier;
  */
 @NullMarked
 final class IdempotencyTracker implements AutoCloseable {
+
+    /**
+     * Sentinel stored in place of null results (Void commands). This lets
+     * {@link #get} return a non-null {@code Optional.present} for cached-null
+     * without calling the illegal {@code Optional.of(null)}.
+     */
+    private static final Object NULL_RESULT = new Object();
 
     private record CompletedEntry(Object result, Instant storedAt) {}
 
@@ -67,7 +75,8 @@ final class IdempotencyTracker implements AutoCloseable {
         // Fast path: already completed (no locking needed for ConcurrentHashMap read)
         var cached = get(commandId);
         if (cached.isPresent()) {
-            return (R) cached.get();
+            Object stored = cached.get();
+            return (R) (stored == NULL_RESULT ? null : stored);
         }
 
         // Atomically claim the execution slot; only one thread gets a null return
@@ -119,11 +128,13 @@ final class IdempotencyTracker implements AutoCloseable {
 
     /**
      * Stores the result for the given command ID.
+     * <p>
+     * A {@code null} result (from Void command handlers) is stored using the
+     * {@link #NULL_RESULT} sentinel so that cache presence can still be detected.
      */
-    void store(CommandId commandId, Object result) {
+    void store(CommandId commandId, @Nullable Object result) {
         Objects.requireNonNull(commandId, "commandId must not be null");
-        Objects.requireNonNull(result, "result must not be null");
-        completed.put(commandId, new CompletedEntry(result, clock.now()));
+        completed.put(commandId, new CompletedEntry(result != null ? result : NULL_RESULT, clock.now()));
     }
 
     private boolean isExpired(CompletedEntry entry) {

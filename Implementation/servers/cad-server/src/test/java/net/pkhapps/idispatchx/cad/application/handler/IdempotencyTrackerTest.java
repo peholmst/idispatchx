@@ -99,6 +99,27 @@ class IdempotencyTrackerTest {
     }
 
     @Test
+    void executeOnce_cachesNullResultForVoidCommands() {
+        try (var tracker = new IdempotencyTracker(Duration.ofMinutes(5), Instant::now)) {
+            var id = CommandId.generate();
+            var executionCount = new AtomicInteger(0);
+
+            Void first = tracker.executeOnce(id, () -> {
+                executionCount.incrementAndGet();
+                return null;
+            });
+            Void second = tracker.executeOnce(id, () -> {
+                executionCount.incrementAndGet();
+                return null;
+            });
+
+            assertNull(first);
+            assertNull(second);
+            assertEquals(1, executionCount.get());
+        }
+    }
+
+    @Test
     void executeOnce_allowsRetryAfterSupplierThrows() {
         try (var tracker = new IdempotencyTracker(Duration.ofMinutes(5), Instant::now)) {
             var id = CommandId.generate();
