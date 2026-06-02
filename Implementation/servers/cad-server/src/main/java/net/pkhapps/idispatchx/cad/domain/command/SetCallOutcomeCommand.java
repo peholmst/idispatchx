@@ -1,6 +1,8 @@
 package net.pkhapps.idispatchx.cad.domain.command;
 
+import net.pkhapps.idispatchx.cad.domain.model.call.CallOutcome;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallId;
+import net.pkhapps.idispatchx.cad.domain.model.shared.Description;
 import net.pkhapps.idispatchx.common.auth.IPAddress;
 import net.pkhapps.idispatchx.common.auth.UserId;
 import org.jspecify.annotations.Nullable;
@@ -8,21 +10,24 @@ import org.jspecify.annotations.Nullable;
 import java.util.Objects;
 
 /**
- * Command to end an active call.
+ * Command to set the outcome and optional rationale of an active call.
  * <p>
- * The call's {@code outcome} and {@code outcomeRationale} must be set via
- * {@link SetCallOutcomeCommand} (or by attaching/creating an incident) before issuing this command.
+ * Outcomes {@code INCIDENT_CREATED} and {@code ATTACHED_TO_INCIDENT} may not be set here;
+ * use {@link CreateIncidentFromCallCommand} or {@link AttachCallToIncidentCommand} instead.
  */
-public record EndCallCommand(
+public record SetCallOutcomeCommand(
         CommandId commandId,
         UserId userId,
         @Nullable IPAddress ipAddress,
-        CallId callId
+        CallId callId,
+        CallOutcome outcome,
+        @Nullable Description outcomeRationale
 ) implements Command {
 
-    public EndCallCommand {
+    public SetCallOutcomeCommand {
         Objects.requireNonNull(commandId, "commandId must not be null");
         Objects.requireNonNull(userId, "userId must not be null");
         Objects.requireNonNull(callId, "callId must not be null");
+        Objects.requireNonNull(outcome, "outcome must not be null");
     }
 }

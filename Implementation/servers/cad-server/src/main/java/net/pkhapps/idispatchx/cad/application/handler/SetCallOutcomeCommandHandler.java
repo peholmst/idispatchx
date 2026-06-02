@@ -1,6 +1,6 @@
 package net.pkhapps.idispatchx.cad.application.handler;
 
-import net.pkhapps.idispatchx.cad.domain.command.UpdateCallDetailsCommand;
+import net.pkhapps.idispatchx.cad.domain.command.SetCallOutcomeCommand;
 import net.pkhapps.idispatchx.cad.domain.event.CallUpdatedEvent;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.event.EventId;
@@ -13,29 +13,27 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
- * Handles {@link UpdateCallDetailsCommand}: partially updates call detail fields.
- * <p>
- * Only non-null fields in the command are applied; existing values are preserved for nulls.
+ * Handles {@link SetCallOutcomeCommand}: sets the outcome and optional rationale on an active call.
  */
-public class UpdateCallDetailsCommandHandler extends CommandHandler<UpdateCallDetailsCommand, Void> {
+public class SetCallOutcomeCommandHandler extends CommandHandler<SetCallOutcomeCommand, Void> {
 
     private final CallRepository callRepository;
     private final ClockPort clock;
 
-    public UpdateCallDetailsCommandHandler(WalPort walPort, EntityLockManager lockManager,
-                                           CallRepository callRepository, ClockPort clock) {
+    public SetCallOutcomeCommandHandler(WalPort walPort, EntityLockManager lockManager,
+                                        CallRepository callRepository, ClockPort clock) {
         super(walPort, lockManager);
         this.callRepository = Objects.requireNonNull(callRepository, "callRepository must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
     @Override
-    protected LockScope determineLockScope(UpdateCallDetailsCommand command) {
+    protected LockScope determineLockScope(SetCallOutcomeCommand command) {
         return LockScope.of("call", command.callId().value());
     }
 
     @Override
-    protected PendingMutation<? extends DomainEvent> prepareExecution(UpdateCallDetailsCommand command) {
+    protected PendingMutation<? extends DomainEvent> prepareExecution(SetCallOutcomeCommand command) {
         var call = callRepository.findById(command.callId())
                 .orElseThrow(() -> new NoSuchElementException("call not found: " + command.callId()));
 
@@ -44,10 +42,7 @@ public class UpdateCallDetailsCommandHandler extends CommandHandler<UpdateCallDe
         }
 
         var now = clock.now();
-        var pending = call.prepareUpdate(
-                now,
-                command.callerName(), command.callerPhoneNumber(),
-                command.location(), command.description());
+        var pending = call.prepareSetOutcome(now, command.outcome(), command.outcomeRationale());
 
         // Rebuild event with causedBy and causedByUser from the command
         var orig = pending.event();
@@ -61,7 +56,7 @@ public class UpdateCallDetailsCommandHandler extends CommandHandler<UpdateCallDe
     }
 
     @Override
-    protected Void buildResult(UpdateCallDetailsCommand command, DomainEvent event) {
+    protected Void buildResult(SetCallOutcomeCommand command, DomainEvent event) {
         return null;
     }
 }

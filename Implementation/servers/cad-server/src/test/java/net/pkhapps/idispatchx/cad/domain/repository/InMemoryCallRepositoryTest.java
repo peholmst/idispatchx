@@ -47,7 +47,8 @@ class InMemoryCallRepositoryTest {
         var ended = newActiveCall();
         repository.add(active);
         repository.add(ended);
-        ended.prepareEnd(CallOutcome.HOAX, new Description("hoax")).applyMutation().run();
+        ended.prepareSetOutcome(Instant.now(), CallOutcome.HOAX, new Description("hoax")).applyMutation().run();
+        ended.prepareEnd(Instant.now()).applyMutation().run();
 
         var activeIds = repository.findActive().map(Call::id).toList();
         assertTrue(activeIds.contains(active.id()));

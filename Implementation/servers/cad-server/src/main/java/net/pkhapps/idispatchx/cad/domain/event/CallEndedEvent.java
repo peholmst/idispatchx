@@ -13,6 +13,8 @@ import java.util.Objects;
 
 /**
  * Event raised when a call transitions to the {@code ENDED} state.
+ * <p>
+ * {@link #timestamp()} records when the call ended.
  */
 public record CallEndedEvent(
         EventId eventId,
@@ -20,7 +22,6 @@ public record CallEndedEvent(
         @Nullable CommandId causedBy,
         UserId causedByUser,
         CallId callId,
-        Instant callEnded,
         CallOutcome outcome,
         @Nullable Description outcomeRationale,
         @Nullable IncidentId incidentId
@@ -31,12 +32,6 @@ public record CallEndedEvent(
         Objects.requireNonNull(timestamp, "timestamp must not be null");
         Objects.requireNonNull(causedByUser, "causedByUser must not be null");
         Objects.requireNonNull(callId, "callId must not be null");
-        Objects.requireNonNull(callEnded, "callEnded must not be null");
         Objects.requireNonNull(outcome, "outcome must not be null");
-    }
-
-    @Override
-    public UserId causedByUser() {
-        return causedByUser;
     }
 }

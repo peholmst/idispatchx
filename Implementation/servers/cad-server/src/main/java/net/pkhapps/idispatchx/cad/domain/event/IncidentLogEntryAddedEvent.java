@@ -31,8 +31,4 @@ public record IncidentLogEntryAddedEvent(
         Objects.requireNonNull(logEntry, "logEntry must not be null");
     }
 
-    @Override
-    public UserId causedByUser() {
-        return causedByUser;
-    }
 }

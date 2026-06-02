@@ -1,6 +1,5 @@
 package net.pkhapps.idispatchx.cad.domain.command;
 
-import net.pkhapps.idispatchx.cad.domain.model.call.CallOutcome;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallerName;
 import net.pkhapps.idispatchx.cad.domain.model.shared.Description;
@@ -13,9 +12,10 @@ import org.jspecify.annotations.Nullable;
 import java.util.Objects;
 
 /**
- * Command to update the details of an existing call.
+ * Command to update call details (caller information, location, description).
  * <p>
  * Only non-null fields are applied; absent fields remain unchanged.
+ * Use {@link SetCallOutcomeCommand} to set the call outcome and rationale.
  */
 public record UpdateCallDetailsCommand(
         CommandId commandId,
@@ -25,9 +25,7 @@ public record UpdateCallDetailsCommand(
         @Nullable CallerName callerName,
         @Nullable PhoneNumber callerPhoneNumber,
         @Nullable Location location,
-        @Nullable Description description,
-        @Nullable CallOutcome outcome,
-        @Nullable Description outcomeRationale
+        @Nullable Description description
 ) implements Command {
 
     public UpdateCallDetailsCommand {

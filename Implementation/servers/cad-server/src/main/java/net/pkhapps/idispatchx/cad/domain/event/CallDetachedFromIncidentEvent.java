@@ -29,8 +29,4 @@ public record CallDetachedFromIncidentEvent(
         Objects.requireNonNull(formerIncidentId, "formerIncidentId must not be null");
     }
 
-    @Override
-    public UserId causedByUser() {
-        return causedByUser;
-    }
 }

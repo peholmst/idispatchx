@@ -76,7 +76,7 @@ public final class Incident extends Entity<IncidentId> {
         var incident = new Incident(id, incidentCreated, incidentType, incidentPriority, location, description);
         var event = new IncidentCreatedEvent(
                 EventId.generate(), incidentCreated, causedBy, causedByUser,
-                id, incidentCreated, sourceCallId, incidentType, incidentPriority, location, description);
+                id, sourceCallId, incidentType, incidentPriority, location, description);
         return new IncidentCreationResult(event, incident);
     }
 
@@ -158,7 +158,7 @@ public final class Incident extends Entity<IncidentId> {
      * Reconstructs an Incident from its {@link IncidentCreatedEvent} for WAL replay.
      */
     public static Incident fromCreatedEvent(IncidentCreatedEvent e) {
-        return new Incident(e.incidentId(), e.incidentCreated(),
+        return new Incident(e.incidentId(), e.timestamp(),
                 e.incidentType(), e.incidentPriority(), e.location(), e.description());
     }
 }

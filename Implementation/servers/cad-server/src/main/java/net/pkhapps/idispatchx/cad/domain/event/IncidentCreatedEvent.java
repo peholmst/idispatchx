@@ -15,6 +15,8 @@ import java.util.Objects;
 
 /**
  * Event raised when a new {@link net.pkhapps.idispatchx.cad.domain.model.incident.Incident} is created.
+ * <p>
+ * {@link #timestamp()} records when the incident was created.
  */
 public record IncidentCreatedEvent(
         EventId eventId,
@@ -22,7 +24,6 @@ public record IncidentCreatedEvent(
         @Nullable CommandId causedBy,
         UserId causedByUser,
         IncidentId incidentId,
-        Instant incidentCreated,
         @Nullable CallId sourceCallId,
         @Nullable IncidentType incidentType,
         @Nullable IncidentPriority incidentPriority,
@@ -35,11 +36,5 @@ public record IncidentCreatedEvent(
         Objects.requireNonNull(timestamp, "timestamp must not be null");
         Objects.requireNonNull(causedByUser, "causedByUser must not be null");
         Objects.requireNonNull(incidentId, "incidentId must not be null");
-        Objects.requireNonNull(incidentCreated, "incidentCreated must not be null");
-    }
-
-    @Override
-    public UserId causedByUser() {
-        return causedByUser;
     }
 }

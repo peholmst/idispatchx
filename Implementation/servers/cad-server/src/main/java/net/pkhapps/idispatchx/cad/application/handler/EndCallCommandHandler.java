@@ -52,16 +52,14 @@ public class EndCallCommandHandler extends CommandHandler<EndCallCommand, Void> 
             throw new IllegalStateException("call is already ENDED: " + command.callId());
         }
 
-        var pending = call.prepareEnd(command.outcome(), command.outcomeRationale());
+        var now = clock.now();
+        var pending = call.prepareEnd(now);
 
-        // Use the authoritative ClockPort timestamp; apply THIS event (not the prepared one)
-        // so live state and WAL-replayed state use the same callEnded value.
-        var callEnded = clock.now();
-        var origEvent = pending.event();
+        // Rebuild event with causedBy and causedByUser from the command
+        var orig = pending.event();
         var event = new CallEndedEvent(
-                EventId.generate(), callEnded, command.commandId(), command.userId(),
-                origEvent.callId(), callEnded, origEvent.outcome(),
-                origEvent.outcomeRationale(), origEvent.incidentId());
+                EventId.generate(), now, command.commandId(), command.userId(),
+                orig.callId(), orig.outcome(), orig.outcomeRationale(), orig.incidentId());
 
         return new PendingMutation<>(event, () -> {
             call.applyEvent(event);

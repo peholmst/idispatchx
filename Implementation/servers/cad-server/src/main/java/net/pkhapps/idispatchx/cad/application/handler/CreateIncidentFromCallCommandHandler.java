@@ -91,7 +91,7 @@ public class CreateIncidentFromCallCommandHandler
 
         var incidentCreatedEvent = new IncidentCreatedEvent(
                 EventId.generate(), now, command.commandId(), command.userId(),
-                incidentId, now, command.sourceCallId(),
+                incidentId, command.sourceCallId(),
                 command.incidentType(), command.incidentPriority(),
                 effectiveLocation, command.description());
 

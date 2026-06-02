@@ -38,8 +38,4 @@ public record CallCreatedEvent(
         Objects.requireNonNull(callStarted, "callStarted must not be null");
     }
 
-    @Override
-    public UserId causedByUser() {
-        return causedByUser;
-    }
 }

@@ -19,8 +19,9 @@ import java.util.List;
  * modifying the domain model. The {@code @type} property stores the fully qualified class name,
  * allowing deserialization of any {@link DomainEvent} subtype on the classpath.
  * <p>
- * A separate mixin adds polymorphic type handling for the {@link Location} sealed interface,
- * using a {@code "type"} discriminator matching the REST API format.
+ * Separate mixins add polymorphic type handling for the {@link Location} and
+ * {@link net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntry} sealed interfaces,
+ * using a {@code "@type"} discriminator consistent with the {@link DomainEvent} mixin.
  */
 final class WalMapperFactory {
 
@@ -28,7 +29,7 @@ final class WalMapperFactory {
     private interface DomainEventMixin {
     }
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
     @JsonSubTypes({
             @JsonSubTypes.Type(value = Location.ExactAddress.class, name = "exact_address"),
             @JsonSubTypes.Type(value = Location.RoadIntersection.class, name = "road_intersection"),
@@ -38,7 +39,7 @@ final class WalMapperFactory {
     private interface LocationMixin {
     }
 
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
     @JsonSubTypes({
             @JsonSubTypes.Type(value = IncidentLogEntry.AutomaticEntry.class, name = "automatic"),
             @JsonSubTypes.Type(value = IncidentLogEntry.ManualEntry.class, name = "manual")

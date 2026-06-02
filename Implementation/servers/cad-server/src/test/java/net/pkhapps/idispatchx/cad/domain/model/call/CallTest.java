@@ -1,9 +1,8 @@
 package net.pkhapps.idispatchx.cad.domain.model.call;
 
 import net.pkhapps.idispatchx.cad.domain.event.CallAttachedToIncidentEvent;
-import net.pkhapps.idispatchx.cad.domain.event.CallDetachedFromIncidentEvent;
-import net.pkhapps.idispatchx.cad.domain.event.CallEndedEvent;
 import net.pkhapps.idispatchx.cad.domain.event.CallUpdatedEvent;
+import net.pkhapps.idispatchx.cad.domain.event.EventId;
 import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.Description;
@@ -21,12 +20,13 @@ class CallTest {
     private static final CallId CALL_ID = new CallId(NanoIdGenerator.generate());
     private static final IncidentId INCIDENT_ID = new IncidentId(NanoIdGenerator.generate());
     private static final UserId DISPATCHER = UserId.of("dispatcher-1");
+    private static final Instant NOW = Instant.parse("2026-06-01T10:00:00Z");
 
     private Call call;
 
     @BeforeEach
     void setUp() {
-        var result = Call.create(CALL_ID, DISPATCHER, Instant.now(), null, null, null, null);
+        var result = Call.create(CALL_ID, DISPATCHER, NOW, null, null, null, null);
         call = result.call();
     }
 
@@ -41,12 +41,13 @@ class CallTest {
 
     @Test
     void prepareEnd_requiresOutcome() {
-        assertThrows(IllegalStateException.class, () -> call.prepareEnd(null, null));
+        assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
     @Test
-    void prepareEnd_succeedsWithOutcome() {
-        var pending = call.prepareEnd(CallOutcome.CALLER_ADVISED, new Description("rationale"));
+    void prepareEnd_succeedsWithOutcomeAlreadySet() {
+        call.prepareSetOutcome(NOW, CallOutcome.CALLER_ADVISED, new Description("rationale")).applyMutation().run();
+        var pending = call.prepareEnd(NOW);
         assertNotNull(pending.event());
         pending.applyMutation().run();
         assertEquals(CallState.ENDED, call.state());
@@ -55,50 +56,59 @@ class CallTest {
 
     @Test
     void prepareEnd_requiresRationaleForCallerAdvised() {
-        assertThrows(IllegalStateException.class,
-                () -> call.prepareEnd(CallOutcome.CALLER_ADVISED, null));
+        call.prepareSetOutcome(NOW, CallOutcome.CALLER_ADVISED, null).applyMutation().run();
+        assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
     @Test
     void prepareEnd_doesNotRequireRationaleForIncidentCreated_whenIncidentAlreadyLinked() {
-        // INCIDENT_CREATED does not require rationale, but DOES require incidentId to be set
+        // Set INCIDENT_CREATED outcome and incidentId via WAL replay (bypassing validation)
         call.applyEvent(new CallUpdatedEvent(
-                net.pkhapps.idispatchx.cad.domain.event.EventId.generate(), Instant.now(), null,
+                EventId.generate(), NOW, null,
                 DISPATCHER, CALL_ID, null, null, null, null,
                 CallOutcome.INCIDENT_CREATED, null, INCIDENT_ID));
-        var endPending = call.prepareEnd(null, null);
+        var endPending = call.prepareEnd(NOW);
         assertNotNull(endPending);
     }
 
     @Test
     void prepareEnd_rejectsIncidentCreatedOutcomeWithoutIncidentId() {
-        assertThrows(IllegalStateException.class,
-                () -> call.prepareEnd(CallOutcome.INCIDENT_CREATED, null));
+        // Simulate INCIDENT_CREATED without incidentId via WAL replay
+        call.applyEvent(new CallUpdatedEvent(
+                EventId.generate(), NOW, null,
+                DISPATCHER, CALL_ID, null, null, null, null,
+                CallOutcome.INCIDENT_CREATED, null, null));
+        assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
     @Test
     void prepareEnd_rejectsAttachedToIncidentOutcomeWithoutIncidentId() {
-        assertThrows(IllegalStateException.class,
-                () -> call.prepareEnd(CallOutcome.ATTACHED_TO_INCIDENT, null));
+        // Simulate ATTACHED_TO_INCIDENT without incidentId via WAL replay
+        call.applyEvent(new CallUpdatedEvent(
+                EventId.generate(), NOW, null,
+                DISPATCHER, CALL_ID, null, null, null, null,
+                CallOutcome.ATTACHED_TO_INCIDENT, null, null));
+        assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
     @Test
     void prepareEnd_allowsAttachedToIncidentOutcomeWhenIncidentIsLinked() {
-        call.prepareAttachToIncident(INCIDENT_ID, Instant.now()).applyMutation().run();
+        call.prepareAttachToIncident(INCIDENT_ID, NOW).applyMutation().run();
         // outcome is now ATTACHED_TO_INCIDENT and incidentId is set — should succeed
-        var endPending = call.prepareEnd(null, null);
+        var endPending = call.prepareEnd(NOW);
         assertNotNull(endPending);
     }
 
     @Test
     void prepareEnd_rejectsEndedCall() {
-        call.prepareEnd(CallOutcome.HOAX, new Description("hoax")).applyMutation().run();
-        assertThrows(IllegalStateException.class, () -> call.prepareEnd(CallOutcome.HOAX, new Description("r")));
+        call.prepareSetOutcome(NOW, CallOutcome.HOAX, new Description("hoax")).applyMutation().run();
+        call.prepareEnd(NOW).applyMutation().run();
+        assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
     @Test
     void prepareAttachToIncident_setsOutcomeAndIncidentId() {
-        var pending = call.prepareAttachToIncident(INCIDENT_ID, Instant.now());
+        var pending = call.prepareAttachToIncident(INCIDENT_ID, NOW);
         pending.applyMutation().run();
         assertEquals(CallOutcome.ATTACHED_TO_INCIDENT, call.outcome());
         assertEquals(INCIDENT_ID, call.incidentId());
@@ -106,32 +116,50 @@ class CallTest {
 
     @Test
     void prepareAttachToIncident_rejectsIfOutcomeIsIncidentCreated() {
-        // Update outcome to INCIDENT_CREATED via applyEvent (simulating WAL replay)
         var incidentId2 = new IncidentId(NanoIdGenerator.generate());
         call.applyEvent(new CallUpdatedEvent(
-                net.pkhapps.idispatchx.cad.domain.event.EventId.generate(), Instant.now(), null,
+                EventId.generate(), NOW, null,
                 DISPATCHER, CALL_ID, null, null, null, null,
                 CallOutcome.INCIDENT_CREATED, null, incidentId2));
         assertThrows(IllegalStateException.class,
-                () -> call.prepareAttachToIncident(INCIDENT_ID, Instant.now()));
+                () -> call.prepareAttachToIncident(INCIDENT_ID, NOW));
     }
 
     @Test
     void prepareDetachFromIncident_requiresAttachedToIncidentOutcome() {
-        assertThrows(IllegalStateException.class, () -> call.prepareDetachFromIncident());
+        assertThrows(IllegalStateException.class, () -> call.prepareDetachFromIncident(NOW));
     }
 
     @Test
     void prepareDetachFromIncident_clearsOutcomeAndIncidentId() {
-        call.prepareAttachToIncident(INCIDENT_ID, Instant.now()).applyMutation().run();
-        call.prepareDetachFromIncident().applyMutation().run();
+        call.prepareAttachToIncident(INCIDENT_ID, NOW).applyMutation().run();
+        call.prepareDetachFromIncident(NOW).applyMutation().run();
         assertNull(call.outcome());
         assertNull(call.incidentId());
     }
 
     @Test
+    void prepareSetOutcome_rejectsIncidentCreatedOutcome() {
+        assertThrows(IllegalArgumentException.class,
+                () -> call.prepareSetOutcome(NOW, CallOutcome.INCIDENT_CREATED, null));
+    }
+
+    @Test
+    void prepareSetOutcome_rejectsAttachedToIncidentOutcome() {
+        assertThrows(IllegalArgumentException.class,
+                () -> call.prepareSetOutcome(NOW, CallOutcome.ATTACHED_TO_INCIDENT, null));
+    }
+
+    @Test
+    void prepareSetOutcome_setsOutcomeAndRationale() {
+        call.prepareSetOutcome(NOW, CallOutcome.HOAX, new Description("hoax rationale")).applyMutation().run();
+        assertEquals(CallOutcome.HOAX, call.outcome());
+        assertEquals("hoax rationale", call.outcomeRationale().value());
+    }
+
+    @Test
     void applyEvent_walReplay_callCreated() {
-        var createdEvent = Call.create(CALL_ID, DISPATCHER, Instant.now(), null, null, null, null).event();
+        var createdEvent = Call.create(CALL_ID, DISPATCHER, NOW, null, null, null, null).event();
         var replayedCall = Call.fromCreatedEvent(createdEvent);
         assertEquals(CallState.ACTIVE, replayedCall.state());
         assertEquals(CALL_ID, replayedCall.id());
@@ -139,22 +167,19 @@ class CallTest {
 
     @Test
     void applyEvent_walReplay_callEnded() {
-        var result = Call.create(CALL_ID, DISPATCHER, Instant.now(), null, null, null, null);
+        var result = Call.create(CALL_ID, DISPATCHER, NOW, null, null, null, null);
         var replayedCall = Call.fromCreatedEvent(result.event());
-        var endPending = replayedCall.prepareEnd(CallOutcome.HOAX, new Description("hoax"));
+        replayedCall.prepareSetOutcome(NOW, CallOutcome.HOAX, new Description("hoax")).applyMutation().run();
+        var endPending = replayedCall.prepareEnd(NOW);
         replayedCall.applyEvent(endPending.event());
         assertEquals(CallState.ENDED, replayedCall.state());
     }
 
     @Test
-    void prepareUpdate_rejectsIncidentCreatedOutcome() {
-        assertThrows(IllegalArgumentException.class,
-                () -> call.prepareUpdate(null, null, null, null, CallOutcome.INCIDENT_CREATED, null));
-    }
-
-    @Test
-    void prepareUpdate_rejectsAttachedToIncidentOutcome() {
-        assertThrows(IllegalArgumentException.class,
-                () -> call.prepareUpdate(null, null, null, null, CallOutcome.ATTACHED_TO_INCIDENT, null));
+    void prepareUpdate_updatesDetailFields() {
+        var pending = call.prepareUpdate(NOW, null, null, null, new Description("updated"));
+        pending.applyMutation().run();
+        assertEquals("updated", call.description().value());
+        assertNull(call.outcome());
     }
 }

@@ -81,73 +81,90 @@ public final class Call extends Entity<CallId> {
     }
 
     /**
-     * Prepares an update of call detail fields.
+     * Prepares an update of call detail fields (caller info, location, description).
      * <p>
      * Only non-null fields in the arguments are applied; existing values are preserved for nulls.
-     * Outcomes {@code INCIDENT_CREATED} and {@code ATTACHED_TO_INCIDENT} may not be set here;
-     * use the specific attach/create commands instead.
+     * Use {@link #prepareSetOutcome(Instant, CallOutcome, Description)} to change outcome or rationale.
+     *
+     * @param now authoritative timestamp supplied by the clock port
      */
     public PendingMutation<CallUpdatedEvent> prepareUpdate(
+            Instant now,
             @Nullable CallerName callerName,
             @Nullable PhoneNumber callerPhoneNumber,
             @Nullable Location location,
-            @Nullable Description description,
-            @Nullable CallOutcome outcome,
-            @Nullable Description outcomeRationale) {
-        if (outcome == CallOutcome.INCIDENT_CREATED || outcome == CallOutcome.ATTACHED_TO_INCIDENT) {
-            throw new IllegalArgumentException(
-                    "outcome " + outcome + " must be set via specific commands, not UpdateCallDetails");
-        }
-
+            @Nullable Description description) {
         var newCallerName = callerName != null ? callerName : this.callerName;
         var newCallerPhoneNumber = callerPhoneNumber != null ? callerPhoneNumber : this.callerPhoneNumber;
         var newLocation = location != null ? location : this.location;
         var newDescription = description != null ? description : this.description;
-        var newOutcome = outcome != null ? outcome : this.outcome;
-        var newOutcomeRationale = outcomeRationale != null ? outcomeRationale : this.outcomeRationale;
 
         var event = new CallUpdatedEvent(
-                EventId.generate(), Instant.now(), null, receivingDispatcher,
+                EventId.generate(), now, null, receivingDispatcher,
                 id(), newCallerName, newCallerPhoneNumber, newLocation, newDescription,
-                newOutcome, newOutcomeRationale, null);
+                null, null, null);
+        return new PendingMutation<>(event, () -> applyUpdate(event));
+    }
+
+    /**
+     * Prepares setting the call outcome and rationale.
+     * <p>
+     * Outcomes {@code INCIDENT_CREATED} and {@code ATTACHED_TO_INCIDENT} may not be set here;
+     * use the specific attach/create commands instead.
+     *
+     * @param now authoritative timestamp supplied by the clock port
+     */
+    public PendingMutation<CallUpdatedEvent> prepareSetOutcome(
+            Instant now,
+            CallOutcome outcome,
+            @Nullable Description outcomeRationale) {
+        Objects.requireNonNull(outcome, "outcome must not be null");
+        if (outcome == CallOutcome.INCIDENT_CREATED || outcome == CallOutcome.ATTACHED_TO_INCIDENT) {
+            throw new IllegalArgumentException(
+                    "outcome " + outcome + " must be set via specific commands, not SetCallOutcome");
+        }
+
+        var event = new CallUpdatedEvent(
+                EventId.generate(), now, null, receivingDispatcher,
+                id(), null, null, null, null,
+                outcome, outcomeRationale, null);
         return new PendingMutation<>(event, () -> applyUpdate(event));
     }
 
     /**
      * Prepares ending the call.
      * <p>
-     * The effective outcome and rationale are resolved: command arguments take precedence over
-     * existing values on the call.
+     * The {@code outcome} must already be set on the call before calling this method.
+     * If the outcome requires a rationale, it must also be set.
+     *
+     * @param now authoritative timestamp supplied by the clock port
      */
-    public PendingMutation<CallEndedEvent> prepareEnd(
-            @Nullable CallOutcome outcome,
-            @Nullable Description outcomeRationale) {
+    public PendingMutation<CallEndedEvent> prepareEnd(Instant now) {
         CallStateMachine.validateTransition(state, CallState.ENDED);
 
-        var effectiveOutcome = outcome != null ? outcome : this.outcome;
-        if (effectiveOutcome == null) {
+        if (outcome == null) {
             throw new IllegalStateException("outcome must be set before ending a call");
         }
-        if ((effectiveOutcome == CallOutcome.INCIDENT_CREATED || effectiveOutcome == CallOutcome.ATTACHED_TO_INCIDENT)
+        if ((outcome == CallOutcome.INCIDENT_CREATED || outcome == CallOutcome.ATTACHED_TO_INCIDENT)
                 && incidentId == null) {
             throw new IllegalStateException(
-                    "outcome " + effectiveOutcome + " requires incidentId to already be set; "
+                    "outcome " + outcome + " requires incidentId to already be set; "
                     + "use attach/create commands to link the call before ending it");
         }
-        var effectiveRationale = outcomeRationale != null ? outcomeRationale : this.outcomeRationale;
-        if (effectiveOutcome.requiresRationale() && effectiveRationale == null) {
-            throw new IllegalStateException("outcome " + effectiveOutcome + " requires an outcomeRationale");
+        if (outcome.requiresRationale() && outcomeRationale == null) {
+            throw new IllegalStateException("outcome " + outcome + " requires an outcomeRationale");
         }
 
-        var callEnded = Instant.now();
         var event = new CallEndedEvent(
-                EventId.generate(), callEnded, null, receivingDispatcher,
-                id(), callEnded, effectiveOutcome, effectiveRationale, incidentId);
+                EventId.generate(), now, null, receivingDispatcher,
+                id(), outcome, outcomeRationale, incidentId);
         return new PendingMutation<>(event, () -> applyEnd(event));
     }
 
     /**
      * Prepares attaching this call to an existing incident.
+     *
+     * @param attachedAt authoritative timestamp supplied by the clock port
      */
     public PendingMutation<CallAttachedToIncidentEvent> prepareAttachToIncident(
             IncidentId incidentId, Instant attachedAt) {
@@ -167,8 +184,10 @@ public final class Call extends Entity<CallId> {
 
     /**
      * Prepares detaching this call from its incident.
+     *
+     * @param now authoritative timestamp supplied by the clock port
      */
-    public PendingMutation<CallDetachedFromIncidentEvent> prepareDetachFromIncident() {
+    public PendingMutation<CallDetachedFromIncidentEvent> prepareDetachFromIncident(Instant now) {
         if (state != CallState.ACTIVE) {
             throw new IllegalStateException("call must be ACTIVE to detach from an incident");
         }
@@ -179,8 +198,8 @@ public final class Call extends Entity<CallId> {
 
         var formerIncidentId = incidentId;
         var event = new CallDetachedFromIncidentEvent(
-                EventId.generate(), Instant.now(), null, receivingDispatcher, id(), formerIncidentId);
-        return new PendingMutation<>(event, () -> applyDetach());
+                EventId.generate(), now, null, receivingDispatcher, id(), formerIncidentId);
+        return new PendingMutation<>(event, this::applyDetach);
     }
 
     /**
@@ -233,7 +252,7 @@ public final class Call extends Entity<CallId> {
 
     private void applyEnd(CallEndedEvent e) {
         this.state = CallState.ENDED;
-        this.callEnded = e.callEnded();
+        this.callEnded = e.timestamp();
         this.outcome = e.outcome();
         this.outcomeRationale = e.outcomeRationale();
         this.incidentId = e.incidentId();

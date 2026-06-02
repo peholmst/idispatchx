@@ -76,7 +76,6 @@ public class DetachCallFromIncidentCommandHandler
         }
 
         // Validates outcome == ATTACHED_TO_INCIDENT and that incidentId is set
-        var callPending = call.prepareDetachFromIncident();
         var formerIncidentId = call.incidentId();
 
         // Acquire the incident lock explicitly. If determineLockScope() already included
@@ -91,6 +90,7 @@ public class DetachCallFromIncidentCommandHandler
                             "incident not found: " + formerIncidentId));
 
             var now = clock.now();
+            var callPending = call.prepareDetachFromIncident(now);
             var logEntryId = new IncidentLogEntryId(NanoIdGenerator.generate());
             var logPending = incident.prepareAddCallDetachedLogEntry(
                     logEntryId, now, command.userId(), command.callId());

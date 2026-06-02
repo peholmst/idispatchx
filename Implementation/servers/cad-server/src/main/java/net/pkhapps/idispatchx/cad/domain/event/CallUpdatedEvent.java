@@ -42,8 +42,4 @@ public record CallUpdatedEvent(
         Objects.requireNonNull(callId, "callId must not be null");
     }
 
-    @Override
-    public UserId causedByUser() {
-        return causedByUser;
-    }
 }
