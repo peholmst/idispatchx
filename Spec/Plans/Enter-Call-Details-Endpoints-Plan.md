@@ -24,8 +24,8 @@ Related plans:
 
 | Phase | Description | Tasks | Status |
 |-------|-------------|-------|--------|
-| 8 | REST API Endpoints (CAD Server) | 3 | Not Started |
-| 9 | WebSocket Event Broadcasting (CAD Server) | 2 | Not Started |
+| 8 | REST API Endpoints (CAD Server) | 3 | Complete |
+| 9 | WebSocket Event Broadcasting (CAD Server) | 2 | Complete |
 | **Total** | | **5** | |
 
 ---
@@ -37,7 +37,7 @@ REST adapters for Dispatcher Client call management. All follow the request/resp
 
 ### Task 8.1: Call Controller
 
-**Status:** Not Started
+**Status:** Complete
 
 **Description:**
 Implement `CallController` with all call management endpoints.
@@ -88,7 +88,7 @@ Each command record must be populated with `userId` (from the JWT) and `@Nullabl
 
 ### Task 8.2: Incident Controller (Partial)
 
-**Status:** Not Started
+**Status:** Complete
 
 **Description:**
 Implement the portions of `IncidentController` needed for this UC: creating incidents from calls
@@ -137,7 +137,7 @@ future implementation of UC-Create-Incident.
 
 ### Task 8.3: Request Validation and Error Handling
 
-**Status:** Not Started
+**Status:** Complete
 
 **Description:**
 Extend the shared request validation infrastructure for the new endpoints. Ensure the global
@@ -166,7 +166,7 @@ Broadcast domain events from call operations to all connected Dispatcher Client 
 
 ### Task 9.1: Event-to-WebSocket Message Translation
 
-**Status:** Not Started
+**Status:** Complete
 
 **Description:**
 Extend `EventBroadcaster` to handle all new call and incident-related events, translating them into
@@ -202,7 +202,7 @@ the WebSocket message format defined in section 6.1 of the API design.
 
 ### Task 9.2: Dispatcher WebSocket Session for Call Events
 
-**Status:** Not Started
+**Status:** Complete
 
 **Description:**
 Verify that `DispatcherWebSocketHandler` and `DispatcherSession` correctly receive and forward

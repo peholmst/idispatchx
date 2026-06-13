@@ -75,8 +75,12 @@ public class DetachCallFromIncidentCommandHandler
             throw new IllegalStateException("call is ENDED: " + command.callId());
         }
 
-        // Validates outcome == ATTACHED_TO_INCIDENT and that incidentId is set
         var formerIncidentId = call.incidentId();
+        if (formerIncidentId == null) {
+            // Let the domain model produce the proper error message
+            call.prepareDetachFromIncident(clock.now()); // always throws
+            throw new IllegalStateException("unreachable");
+        }
 
         // Acquire the incident lock explicitly. If determineLockScope() already included
         // it (the common case), this is re-entrant and a no-op. If a concurrent attach

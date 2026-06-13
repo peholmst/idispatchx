@@ -9,6 +9,7 @@ import net.pkhapps.idispatchx.cad.domain.model.shared.location.Location;
 import net.pkhapps.idispatchx.common.auth.UserId;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Instant;
 import java.util.Objects;
 
 /**
