@@ -23,8 +23,8 @@ import java.util.Objects;
  */
 public abstract class CommandHandler<C extends Command, R> {
 
-    private final WalPort walPort;
-    private final EntityLockManager lockManager;
+    protected final WalPort walPort;
+    protected final EntityLockManager lockManager;
 
     protected CommandHandler(WalPort walPort, EntityLockManager lockManager) {
         this.walPort = Objects.requireNonNull(walPort, "walPort must not be null");
@@ -33,6 +33,9 @@ public abstract class CommandHandler<C extends Command, R> {
 
     /**
      * Handles the command with proper locking and WAL ordering.
+     * <p>
+     * If {@link #prepareBatchExecution} returns a non-null result, batch WAL write is used.
+     * Otherwise falls back to {@link #prepareExecution} for a single-event write.
      *
      * @param command the command to handle
      * @return the result of handling the command
@@ -43,25 +46,24 @@ public abstract class CommandHandler<C extends Command, R> {
         var lockScope = determineLockScope(command);
 
         try (var lock = lockManager.acquire(lockScope)) {
-            // 1. Validate command and compute pending mutation (NO state change yet)
+            // Check for batch path (cross-aggregate handlers)
+            var batchMutation = prepareBatchExecution(command);
+            if (batchMutation != null) {
+                walPort.writeBatch(batchMutation.events());
+                batchMutation.applyMutation().run();
+                return buildBatchResult(command, batchMutation.events());
+            }
+
+            // Single-event path (most handlers)
             var pendingMutation = prepareExecution(command);
-
-            // 2. Write event to WAL and block until synced to disk
             walPort.write(pendingMutation.event());
-
-            // 3. ONLY after successful WAL write, apply state mutation
             pendingMutation.applyMutation().run();
-
-            // 4. Return result
             return buildResult(command, pendingMutation.event());
         }
     }
 
     /**
      * Determines the lock scope for the command.
-     * <p>
-     * Subclasses must return the appropriate lock scope identifying which
-     * aggregates need to be locked before executing this command.
      *
      * @param command the command being handled
      * @return the lock scope
@@ -69,26 +71,56 @@ public abstract class CommandHandler<C extends Command, R> {
     protected abstract LockScope determineLockScope(C command);
 
     /**
-     * Prepares the execution by validating the command and creating the pending mutation.
+     * Prepares a single-event execution.
      * <p>
-     * This method must NOT modify any state. It should:
-     * <ul>
-     *   <li>Validate that the command can be executed</li>
-     *   <li>Create the domain event that represents the change</li>
-     *   <li>Create a runnable that will apply the state mutation</li>
-     * </ul>
+     * Must NOT modify any state. Override this in single-aggregate handlers.
+     * Batch handlers should override {@link #prepareBatchExecution} instead and may
+     * leave this throwing {@link UnsupportedOperationException}.
      *
      * @param command the command being handled
      * @return the pending mutation containing the event and deferred state change
      */
-    protected abstract PendingMutation<? extends DomainEvent> prepareExecution(C command);
+    protected PendingMutation<? extends DomainEvent> prepareExecution(C command) {
+        throw new UnsupportedOperationException(
+                "Override prepareExecution or prepareBatchExecution in " + getClass().getSimpleName());
+    }
 
     /**
-     * Builds the result after successful execution.
+     * Prepares a batch execution for cross-aggregate commands.
+     * <p>
+     * Default returns {@code null}, meaning the single-event path is used.
+     * Cross-aggregate handlers override this to return a {@link PendingBatchMutation}.
+     *
+     * @param command the command being handled
+     * @return the batch mutation, or {@code null} to fall back to {@link #prepareExecution}
+     */
+    protected PendingBatchMutation<? extends DomainEvent> prepareBatchExecution(C command) {
+        return null;
+    }
+
+    /**
+     * Builds the result after a single-event execution.
      *
      * @param command the command that was handled
      * @param event   the event that was written to WAL
      * @return the result
      */
-    protected abstract R buildResult(C command, DomainEvent event);
+    protected R buildResult(C command, DomainEvent event) {
+        throw new UnsupportedOperationException(
+                "Override buildResult or buildBatchResult in " + getClass().getSimpleName());
+    }
+
+    /**
+     * Builds the result after a batch execution.
+     * <p>
+     * Override in cross-aggregate handlers that use {@link #prepareBatchExecution}.
+     *
+     * @param command the command that was handled
+     * @param events  the events that were written to WAL
+     * @return the result
+     */
+    protected R buildBatchResult(C command, java.util.List<? extends DomainEvent> events) {
+        throw new UnsupportedOperationException(
+                "Override buildBatchResult in batch command handlers: " + getClass().getSimpleName());
+    }
 }

@@ -11,7 +11,7 @@ import java.util.Objects;
  */
 public record WalEntry(SequenceNumber sequenceNumber, DomainEvent event) {
 
-    WalEntry {
+    public WalEntry {
         Objects.requireNonNull(sequenceNumber, "sequenceNumber must not be null");
         Objects.requireNonNull(event, "event must not be null");
     }

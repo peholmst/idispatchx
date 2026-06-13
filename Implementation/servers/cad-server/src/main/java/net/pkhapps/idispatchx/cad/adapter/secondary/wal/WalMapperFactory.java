@@ -1,12 +1,14 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
+import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntry;
+import net.pkhapps.idispatchx.cad.domain.model.shared.location.Location;
 
 import java.util.List;
 
@@ -16,11 +18,33 @@ import java.util.List;
  * Uses a mixin to add {@code @JsonTypeInfo} to the {@link DomainEvent} interface without
  * modifying the domain model. The {@code @type} property stores the fully qualified class name,
  * allowing deserialization of any {@link DomainEvent} subtype on the classpath.
+ * <p>
+ * Separate mixins add polymorphic type handling for the {@link Location} and
+ * {@link net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntry} sealed interfaces,
+ * using a {@code "@type"} discriminator consistent with the {@link DomainEvent} mixin.
  */
 final class WalMapperFactory {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@type")
     private interface DomainEventMixin {
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = Location.ExactAddress.class, name = "exact_address"),
+            @JsonSubTypes.Type(value = Location.RoadIntersection.class, name = "road_intersection"),
+            @JsonSubTypes.Type(value = Location.NamedPlace.class, name = "named_place"),
+            @JsonSubTypes.Type(value = Location.RelativeLocation.class, name = "relative_location")
+    })
+    private interface LocationMixin {
+    }
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = IncidentLogEntry.AutomaticEntry.class, name = "automatic"),
+            @JsonSubTypes.Type(value = IncidentLogEntry.ManualEntry.class, name = "manual")
+    })
+    private interface IncidentLogEntryMixin {
     }
 
     /** Document shape stored per WAL entry: {seq, event}. */
@@ -62,6 +86,8 @@ final class WalMapperFactory {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.addMixIn(DomainEvent.class, DomainEventMixin.class);
+        mapper.addMixIn(Location.class, LocationMixin.class);
+        mapper.addMixIn(IncidentLogEntry.class, IncidentLogEntryMixin.class);
         if (!eventTypes.isEmpty()) {
             mapper.registerSubtypes(eventTypes.toArray(new Class[0]));
         }
