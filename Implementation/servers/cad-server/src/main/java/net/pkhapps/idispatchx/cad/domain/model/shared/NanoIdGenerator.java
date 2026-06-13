@@ -22,4 +22,9 @@ public final class NanoIdGenerator {
         }
         return new String(chars);
     }
+
+    public static boolean isNanoIdChar(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                || (c >= '0' && c <= '9') || c == '_' || c == '-';
+    }
 }

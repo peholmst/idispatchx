@@ -33,7 +33,7 @@ class CallIdTest {
 
     @Test
     void generatedNanoIdIsValid() {
-        var id = new CallId(NanoIdGenerator.generate());
+        var id = CallId.newId();
         assertEquals(21, id.value().length());
     }
 }

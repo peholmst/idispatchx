@@ -4,7 +4,6 @@ import net.pkhapps.idispatchx.cad.domain.command.CreateCallCommand;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.model.call.Call;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallId;
-import net.pkhapps.idispatchx.cad.domain.model.shared.NanoIdGenerator;
 import net.pkhapps.idispatchx.cad.domain.repository.CallRepository;
 import net.pkhapps.idispatchx.cad.port.secondary.clock.ClockPort;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
@@ -35,7 +34,7 @@ public class CreateCallCommandHandler extends CommandHandler<CreateCallCommand, 
 
     @Override
     protected PendingMutation<? extends DomainEvent> prepareExecution(CreateCallCommand command) {
-        var callId = new CallId(NanoIdGenerator.generate());
+        var callId = CallId.newId();
         var callStarted = clock.now();
 
         var result = Call.create(callId, command.userId(), callStarted,
@@ -46,7 +45,7 @@ public class CreateCallCommandHandler extends CommandHandler<CreateCallCommand, 
         var event = new net.pkhapps.idispatchx.cad.domain.event.CallCreatedEvent(
                 result.event().eventId(), result.event().timestamp(),
                 command.commandId(), command.userId(),
-                callId, callStarted,
+                callId,
                 command.callerName(), command.callerPhoneNumber(),
                 command.location(), command.description());
 

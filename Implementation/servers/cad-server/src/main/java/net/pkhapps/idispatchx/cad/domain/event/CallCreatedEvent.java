@@ -9,7 +9,6 @@ import net.pkhapps.idispatchx.cad.domain.model.shared.location.Location;
 import net.pkhapps.idispatchx.common.auth.UserId;
 import org.jspecify.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -23,7 +22,6 @@ public record CallCreatedEvent(
         @Nullable CommandId causedBy,
         UserId causedByUser,
         CallId callId,
-        Instant callStarted,
         @Nullable CallerName callerName,
         @Nullable PhoneNumber callerPhoneNumber,
         @Nullable Location location,
@@ -35,7 +33,6 @@ public record CallCreatedEvent(
         Objects.requireNonNull(timestamp, "timestamp must not be null");
         Objects.requireNonNull(causedByUser, "causedByUser must not be null");
         Objects.requireNonNull(callId, "callId must not be null");
-        Objects.requireNonNull(callStarted, "callStarted must not be null");
     }
 
 }

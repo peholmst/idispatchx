@@ -20,16 +20,15 @@ public record CallId(String value) {
                     "CallId must be exactly " + NANO_ID_LENGTH + " characters, got: " + value.length());
         }
         for (int i = 0; i < value.length(); i++) {
-            if (!isNanoIdChar(value.charAt(i))) {
+            if (!NanoIdGenerator.isNanoIdChar(value.charAt(i))) {
                 throw new IllegalArgumentException(
                         "CallId contains invalid character at position " + i + ": " + value);
             }
         }
     }
 
-    private static boolean isNanoIdChar(char c) {
-        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
-                || (c >= '0' && c <= '9') || c == '_' || c == '-';
+    public static CallId newId() {
+        return new CallId(NanoIdGenerator.generate());
     }
 
     @Override

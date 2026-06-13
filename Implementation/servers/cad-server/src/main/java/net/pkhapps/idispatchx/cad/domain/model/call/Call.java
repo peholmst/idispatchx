@@ -76,7 +76,7 @@ public final class Call extends Entity<CallId> {
                 callerName, callerPhoneNumber, location, description);
         var event = new CallCreatedEvent(
                 EventId.generate(), callStarted, null, receivingDispatcher,
-                id, callStarted, callerName, callerPhoneNumber, location, description);
+                id, callerName, callerPhoneNumber, location, description);
         return new CallCreationResult(event, call);
     }
 
@@ -272,7 +272,7 @@ public final class Call extends Entity<CallId> {
      * Reconstructs a Call from its {@link CallCreatedEvent} for WAL replay.
      */
     public static Call fromCreatedEvent(CallCreatedEvent e) {
-        return new Call(e.callId(), e.causedByUser(), e.callStarted(),
+        return new Call(e.callId(), e.causedByUser(), e.timestamp(),
                 e.callerName(), e.callerPhoneNumber(), e.location(), e.description());
     }
 }

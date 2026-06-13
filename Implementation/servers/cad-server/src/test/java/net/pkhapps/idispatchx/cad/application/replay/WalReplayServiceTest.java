@@ -50,7 +50,7 @@ class WalReplayServiceTest {
         var callId = new CallId(NanoIdGenerator.generate());
         var now = Instant.now();
         walEvents.add(new CallCreatedEvent(EventId.generate(), now, null, DISPATCHER,
-                callId, now, null, null, null, null));
+                callId, null, null, null, null));
 
         replayService.replayAll();
 
@@ -78,7 +78,7 @@ class WalReplayServiceTest {
         var callId = new CallId(NanoIdGenerator.generate());
         var now = Instant.now();
         walEvents.add(new CallCreatedEvent(EventId.generate(), now, null, DISPATCHER,
-                callId, now, null, null, null, null));
+                callId, null, null, null, null));
         walEvents.add(new CallEndedEvent(EventId.generate(), now, null, DISPATCHER,
                 callId, CallOutcome.HOAX, new Description("hoax"), null));
 

@@ -29,5 +29,9 @@ public record SetCallOutcomeCommand(
         Objects.requireNonNull(userId, "userId must not be null");
         Objects.requireNonNull(callId, "callId must not be null");
         Objects.requireNonNull(outcome, "outcome must not be null");
+        if (outcome == CallOutcome.INCIDENT_CREATED || outcome == CallOutcome.ATTACHED_TO_INCIDENT) {
+            throw new IllegalArgumentException(
+                    "Outcome " + outcome + " must be set via CreateIncidentFromCallCommand or AttachCallToIncidentCommand");
+        }
     }
 }
