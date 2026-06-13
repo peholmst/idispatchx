@@ -230,6 +230,25 @@ class CallControllerTest {
         assertEquals(404, response.statusCode());
     }
 
+    @Test
+    void updateCallDetails_emptyBody_unknownCall_returns404() throws Exception {
+        // Empty body (no-op patch) must still validate the target
+        var response = patch("/api/v1/calls/V1StGXR8_Z5jdHi6B-myT", "{}", UUID.randomUUID().toString());
+        assertEquals(404, response.statusCode());
+    }
+
+    @Test
+    void updateCallDetails_outcomeRationaleWithoutOutcome_returns400() throws Exception {
+        var callId = createCallGetId();
+        var response = patch("/api/v1/calls/" + callId,
+                """
+                {"outcomeRationale":"Some rationale without outcome"}
+                """,
+                UUID.randomUUID().toString());
+        assertEquals(400, response.statusCode());
+        assertTrue(response.body().contains("outcomeRationale"));
+    }
+
     // -----------------------------------------------------------------------
     // POST /api/v1/calls/{callId}/end
     // -----------------------------------------------------------------------
@@ -296,6 +315,16 @@ class CallControllerTest {
     // -----------------------------------------------------------------------
     // POST /api/v1/calls/{callId}/attach-to-incident
     // -----------------------------------------------------------------------
+
+    @Test
+    void attachToIncident_missingIncidentId_returns400() throws Exception {
+        var callId = createCallGetId();
+        // Body with no incidentId (null) must return 400 not 500
+        var response = post("/api/v1/calls/" + callId + "/attach-to-incident",
+                "{}", UUID.randomUUID().toString());
+        assertEquals(400, response.statusCode());
+        assertTrue(response.body().contains("incidentId"));
+    }
 
     @Test
     void attachToIncident_incidentNotFound_returns404() throws Exception {

@@ -137,9 +137,26 @@ public final class CallController {
         var callId = new CallId(ctx.pathParam("callId"));
         var body = ctx.bodyAsClass(CallDtos.UpdateCallDetailsRequest.class);
 
+        // outcomeRationale without outcome cannot be applied — reject rather than silently discard
+        if (body.outcomeRationale() != null && body.outcome() == null) {
+            throw new ValidationException(CadErrorCode.VALIDATION_ERROR,
+                    "outcomeRationale requires outcome to also be present");
+        }
+
         boolean hasDetailFields = body.callerName() != null || body.callerPhoneNumber() != null
                 || body.location() != null || body.description() != null;
         boolean hasOutcomeFields = body.outcome() != null;
+
+        if (!hasDetailFields && !hasOutcomeFields) {
+            // No-op body: validate the target so 404/409 are returned as documented
+            var call = callRepository.findById(callId)
+                    .orElseThrow(() -> new NoSuchElementException("call not found: " + callId));
+            if (call.state() == CallState.ENDED) {
+                throw new IllegalStateException("call is ENDED: " + callId);
+            }
+            ctx.status(200);
+            return;
+        }
 
         if (hasDetailFields) {
             dispatcher.dispatch(updateCallDetailsHandler, new UpdateCallDetailsCommand(
@@ -219,6 +236,10 @@ public final class CallController {
         var claims = AuthContext.requireClaims(ctx);
         var callId = new CallId(ctx.pathParam("callId"));
         var body = ctx.bodyAsClass(CallDtos.AttachCallToIncidentRequest.class);
+
+        if (body.incidentId() == null || body.incidentId().isBlank()) {
+            throw new ValidationException(CadErrorCode.VALIDATION_ERROR, "incidentId is required");
+        }
 
         dispatcher.dispatch(attachCallToIncidentHandler, new AttachCallToIncidentCommand(
                 commandId,

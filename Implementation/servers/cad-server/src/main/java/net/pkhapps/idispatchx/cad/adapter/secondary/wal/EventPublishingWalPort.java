@@ -41,11 +41,15 @@ public final class EventPublishingWalPort implements WalPort {
     @Override
     public SequenceNumber writeBatch(List<? extends DomainEvent> events) {
         var seq = delegate.writeBatch(events);
-        var seqValue = seq.value();
-        // Batch events all share the same sequence number (the last one in the batch)
+        var lastSeq = seq.value();
+        var batchSize = events.size();
+        // The WAL assigns each event in the batch a distinct contiguous sequence.
+        // The delegate returns the LAST sequence in the batch, so event[i] has
+        // sequence: lastSeq - (batchSize - 1 - i)
         broadcastExecutor.execute(() -> {
-            for (var event : events) {
-                broadcaster.broadcast(event, seqValue);
+            for (int i = 0; i < batchSize; i++) {
+                var eventSeq = lastSeq - (batchSize - 1 - i);
+                broadcaster.broadcast(events.get(i), eventSeq);
             }
         });
         return seq;
