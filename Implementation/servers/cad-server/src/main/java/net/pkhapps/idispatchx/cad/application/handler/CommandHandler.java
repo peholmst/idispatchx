@@ -2,6 +2,7 @@ package net.pkhapps.idispatchx.cad.application.handler;
 
 import net.pkhapps.idispatchx.cad.domain.command.Command;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
+import net.pkhapps.idispatchx.cad.port.secondary.publisher.DomainEventPublisher;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
 
 import java.util.Objects;
@@ -49,15 +50,21 @@ public abstract class CommandHandler<C extends Command, R> {
             // Check for batch path (cross-aggregate handlers)
             var batchMutation = prepareBatchExecution(command);
             if (batchMutation != null) {
-                walPort.writeBatch(batchMutation.events());
+                var lastSeq = walPort.writeBatch(batchMutation.events());
                 batchMutation.applyMutation().run();
+                if (walPort instanceof DomainEventPublisher publisher) {
+                    publisher.publishBatchAfterMutation(batchMutation.events(), lastSeq.value());
+                }
                 return buildBatchResult(command, batchMutation.events());
             }
 
             // Single-event path (most handlers)
             var pendingMutation = prepareExecution(command);
-            walPort.write(pendingMutation.event());
+            var seq = walPort.write(pendingMutation.event());
             pendingMutation.applyMutation().run();
+            if (walPort instanceof DomainEventPublisher publisher) {
+                publisher.publishAfterMutation(pendingMutation.event(), seq.value());
+            }
             return buildResult(command, pendingMutation.event());
         }
     }

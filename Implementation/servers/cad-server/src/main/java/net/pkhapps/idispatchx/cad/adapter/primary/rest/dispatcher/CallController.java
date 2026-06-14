@@ -206,12 +206,11 @@ public final class CallController {
             ));
         }
 
-        // Validate that outcome is now set (gives 400 instead of 409 for missing outcome)
+        // Validate that outcome is now set (gives 400 instead of 409 for missing outcome).
+        // Note: no ENDED check here — an already-ended call with the same X-Command-Id is a
+        // legitimate idempotent retry and must reach IdempotentCommandDispatcher to return 200.
         var call = callRepository.findById(callId)
                 .orElseThrow(() -> new NoSuchElementException("call not found: " + callId));
-        if (call.state() == CallState.ENDED) {
-            throw new IllegalStateException("call is already ENDED: " + callId);
-        }
         if (call.outcome() == null) {
             throw new ValidationException(CadErrorCode.VALIDATION_ERROR,
                     "outcome is required to end a call");

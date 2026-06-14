@@ -4,12 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;
+import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
+import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
+import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
 import net.pkhapps.idispatchx.common.auth.TokenValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,20 +94,23 @@ class DispatcherWebSocketHandlerTest {
                 .findAndRegisterModules()
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         assertDoesNotThrow(() -> new DispatcherWebSocketHandler(
-                tokenValidator, sessionStore, sessionRegistry, objectMapper));
+                tokenValidator, sessionStore, sessionRegistry, objectMapper, noopWalPort()));
     }
 
     @Test
     void handler_nullArgs_throwNPE() {
         var om = new ObjectMapper();
+        var wal = noopWalPort();
         assertThrows(NullPointerException.class, () ->
-                new DispatcherWebSocketHandler(null, new SessionStore(), sessionRegistry, om));
+                new DispatcherWebSocketHandler(null, new SessionStore(), sessionRegistry, om, wal));
         assertThrows(NullPointerException.class, () ->
-                new DispatcherWebSocketHandler(buildTokenValidator(), null, sessionRegistry, om));
+                new DispatcherWebSocketHandler(buildTokenValidator(), null, sessionRegistry, om, wal));
         assertThrows(NullPointerException.class, () ->
-                new DispatcherWebSocketHandler(buildTokenValidator(), new SessionStore(), null, om));
+                new DispatcherWebSocketHandler(buildTokenValidator(), new SessionStore(), null, om, wal));
         assertThrows(NullPointerException.class, () ->
-                new DispatcherWebSocketHandler(buildTokenValidator(), new SessionStore(), sessionRegistry, null));
+                new DispatcherWebSocketHandler(buildTokenValidator(), new SessionStore(), sessionRegistry, null, wal));
+        assertThrows(NullPointerException.class, () ->
+                new DispatcherWebSocketHandler(buildTokenValidator(), new SessionStore(), sessionRegistry, om, null));
     }
 
     // -----------------------------------------------------------------------
@@ -113,5 +121,16 @@ class DispatcherWebSocketHandlerTest {
         // KeyProvider that always returns null → validation fails with KEY_NOT_FOUND.
         // Sufficient for tests that only verify constructor / registry / broadcast behavior.
         return new TokenValidator(keyId -> null, "https://auth.example.com");
+    }
+
+    private static WalPort noopWalPort() {
+        return new WalPort() {
+            @Override public SequenceNumber write(DomainEvent e) { return SequenceNumber.start(); }
+            @Override public SequenceNumber writeBatch(List<? extends DomainEvent> e) { return SequenceNumber.start(); }
+            @Override public void replayFrom(SequenceNumber from, Consumer<DomainEvent> c) {}
+            @Override public void replay(Consumer<DomainEvent> c) {}
+            @Override public void truncate(SequenceNumber upTo) {}
+            @Override public SequenceNumber currentSequence() { return SequenceNumber.start(); }
+        };
     }
 }

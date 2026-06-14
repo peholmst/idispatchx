@@ -298,6 +298,18 @@ class CallControllerTest {
     }
 
     @Test
+    void endCall_retry_withSameCommandId_returns200() throws Exception {
+        var callId = createCallGetId();
+        var body = """
+                {"outcome":"hoax","outcomeRationale":"false alarm"}
+                """;
+        var commandId = UUID.randomUUID().toString();
+        assertEquals(200, post("/api/v1/calls/" + callId + "/end", body, commandId).statusCode());
+        // Retry with identical X-Command-Id must be treated as idempotent
+        assertEquals(200, post("/api/v1/calls/" + callId + "/end", body, commandId).statusCode());
+    }
+
+    @Test
     void endCall_observerForbidden() throws Exception {
         var observerApp = buildApp(OBSERVER_CLAIMS);
         int observerPort;

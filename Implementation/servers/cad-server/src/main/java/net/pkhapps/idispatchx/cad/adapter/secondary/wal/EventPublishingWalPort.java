@@ -3,10 +3,12 @@ package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.EventBroadcaster;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
+import net.pkhapps.idispatchx.cad.port.secondary.publisher.DomainEventPublisher;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -14,14 +16,22 @@ import java.util.function.Consumer;
  * Decorator around a {@link WalPort} delegate that publishes domain events to the
  * {@link EventBroadcaster} after each successful WAL write.
  * <p>
- * Broadcasting runs on the provided {@link Executor} so it is non-blocking with
- * respect to the originating command handler (per the Performance NFR).
+ * Publishing is triggered by {@link net.pkhapps.idispatchx.cad.application.handler.CommandHandler}
+ * <em>after</em> the state mutation is applied, so the repository already reflects the
+ * post-command state when the broadcaster reads it.
+ * <p>
+ * Events are submitted to the {@link Executor} in strict WAL-sequence order even when
+ * concurrent command handlers call {@link #publishAfterMutation} out of order: a pending
+ * map holds any out-of-order entries until the gap is filled, then drains in order.
  */
-public final class EventPublishingWalPort implements WalPort {
+public final class EventPublishingWalPort implements WalPort, DomainEventPublisher {
 
     private final WalPort delegate;
     private final EventBroadcaster broadcaster;
     private final Executor broadcastExecutor;
+
+    private final TreeMap<Long, DomainEvent> pendingBroadcasts = new TreeMap<>();
+    private long nextExpectedSeq = -1; // -1 = not yet initialized; set on first publish call
 
     public EventPublishingWalPort(WalPort delegate, EventBroadcaster broadcaster,
                                   Executor broadcastExecutor) {
@@ -32,27 +42,48 @@ public final class EventPublishingWalPort implements WalPort {
 
     @Override
     public SequenceNumber write(DomainEvent event) {
-        var seq = delegate.write(event);
-        var seqValue = seq.value();
-        broadcastExecutor.execute(() -> broadcaster.broadcast(event, seqValue));
-        return seq;
+        return delegate.write(event);
     }
 
     @Override
     public SequenceNumber writeBatch(List<? extends DomainEvent> events) {
-        var seq = delegate.writeBatch(events);
-        var lastSeq = seq.value();
-        var batchSize = events.size();
-        // The WAL assigns each event in the batch a distinct contiguous sequence.
-        // The delegate returns the LAST sequence in the batch, so event[i] has
-        // sequence: lastSeq - (batchSize - 1 - i)
-        broadcastExecutor.execute(() -> {
-            for (int i = 0; i < batchSize; i++) {
-                var eventSeq = lastSeq - (batchSize - 1 - i);
-                broadcaster.broadcast(events.get(i), eventSeq);
+        return delegate.writeBatch(events);
+    }
+
+    @Override
+    public synchronized void publishAfterMutation(DomainEvent event, long walSeq) {
+        if (nextExpectedSeq < 0) {
+            nextExpectedSeq = walSeq;
+        }
+        pendingBroadcasts.put(walSeq, event);
+        drainInOrder();
+    }
+
+    @Override
+    public synchronized void publishBatchAfterMutation(List<? extends DomainEvent> events, long lastWalSeq) {
+        int size = events.size();
+        long firstSeq = lastWalSeq - (size - 1);
+        if (nextExpectedSeq < 0) {
+            nextExpectedSeq = firstSeq;
+        }
+        for (int i = 0; i < size; i++) {
+            pendingBroadcasts.put(firstSeq + i, events.get(i));
+        }
+        drainInOrder();
+    }
+
+    private void drainInOrder() {
+        while (!pendingBroadcasts.isEmpty()) {
+            var entry = pendingBroadcasts.firstEntry();
+            if (entry.getKey() != nextExpectedSeq) {
+                break;
             }
-        });
-        return seq;
+            pendingBroadcasts.pollFirstEntry();
+            nextExpectedSeq++;
+            final long seq = entry.getKey();
+            final DomainEvent event = entry.getValue();
+            broadcastExecutor.execute(() -> broadcaster.broadcast(event, seq));
+        }
     }
 
     @Override
