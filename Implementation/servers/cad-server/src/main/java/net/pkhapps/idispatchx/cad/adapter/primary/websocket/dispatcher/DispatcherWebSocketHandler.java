@@ -104,8 +104,10 @@ public final class DispatcherWebSocketHandler {
                 log.info("Dispatcher WebSocket connected: connectionId={}, userId={}, oidcSessionId={}",
                         connectionId, claims.subject(), claims.sessionId());
 
-                // Send connected event per spec section 6.1
-                var currentSeq = walPort.currentSequence().value();
+                // Send connected event per spec section 6.1.
+                // Use currentSequenceNumber() (0 for empty WAL) so clients implementing
+                // gap detection do not treat the first real event as a duplicate.
+                var currentSeq = walPort.currentSequenceNumber();
                 session.send(Map.of(
                         "type", "connected",
                         "sequenceNumber", currentSeq,

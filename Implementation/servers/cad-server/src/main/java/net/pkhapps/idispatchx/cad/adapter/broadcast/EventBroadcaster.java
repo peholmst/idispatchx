@@ -53,30 +53,69 @@ public final class EventBroadcaster {
     }
 
     /**
+     * Eagerly captures a complete call snapshot for call-mutating events so the snapshot
+     * can be stored before asynchronous dispatch. Called on the command-handler thread while
+     * the entity lock is still held, guaranteeing the snapshot reflects the event's own
+     * post-mutation state rather than any later concurrent mutation.
+     *
+     * @param event the domain event that was just applied
+     * @return the call payload map, or {@code null} for non-call events
+     */
+    public @Nullable Map<String, Object> captureCallSnapshot(DomainEvent event) {
+        net.pkhapps.idispatchx.cad.domain.model.shared.CallId callId = switch (event) {
+            case CallCreatedEvent e -> e.callId();
+            case CallUpdatedEvent e -> e.callId();
+            case CallEndedEvent e -> e.callId();
+            default -> null;
+        };
+        if (callId == null) {
+            return null;
+        }
+        var call = callRepository.findById(callId).orElse(null);
+        if (call == null) {
+            log.warn("Call {} not found when capturing snapshot for {}", callId, event.getClass().getSimpleName());
+            return null;
+        }
+        return buildCallMapFromAggregate(call);
+    }
+
+    /**
      * Broadcasts the given domain event to all connected clients.
+     * Uses a pre-captured call snapshot if provided; falls back to reading the repository.
      *
      * @param event             the domain event to broadcast
      * @param walSequenceNumber the WAL sequence number assigned to the event
+     * @param callSnapshot      pre-captured call state map, or {@code null} to read from repo
      */
-    public void broadcast(DomainEvent event, long walSequenceNumber) {
+    public void broadcast(DomainEvent event, long walSequenceNumber, @Nullable Map<String, Object> callSnapshot) {
         Objects.requireNonNull(event, "event must not be null");
         try {
-            dispatch(event, walSequenceNumber);
+            dispatch(event, walSequenceNumber, callSnapshot);
         } catch (Exception e) {
             log.error("Unexpected error broadcasting event {} (seq={}): {}",
                     event.getClass().getSimpleName(), walSequenceNumber, e.getMessage(), e);
         }
     }
 
-    private void dispatch(DomainEvent event, long seq) {
+    /**
+     * Broadcasts the given domain event to all connected clients (snapshot read from repository).
+     *
+     * @param event             the domain event to broadcast
+     * @param walSequenceNumber the WAL sequence number assigned to the event
+     */
+    public void broadcast(DomainEvent event, long walSequenceNumber) {
+        broadcast(event, walSequenceNumber, null);
+    }
+
+    private void dispatch(DomainEvent event, long seq, @Nullable Map<String, Object> callSnapshot) {
         var ts = event.timestamp();
         switch (event) {
             case CallCreatedEvent e -> dispatcherBroadcastService.sendCallCreated(
-                    seq, ts, buildCallSnapshot(e.callId(), "active", null));
+                    seq, ts, callSnapshot != null ? callSnapshot : buildCallSnapshot(e.callId(), "active", null));
             case CallUpdatedEvent e -> dispatcherBroadcastService.sendCallUpdated(
-                    seq, ts, buildCallSnapshot(e.callId(), null, null));
+                    seq, ts, callSnapshot != null ? callSnapshot : buildCallSnapshot(e.callId(), null, null));
             case CallEndedEvent e -> dispatcherBroadcastService.sendCallEnded(
-                    seq, ts, buildCallSnapshot(e.callId(), "ended", null));
+                    seq, ts, callSnapshot != null ? callSnapshot : buildCallSnapshot(e.callId(), "ended", null));
             case CallAttachedToIncidentEvent e -> dispatcherBroadcastService.sendCallAttachedToIncident(
                     seq, ts, e.callId().value(), e.incidentId().value());
             case CallDetachedFromIncidentEvent e -> dispatcherBroadcastService.sendCallDetachedFromIncident(

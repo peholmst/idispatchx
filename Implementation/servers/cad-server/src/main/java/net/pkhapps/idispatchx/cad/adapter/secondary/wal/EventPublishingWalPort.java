@@ -5,8 +5,10 @@ import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import net.pkhapps.idispatchx.cad.port.secondary.publisher.DomainEventPublisher;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
@@ -18,26 +20,37 @@ import java.util.function.Consumer;
  * <p>
  * Publishing is triggered by {@link net.pkhapps.idispatchx.cad.application.handler.CommandHandler}
  * <em>after</em> the state mutation is applied, so the repository already reflects the
- * post-command state when the broadcaster reads it.
+ * post-command state when the snapshot is captured.
+ * <p>
+ * Call snapshots are captured eagerly (synchronously on the command-handler thread while the
+ * entity lock is still held) so that a concurrent mutation on the same call cannot overwrite
+ * the snapshot before it is broadcast.
  * <p>
  * Events are submitted to the {@link Executor} in strict WAL-sequence order even when
- * concurrent command handlers call {@link #publishAfterMutation} out of order: a pending
- * map holds any out-of-order entries until the gap is filled, then drains in order.
+ * concurrent command handlers call {@link #publishAfterMutation} out of order: the expected
+ * sequence is initialized from the WAL state at construction and a pending map holds any
+ * out-of-order entries until the gap is filled, then drains in order.
  */
 public final class EventPublishingWalPort implements WalPort, DomainEventPublisher {
+
+    private record PendingBroadcast(DomainEvent event, @Nullable Map<String, Object> callSnapshot) {}
 
     private final WalPort delegate;
     private final EventBroadcaster broadcaster;
     private final Executor broadcastExecutor;
 
-    private final TreeMap<Long, DomainEvent> pendingBroadcasts = new TreeMap<>();
-    private long nextExpectedSeq = -1; // -1 = not yet initialized; set on first publish call
+    private final TreeMap<Long, PendingBroadcast> pendingBroadcasts = new TreeMap<>();
+    private long nextExpectedSeq;
 
     public EventPublishingWalPort(WalPort delegate, EventBroadcaster broadcaster,
                                   Executor broadcastExecutor) {
         this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
         this.broadcaster = Objects.requireNonNull(broadcaster, "broadcaster must not be null");
         this.broadcastExecutor = Objects.requireNonNull(broadcastExecutor, "broadcastExecutor must not be null");
+        // Initialize from WAL state: 0→1 for empty WAL, K→K+1 for a WAL with K events.
+        // This prevents the drain from blocking permanently when a higher-sequence publish
+        // callback arrives before a lower-sequence one under concurrent command handling.
+        this.nextExpectedSeq = delegate.currentSequenceNumber() + 1;
     }
 
     @Override
@@ -52,10 +65,8 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
 
     @Override
     public synchronized void publishAfterMutation(DomainEvent event, long walSeq) {
-        if (nextExpectedSeq < 0) {
-            nextExpectedSeq = walSeq;
-        }
-        pendingBroadcasts.put(walSeq, event);
+        var snapshot = broadcaster.captureCallSnapshot(event);
+        pendingBroadcasts.put(walSeq, new PendingBroadcast(event, snapshot));
         drainInOrder();
     }
 
@@ -63,11 +74,10 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
     public synchronized void publishBatchAfterMutation(List<? extends DomainEvent> events, long lastWalSeq) {
         int size = events.size();
         long firstSeq = lastWalSeq - (size - 1);
-        if (nextExpectedSeq < 0) {
-            nextExpectedSeq = firstSeq;
-        }
         for (int i = 0; i < size; i++) {
-            pendingBroadcasts.put(firstSeq + i, events.get(i));
+            var event = events.get(i);
+            var snapshot = broadcaster.captureCallSnapshot(event);
+            pendingBroadcasts.put(firstSeq + i, new PendingBroadcast(event, snapshot));
         }
         drainInOrder();
     }
@@ -81,8 +91,8 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
             pendingBroadcasts.pollFirstEntry();
             nextExpectedSeq++;
             final long seq = entry.getKey();
-            final DomainEvent event = entry.getValue();
-            broadcastExecutor.execute(() -> broadcaster.broadcast(event, seq));
+            final var pending = entry.getValue();
+            broadcastExecutor.execute(() -> broadcaster.broadcast(pending.event(), seq, pending.callSnapshot()));
         }
     }
 
@@ -104,5 +114,10 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
     @Override
     public SequenceNumber currentSequence() {
         return delegate.currentSequence();
+    }
+
+    @Override
+    public long currentSequenceNumber() {
+        return delegate.currentSequenceNumber();
     }
 }

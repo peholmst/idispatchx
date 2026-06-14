@@ -158,6 +158,10 @@ public final class CallController {
             return;
         }
 
+        // Parse and validate outcome before dispatching anything so an invalid outcome
+        // does not leave a partial update (detail fields committed, outcome rejected).
+        var outcome = hasOutcomeFields ? CallDtos.parseOutcome(body.outcome()) : null;
+
         if (hasDetailFields) {
             dispatcher.dispatch(updateCallDetailsHandler, new UpdateCallDetailsCommand(
                     commandId,
@@ -172,7 +176,6 @@ public final class CallController {
         }
 
         if (hasOutcomeFields) {
-            var outcome = CallDtos.parseOutcome(body.outcome());
             dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
                     CommandIdExtractor.derive(commandId, "set-outcome"),
                     new UserId(claims.subject()),
