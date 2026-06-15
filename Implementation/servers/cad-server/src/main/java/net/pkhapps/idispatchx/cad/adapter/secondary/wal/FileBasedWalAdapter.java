@@ -226,6 +226,11 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
     }
 
     @Override
+    public long currentSequenceNumber() {
+        return currentSeq.get();
+    }
+
+    @Override
     public synchronized void close() throws IOException {
         if (!closed) {
             closed = true;

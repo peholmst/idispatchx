@@ -65,4 +65,15 @@ public interface WalPort {
      * @return the current sequence number
      */
     SequenceNumber currentSequence();
+
+    /**
+     * Returns the highest WAL sequence number as a raw long, or {@code 0} if the WAL is empty.
+     * <p>
+     * Unlike {@link #currentSequence()}, which returns {@code SequenceNumber.start()} for an
+     * empty WAL, this method returns {@code 0} so callers can distinguish "no events written
+     * yet" from "exactly one event written".
+     *
+     * @return the current sequence number, or 0 if the WAL is empty
+     */
+    long currentSequenceNumber();
 }
