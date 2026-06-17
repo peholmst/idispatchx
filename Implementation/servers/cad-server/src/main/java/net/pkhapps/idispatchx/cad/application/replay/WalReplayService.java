@@ -49,6 +49,22 @@ public class WalReplayService {
                 incidentRepository.findAll().count());
     }
 
+    /**
+     * Replays WAL entries after the given sequence number, applying them to the repositories.
+     * Used on startup when a snapshot has already been loaded and the repositories contain the
+     * snapshot state.
+     *
+     * @param from replay events after this sequence number (exclusive)
+     */
+    public void replayFrom(net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber from) {
+        log.info("Replaying WAL from sequence {}", from.value());
+        walPort.replayFrom(from, this::handleEvent);
+        log.info("WAL replay complete (from seq {}): {} active calls, {} active incidents",
+                from.value(),
+                callRepository.findAll().count(),
+                incidentRepository.findAll().count());
+    }
+
     private void handleEvent(DomainEvent event) {
         switch (event) {
             case CallCreatedEvent e -> {

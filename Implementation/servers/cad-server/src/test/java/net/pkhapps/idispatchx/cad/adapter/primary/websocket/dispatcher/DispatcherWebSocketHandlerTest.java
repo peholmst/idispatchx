@@ -131,6 +131,7 @@ class DispatcherWebSocketHandlerTest {
             @Override public void replay(Consumer<DomainEvent> c) {}
             @Override public void truncate(SequenceNumber upTo) {}
             @Override public SequenceNumber currentSequence() { return SequenceNumber.start(); }
+            @Override public long currentSequenceNumber() { return 0; }
         };
     }
 }

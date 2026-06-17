@@ -194,6 +194,11 @@ class IdempotentCommandDispatcherTest {
         public SequenceNumber currentSequence() {
             return seq == 0 ? SequenceNumber.start() : new SequenceNumber(seq);
         }
+
+        @Override
+        public long currentSequenceNumber() {
+            return seq;
+        }
     }
 
     static class FailingWalPort extends SimpleWalPort {

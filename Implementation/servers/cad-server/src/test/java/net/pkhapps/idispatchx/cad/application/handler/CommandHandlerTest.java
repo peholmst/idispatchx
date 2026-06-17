@@ -189,6 +189,11 @@ class CommandHandlerTest {
         public SequenceNumber currentSequence() {
             return sequenceCounter == 0 ? SequenceNumber.start() : new SequenceNumber(sequenceCounter);
         }
+
+        @Override
+        public long currentSequenceNumber() {
+            return sequenceCounter;
+        }
     }
 
     static class SlowWalPort extends RecordingWalPort {
