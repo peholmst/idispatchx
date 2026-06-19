@@ -1,6 +1,6 @@
 import STYLES from './CallDetailForm.css?inline';
 import { LocationEntry, LocationChangedEvent } from './LocationEntry.ts';
-import type { CadRestClient } from '../cad/CadRestClient.ts';
+import type { CadRestClient, UpdateCallParams } from '../cad/CadRestClient.ts';
 import type { DispatcherWebSocketClient } from '../cad/DispatcherWebSocketClient.ts';
 import type { GeocodingClient } from '../gis/GeocodingClient.ts';
 import type { Call, CallSummary, CallOutcome, Coordinates } from '../cad/types.ts';
@@ -304,8 +304,15 @@ export class CallDetailForm extends HTMLElement {
         if (!this.#currentCall || !this.#cadRest || Object.keys(this.#pendingUpdate).length === 0) return;
         const update = { ...this.#pendingUpdate };
         this.#pendingUpdate = {};
+        // The server treats null/undefined the same as an absent field (null = skip).
+        // Strip them so we never send a no-op PATCH and so callers can distinguish
+        // "nothing to save" from "save failed".
+        const nonNullUpdate = Object.fromEntries(
+            Object.entries(update).filter(([, v]) => v !== null && v !== undefined)
+        );
+        if (Object.keys(nonNullUpdate).length === 0) return;
         try {
-            await this.#cadRest.updateCall(this.#currentCall.callId, update);
+            await this.#cadRest.updateCall(this.#currentCall.callId, nonNullUpdate as UpdateCallParams);
         } catch (err) {
             console.error('[CallDetailForm] Auto-save failed:', err);
             Object.assign(this.#pendingUpdate, update); // restore for retry
@@ -458,6 +465,13 @@ export class CallDetailForm extends HTMLElement {
         this.#callerPhoneInput.value = call.callerPhoneNumber ?? '';
         this.#descriptionTextarea.value = call.description ?? '';
         this.#locationEntry.value = call.location;
+        // Emit coordinates so vicinity filters activate when a call is selected/loaded.
+        const coords = call.location?.coordinates ?? null;
+        if (coords?.latitude !== this.#lastCoordinates?.latitude ||
+            coords?.longitude !== this.#lastCoordinates?.longitude) {
+            this.#lastCoordinates = coords;
+            this.#emitCoordinatesKnown(coords);
+        }
 
         // Outcome
         const readonlyOutcomes: CallOutcome[] = ['incident_created', 'attached_to_incident'];

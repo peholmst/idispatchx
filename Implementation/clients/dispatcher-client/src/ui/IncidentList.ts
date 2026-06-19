@@ -234,12 +234,14 @@ export class IncidentList extends HTMLElement {
         this.#wsClient.onIncidentDetailsUpdated((payload) => {
             const inc = this.#incidents.get(payload.incidentId);
             if (inc) {
+                // Payload fields are always present; null means "cleared", not "absent".
+                // Use direct assignment so the UI reflects server-side clears.
                 this.#incidents.set(payload.incidentId, {
                     ...inc,
-                    incidentType: payload.incidentType ?? inc.incidentType,
-                    incidentPriority: payload.incidentPriority ?? inc.incidentPriority,
-                    location: payload.location ?? inc.location,
-                    description: payload.description ?? inc.description,
+                    incidentType: payload.incidentType,
+                    incidentPriority: payload.incidentPriority,
+                    location: payload.location,
+                    description: payload.description,
                 });
                 this.#renderTable();
             }
