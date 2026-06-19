@@ -121,5 +121,10 @@ class WalReplayServiceTest {
         public SequenceNumber currentSequence() {
             return walEvents.isEmpty() ? SequenceNumber.start() : new SequenceNumber(walEvents.size());
         }
+
+        @Override
+        public long currentSequenceNumber() {
+            return walEvents.size();
+        }
     }
 }
