@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 /**
@@ -42,6 +43,13 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
     private final TreeMap<Long, PendingBroadcast> pendingBroadcasts = new TreeMap<>();
     private long nextExpectedSeq;
 
+    /**
+     * Tracks the highest WAL sequence number whose repository mutation is fully applied.
+     * Initialized to the WAL's current sequence so that all events replayed during startup
+     * are implicitly accounted for once replay completes.
+     */
+    private final AtomicLong lastAppliedSequence;
+
     public EventPublishingWalPort(WalPort delegate, EventBroadcaster broadcaster,
                                   Executor broadcastExecutor) {
         this.delegate = Objects.requireNonNull(delegate, "delegate must not be null");
@@ -50,7 +58,21 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
         // Initialize from WAL state: 0→1 for empty WAL, K→K+1 for a WAL with K events.
         // This prevents the drain from blocking permanently when a higher-sequence publish
         // callback arrives before a lower-sequence one under concurrent command handling.
-        this.nextExpectedSeq = delegate.currentSequenceNumber() + 1;
+        long currentSeq = delegate.currentSequenceNumber();
+        this.nextExpectedSeq = currentSeq + 1;
+        // After startup WAL replay completes, the repository reflects all events up to
+        // currentSeq, so it is safe to snapshot up to this point.
+        this.lastAppliedSequence = new AtomicLong(currentSeq);
+    }
+
+    /**
+     * Returns the highest WAL sequence number whose repository mutation has been fully
+     * applied. The snapshot can safely be taken up to and including this sequence number.
+     *
+     * @return last fully-applied sequence, or 0 if no events have been applied
+     */
+    public long lastAppliedSequence() {
+        return lastAppliedSequence.get();
     }
 
     @Override
@@ -65,6 +87,7 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
 
     @Override
     public synchronized void publishAfterMutation(DomainEvent event, long walSeq) {
+        lastAppliedSequence.updateAndGet(curr -> Math.max(curr, walSeq));
         var snapshot = broadcaster.captureCallSnapshot(event);
         pendingBroadcasts.put(walSeq, new PendingBroadcast(event, snapshot));
         drainInOrder();
@@ -72,6 +95,7 @@ public final class EventPublishingWalPort implements WalPort, DomainEventPublish
 
     @Override
     public synchronized void publishBatchAfterMutation(List<? extends DomainEvent> events, long lastWalSeq) {
+        lastAppliedSequence.updateAndGet(curr -> Math.max(curr, lastWalSeq));
         int size = events.size();
         long firstSeq = lastWalSeq - (size - 1);
         for (int i = 0; i < size; i++) {

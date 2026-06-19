@@ -414,26 +414,42 @@ For each event during replay, dispatch to appropriate handler:
 
 ### 11.3 Snapshot Service
 
-```java
-public class SnapshotService {
-    void createPeriodicSnapshot();  // Called by scheduler
-    void purgeAfterSnapshot(SequenceNumber snapshotSequence);
-}
-```
+Periodic snapshot creation is handled by a scheduled task inside the server composition root (not a separate `SnapshotService` class in the current implementation).
+
+**Snapshot DTOs**
+
+`Call` and `Incident` aggregates have private constructors and no Jackson annotations. To avoid coupling the domain model to Jackson, snapshot serialization uses plain DTO records:
+
+- `CallSnapshot` — serializable record capturing all `Call` fields
+- `IncidentSnapshot` — serializable record capturing all `Incident` fields, including log entries
+
+`OperationalState` holds collections of these DTOs rather than live aggregates. On startup, `CallSnapshot.toCall()` and `IncidentSnapshot.toIncident()` reconstruct the live aggregates by calling `Call.restore(...)` / `Incident.restore(...)` — static factory methods that bypass the normal creation lifecycle and accept all persisted fields directly.
 
 **Periodic Snapshot Creation:**
 
-1. Scheduler triggers `createPeriodicSnapshot()` at configurable interval
-2. Gather current operational state from all repositories
-3. Get current `walPort.currentSequence()`
-4. Call `snapshotPort.createSnapshot(state, sequenceNumber)`
-5. After successful snapshot: call `walPort.truncate(sequenceNumber)` and `snapshotPort.purgeOlderSnapshots(sequenceNumber)`
+1. Scheduler triggers snapshot creation at configurable interval
+2. Gather current operational state from all repositories, converting each aggregate to its DTO (`CallSnapshot.from(call)`, `IncidentSnapshot.from(incident)`)
+3. Read `lastAppliedSequence` — the highest WAL sequence number whose repository mutation is fully applied (see WAL Write Barrier below)
+4. If `lastAppliedSequence == 0` (no mutations applied since startup), skip and return
+5. Call `snapshotPort.createSnapshot(state, lastAppliedSequence)`
+6. After successful snapshot: call `walPort.truncate(lastAppliedSequence)` and `snapshotPort.purgeOlderSnapshots(lastAppliedSequence)`
+
+**WAL Write Barrier**
+
+The snapshot sequence number must not be taken from `walPort.currentSequence()`. Between gathering repository state and reading `currentSequence()`, a concurrent command handler may write event N to the WAL but not yet apply its repository mutation. The snapshot would then claim sequence N while missing N's effect. After WAL truncation at N, event N would be permanently lost on restart.
+
+The fix: track a `lastAppliedSequence` counter that is updated only after a command handler's repository mutation is fully applied. The snapshot is taken at `lastAppliedSequence`, which guarantees the WAL still contains all events whose effects may be absent from the snapshot.
+
+`lastAppliedSequence` is maintained in `EventPublishingWalPort`:
+- Initialized to `walPort.currentSequenceNumber()` at construction time (after startup replay the repository reflects all events up to this sequence)
+- Updated to `max(current, walSeq)` in `publishAfterMutation` / `publishBatchAfterMutation`, which are called by `CommandHandler` after the repository mutation is applied
 
 **Constraints:**
 
 - Atomic write: temporary file followed by rename
 - Purging is asynchronous and must not block normal operations
 - Snapshot interval is configurable
+- Snapshot is skipped when `lastAppliedSequence == 0` (no command-driven mutations have occurred)
 
 ### 11.4 Warm Standby Support
 
