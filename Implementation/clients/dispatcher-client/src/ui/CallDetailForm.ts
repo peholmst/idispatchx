@@ -273,7 +273,12 @@ export class CallDetailForm extends HTMLElement {
         });
 
         this.#outcomeRationaleTextarea.addEventListener('input', () => {
-            this.#scheduleSave({ outcomeRationale: this.#outcomeRationaleTextarea.value || null });
+            // Always include the current outcome so the server never receives rationale without outcome.
+            const outcome = (this.#outcomeSelect.value as CallOutcome) || this.#currentCall?.outcome || null;
+            this.#scheduleSave({
+                outcomeRationale: this.#outcomeRationaleTextarea.value || null,
+                ...(outcome !== null ? { outcome } : {}),
+            });
         });
 
         this.#locationEntry.addEventListener(LocationChangedEvent.TYPE, () => {
@@ -304,6 +309,7 @@ export class CallDetailForm extends HTMLElement {
         } catch (err) {
             console.error('[CallDetailForm] Auto-save failed:', err);
             Object.assign(this.#pendingUpdate, update); // restore for retry
+            throw err; // propagate so end-call / create-incident can abort
         }
     }
 

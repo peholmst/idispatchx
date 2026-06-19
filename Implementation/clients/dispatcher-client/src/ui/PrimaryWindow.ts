@@ -179,6 +179,10 @@ export class PrimaryWindow extends HTMLElement {
             if (!this.#connectionBanner) return;
             if (connected) {
                 this.#connectionBanner.classList.add('hidden');
+                // The server does not replay missed events on reconnect, so re-fetch
+                // via REST to pick up any calls or incidents that changed while offline.
+                this.#callList?.refresh();
+                this.#incidentList?.refresh();
             } else {
                 this.#connectionBanner.textContent = t('ws.reconnecting');
                 this.#connectionBanner.classList.remove('hidden');

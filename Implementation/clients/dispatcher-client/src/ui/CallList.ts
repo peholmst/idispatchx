@@ -103,6 +103,11 @@ export class CallList extends HTMLElement {
         this.#renderTable();
     }
 
+    /** Re-fetch all active calls via REST (call after WebSocket reconnect). */
+    refresh(): void {
+        void this.#loadCalls();
+    }
+
     #buildDom(): void {
         // Vicinity banner
         this.#vicinityBanner = document.createElement('div');

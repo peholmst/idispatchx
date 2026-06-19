@@ -103,6 +103,11 @@ export class IncidentList extends HTMLElement {
         this.#renderTable();
     }
 
+    /** Re-fetch incidents via REST (call after WebSocket reconnect). */
+    refresh(): void {
+        void this.#loadIncidents();
+    }
+
     #buildDom(): void {
         // Vicinity banner
         this.#vicinityBanner = document.createElement('div');
@@ -241,16 +246,23 @@ export class IncidentList extends HTMLElement {
         });
 
         this.#wsClient.onIncidentLogEntryAdded((payload) => {
-            // A log entry may include a call link — refresh callIds count
+            // Automatic log entries carry changeData that tracks call link changes.
             const inc = this.#incidents.get(payload.incidentId);
             if (inc) {
                 const changeData = payload.logEntry.entryType === 'automatic'
                     ? (payload.logEntry as { changeData: { type?: string; callId?: string } }).changeData
                     : null;
-                if (changeData?.type === 'call_attached' && changeData.callId) {
+                if (!changeData?.callId) return;
+                if (changeData.type === 'call_linked') {
                     this.#incidents.set(payload.incidentId, {
                         ...inc,
                         callIds: [...new Set([...inc.callIds, changeData.callId])],
+                    });
+                    this.#renderTable();
+                } else if (changeData.type === 'call_detached') {
+                    this.#incidents.set(payload.incidentId, {
+                        ...inc,
+                        callIds: inc.callIds.filter((id) => id !== changeData.callId),
                     });
                     this.#renderTable();
                 }
