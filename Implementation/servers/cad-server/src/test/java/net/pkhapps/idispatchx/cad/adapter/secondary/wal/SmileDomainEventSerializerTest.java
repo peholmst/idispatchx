@@ -1,10 +1,10 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
+import tools.jackson.core.JacksonException;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,7 +21,7 @@ class SmileDomainEventSerializerTest {
     }
 
     @Test
-    void roundTrip_preservesAllFields() throws IOException {
+    void roundTrip_preservesAllFields() {
         var event = TestDomainEvent.of("smile test");
         var original = new WalEntry(new SequenceNumber(7), event);
         WalEntry restored = serializer.deserialize(serializer.serialize(original));
@@ -33,7 +33,7 @@ class SmileDomainEventSerializerTest {
     }
 
     @Test
-    void output_isSmallerThanJson() throws IOException {
+    void output_isSmallerThanJson() {
         var entry = new WalEntry(new SequenceNumber(1), TestDomainEvent.of("a".repeat(100)));
         byte[] smileBytes = serializer.serialize(entry);
         byte[] jsonBytes = jsonSerializer.serialize(entry);
@@ -42,14 +42,14 @@ class SmileDomainEventSerializerTest {
     }
 
     @Test
-    void deserialize_corruptBytes_throwsIOException() {
-        assertThrows(IOException.class, () -> serializer.deserialize(new byte[]{0, 1, 2, 3}));
+    void deserialize_corruptBytes_throwsJacksonException() {
+        assertThrows(JacksonException.class, () -> serializer.deserialize(new byte[]{0, 1, 2, 3}));
     }
 
     @Test
-    void deserialize_jsonBytes_throwsIOException() throws IOException {
+    void deserialize_jsonBytes_throwsJacksonException() {
         // JSON bytes are not valid SMILE
         byte[] jsonBytes = jsonSerializer.serialize(new WalEntry(new SequenceNumber(1), TestDomainEvent.of("x")));
-        assertThrows(IOException.class, () -> serializer.deserialize(jsonBytes));
+        assertThrows(JacksonException.class, () -> serializer.deserialize(jsonBytes));
     }
 }

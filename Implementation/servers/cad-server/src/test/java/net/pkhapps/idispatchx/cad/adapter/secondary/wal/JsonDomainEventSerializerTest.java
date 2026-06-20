@@ -1,11 +1,11 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
-import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidTypeIdException;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,7 +20,7 @@ class JsonDomainEventSerializerTest {
     }
 
     @Test
-    void serialize_producesNonEmptyBytes() throws IOException {
+    void serialize_producesNonEmptyBytes() {
         var entry = new WalEntry(new SequenceNumber(1), TestDomainEvent.of("hello"));
         byte[] bytes = serializer.serialize(entry);
         assertNotNull(bytes);
@@ -28,14 +28,14 @@ class JsonDomainEventSerializerTest {
     }
 
     @Test
-    void roundTrip_preservesSequenceNumber() throws IOException {
+    void roundTrip_preservesSequenceNumber() {
         var original = new WalEntry(new SequenceNumber(42), TestDomainEvent.of("test"));
         WalEntry restored = serializer.deserialize(serializer.serialize(original));
         assertEquals(42L, restored.sequenceNumber().value());
     }
 
     @Test
-    void roundTrip_preservesEventFields() throws IOException {
+    void roundTrip_preservesEventFields() {
         var event = TestDomainEvent.of("hello world");
         var original = new WalEntry(new SequenceNumber(1), event);
         WalEntry restored = serializer.deserialize(serializer.serialize(original));
@@ -47,7 +47,7 @@ class JsonDomainEventSerializerTest {
     }
 
     @Test
-    void roundTrip_preservesNullCausedBy() throws IOException {
+    void roundTrip_preservesNullCausedBy() {
         var event = TestDomainEvent.of("no cause");
         var original = new WalEntry(new SequenceNumber(1), event);
         WalEntry restored = serializer.deserialize(serializer.serialize(original));
@@ -55,7 +55,7 @@ class JsonDomainEventSerializerTest {
     }
 
     @Test
-    void roundTrip_preservesNonNullCausedBy() throws IOException {
+    void roundTrip_preservesNonNullCausedBy() {
         var causedBy = net.pkhapps.idispatchx.cad.domain.command.CommandId.generate();
         var event = TestDomainEvent.of("caused", causedBy);
         var original = new WalEntry(new SequenceNumber(5), event);
@@ -64,7 +64,7 @@ class JsonDomainEventSerializerTest {
     }
 
     @Test
-    void serialize_producesJsonText() throws IOException {
+    void serialize_producesJsonText() {
         var entry = new WalEntry(new SequenceNumber(1), TestDomainEvent.of("test"));
         byte[] bytes = serializer.serialize(entry);
         String json = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
@@ -73,16 +73,16 @@ class JsonDomainEventSerializerTest {
     }
 
     @Test
-    void deserialize_unknownType_throwsIOException() {
+    void deserialize_unknownType_throwsJacksonException() {
         byte[] corrupt = "{\"seq\":1,\"event\":{\"@type\":\"com.example.NonExistentEvent\"}}".getBytes(
                 java.nio.charset.StandardCharsets.UTF_8);
-        assertThrows(IOException.class, () -> serializer.deserialize(corrupt));
+        assertThrows(InvalidTypeIdException.class, () -> serializer.deserialize(corrupt));
     }
 
     @Test
-    void deserialize_corruptBytes_throwsIOException() {
+    void deserialize_corruptBytes_throwsJacksonException() {
         byte[] corrupt = "NOT_JSON_AT_ALL".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        assertThrows(IOException.class, () -> serializer.deserialize(corrupt));
+        assertThrows(JacksonException.class, () -> serializer.deserialize(corrupt));
     }
 
     @Test

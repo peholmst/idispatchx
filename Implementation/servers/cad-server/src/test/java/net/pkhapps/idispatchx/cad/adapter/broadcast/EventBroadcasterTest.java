@@ -17,7 +17,7 @@ import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntryId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallId;
 import net.pkhapps.idispatchx.cad.domain.repository.InMemoryCallRepository;
 import net.pkhapps.idispatchx.common.auth.UserId;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

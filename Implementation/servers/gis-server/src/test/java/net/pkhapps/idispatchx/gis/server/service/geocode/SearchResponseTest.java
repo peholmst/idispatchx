@@ -1,7 +1,8 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.common.domain.model.Coordinates;
 import net.pkhapps.idispatchx.common.domain.model.Language;
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
@@ -26,7 +27,7 @@ class SearchResponseTest {
             MunicipalityCode.of("091"), HELSINKI_NAME);
     private static final Coordinates.Epsg4326 COORDS = Coordinates.Epsg4326.of(60.169857, 24.938379);
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     // === Construction Tests ===
 
@@ -172,7 +173,7 @@ class SearchResponseTest {
     // === Jackson Serialization Tests ===
 
     @Test
-    void jackson_serializeEmptyResponse_producesExpectedJson() throws JsonProcessingException {
+    void jackson_serializeEmptyResponse_producesExpectedJson() {
         var response = SearchResponse.empty("test query");
         var json = objectMapper.writeValueAsString(response);
 
@@ -182,7 +183,7 @@ class SearchResponseTest {
     }
 
     @Test
-    void jackson_serializeWithResults_producesExpectedJson() throws JsonProcessingException {
+    void jackson_serializeWithResults_producesExpectedJson() {
         var response = SearchResponse.of(
                 List.of(
                         new AddressResult(
@@ -203,7 +204,7 @@ class SearchResponseTest {
     }
 
     @Test
-    void jackson_deserializeEmptyResponse_correctObject() throws JsonProcessingException {
+    void jackson_deserializeEmptyResponse_correctObject() {
         var json = """
                 {"results":[],"query":"test"}
                 """;
@@ -214,7 +215,7 @@ class SearchResponseTest {
     }
 
     @Test
-    void jackson_roundTrip_preservesData() throws JsonProcessingException {
+    void jackson_roundTrip_preservesData() {
         var original = SearchResponse.of(
                 List.of(
                         new PlaceResult(

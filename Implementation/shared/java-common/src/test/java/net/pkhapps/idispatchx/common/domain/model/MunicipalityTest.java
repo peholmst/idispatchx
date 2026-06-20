@@ -1,8 +1,9 @@
 package net.pkhapps.idispatchx.common.domain.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.exc.ValueInstantiationException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -23,7 +24,7 @@ class MunicipalityTest {
             Map.of(FINNISH, "Espoo", SWEDISH, "Esbo"));
     private static final MultilingualName MANUAL_NAME = MultilingualName.withUnspecifiedLanguage("Helsinki");
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     // === Construction Tests ===
 
@@ -148,7 +149,7 @@ class MunicipalityTest {
     // === Jackson Serialization Tests ===
 
     @Test
-    void jackson_serializeWithCode_correctJson() throws JsonProcessingException {
+    void jackson_serializeWithCode_correctJson() {
         var municipality = Municipality.of(HELSINKI_CODE, HELSINKI_NAME);
         var json = objectMapper.writeValueAsString(municipality);
         assertTrue(json.contains("\"code\""));
@@ -159,7 +160,7 @@ class MunicipalityTest {
     }
 
     @Test
-    void jackson_serializeWithoutCode_correctJson() throws JsonProcessingException {
+    void jackson_serializeWithoutCode_correctJson() {
         var municipality = Municipality.withoutCode(MANUAL_NAME);
         var json = objectMapper.writeValueAsString(municipality);
         assertTrue(json.contains("\"code\":null") || !json.contains("\"code\""));
@@ -167,7 +168,7 @@ class MunicipalityTest {
     }
 
     @Test
-    void jackson_deserializeWithCode_correctObject() throws JsonProcessingException {
+    void jackson_deserializeWithCode_correctObject() {
         var json = """
                 {"code":"091","name":{"fi":"Helsinki","sv":"Helsingfors"}}
                 """;
@@ -178,7 +179,7 @@ class MunicipalityTest {
     }
 
     @Test
-    void jackson_deserializeWithExplicitNullCode_correctObject() throws JsonProcessingException {
+    void jackson_deserializeWithExplicitNullCode_correctObject() {
         var json = """
                 {"code":null,"name":{"":"Helsinki"}}
                 """;
@@ -189,7 +190,7 @@ class MunicipalityTest {
     }
 
     @Test
-    void jackson_deserializeWithOmittedCode_correctObject() throws JsonProcessingException {
+    void jackson_deserializeWithOmittedCode_correctObject() {
         var json = """
                 {"name":{"":"Helsinki"}}
                 """;
@@ -200,7 +201,7 @@ class MunicipalityTest {
     }
 
     @Test
-    void jackson_roundTripWithCode_preservesData() throws JsonProcessingException {
+    void jackson_roundTripWithCode_preservesData() {
         var original = Municipality.of(HELSINKI_CODE, HELSINKI_NAME);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, Municipality.class);
@@ -208,7 +209,7 @@ class MunicipalityTest {
     }
 
     @Test
-    void jackson_roundTripWithoutCode_preservesData() throws JsonProcessingException {
+    void jackson_roundTripWithoutCode_preservesData() {
         var original = Municipality.withoutCode(MANUAL_NAME);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, Municipality.class);

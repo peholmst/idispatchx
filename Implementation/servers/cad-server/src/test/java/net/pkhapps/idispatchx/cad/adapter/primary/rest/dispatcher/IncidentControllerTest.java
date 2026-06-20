@@ -1,9 +1,9 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.rest.dispatcher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.javalin.Javalin;
-import io.javalin.json.JavalinJackson;
+import io.javalin.json.JavalinJackson3;
 import net.pkhapps.idispatchx.cad.adapter.auth.AuthContext;
 import net.pkhapps.idispatchx.cad.adapter.primary.rest.shared.GlobalExceptionHandler;
 import net.pkhapps.idispatchx.cad.application.handler.CreateCallCommandHandler;
@@ -58,9 +58,8 @@ class IncidentControllerTest {
     private ClockPort clock;
     private Javalin app;
     private int port;
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .findAndRegisterModules()
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .build();
 
     @BeforeEach
     void setUp() throws IOException {
@@ -252,15 +251,13 @@ class IncidentControllerTest {
     }
 
     private Javalin buildApp(TokenClaims claims) {
-        var om = new ObjectMapper()
-                .findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        var om = JsonMapper.builder().build();
         var dispatcher = DispatcherFactory.create(entry -> {}, clock, Duration.ofMinutes(5));
         var controller = new IncidentController(dispatcher,
                 new CreateIncidentFromCallCommandHandler(walPort, lockManager, callRepository, incidentRepository, clock),
                 incidentRepository, callRepository);
         var javalinApp = Javalin.create(cfg -> {
-            cfg.jsonMapper(new JavalinJackson(om, true));
+            cfg.jsonMapper(new JavalinJackson3(om, true));
             cfg.startup.showJavalinBanner = false;
         });
         GlobalExceptionHandler.register(javalinApp.unsafe.routes);
