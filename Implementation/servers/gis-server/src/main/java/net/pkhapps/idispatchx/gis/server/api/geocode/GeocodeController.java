@@ -1,9 +1,15 @@
 package net.pkhapps.idispatchx.gis.server.api.geocode;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import net.pkhapps.idispatchx.common.api.ErrorResponse;
 import net.pkhapps.idispatchx.common.api.ValidationException;
 import net.pkhapps.idispatchx.gis.server.api.error.GisErrorCode;
 import net.pkhapps.idispatchx.gis.server.service.geocode.DatabaseUnavailableException;
@@ -39,17 +45,36 @@ public final class GeocodeController {
     /**
      * Registers all geocoding routes on the given Javalin instance.
      *
-     * @param app             the Javalin application
+     * @param router          the Javalin routing API
      * @param jwtAuthHandler  the JWT authentication handler (applied as before-filter)
      * @param roleAuthHandler the role authorization handler (applied as before-filter)
      * @param contextPath     the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
-        app.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
-        app.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
-        app.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
+    public void registerRoutes(JavalinDefaultRoutingApi router, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
+        router.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
+        router.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
     }
 
+    @OpenApi(
+        path = "/api/v1/geocode/search",
+        methods = {HttpMethod.GET},
+        operationId = "geocodeSearch",
+        tags = {"Geocode"},
+        summary = "Search for addresses, places, and intersections",
+        queryParams = {
+            @OpenApiParam(name = "q", description = "Search query (minimum 3 characters)", required = true),
+            @OpenApiParam(name = "limit", description = "Maximum number of results to return", type = Integer.class),
+            @OpenApiParam(name = "municipality", description = "Filter results by municipality code")
+        },
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = SearchResponse.class)}),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "503", content = {@OpenApiContent(from = SearchResponse.class)})
+        }
+    )
     private void handleSearch(Context ctx) {
         var q = ctx.queryParam("q");
         var limitStr = ctx.queryParam("limit");

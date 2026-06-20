@@ -1,9 +1,14 @@
 package net.pkhapps.idispatchx.gis.server.api.layers;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiResponse;
+import net.pkhapps.idispatchx.common.api.ErrorResponse;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
 
 import java.util.List;
@@ -36,17 +41,29 @@ public final class LayersController {
     /**
      * Registers all layers routes on the given Javalin instance.
      *
-     * @param app             the Javalin application
+     * @param router          the Javalin routing API
      * @param jwtAuthHandler  the JWT authentication handler (applied as before-filter)
      * @param roleAuthHandler the role authorization handler (applied as before-filter)
      * @param contextPath     the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
-        app.before(contextPath + "/api/v1/layers*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
-        app.before(contextPath + "/api/v1/layers*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
-        app.get(contextPath + "/api/v1/layers", this::handleGetLayers);
+    public void registerRoutes(JavalinDefaultRoutingApi router, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
+        router.before(contextPath + "/api/v1/layers*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(contextPath + "/api/v1/layers*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
+        router.get(contextPath + "/api/v1/layers", this::handleGetLayers);
     }
 
+    @OpenApi(
+        path = "/api/v1/layers",
+        methods = {HttpMethod.GET},
+        operationId = "listLayers",
+        tags = {"Layers"},
+        summary = "List available WMTS tile layers",
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = LayersResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleGetLayers(Context ctx) {
         var layerInfos = layers.entrySet().stream()
                 .map(entry -> new LayerInfo(entry.getKey(), toTitle(entry.getKey())))

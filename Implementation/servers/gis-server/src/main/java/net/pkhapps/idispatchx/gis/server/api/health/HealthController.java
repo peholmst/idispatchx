@@ -1,8 +1,12 @@
 package net.pkhapps.idispatchx.gis.server.api.health;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.HttpStatus;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiResponse;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,13 +63,24 @@ public final class HealthController {
      * Registers the health check route on the given Javalin instance.
      * No authentication filters are applied.
      *
-     * @param app         the Javalin application
+     * @param router      the Javalin routing API
      * @param contextPath the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, String contextPath) {
-        app.get(contextPath + "/health", this::handleHealthCheck);
+    public void registerRoutes(JavalinDefaultRoutingApi router, String contextPath) {
+        router.get(contextPath + "/health", this::handleHealthCheck);
     }
 
+    @OpenApi(
+        path = "/health",
+        methods = {HttpMethod.GET},
+        operationId = "healthCheck",
+        tags = {"Health"},
+        summary = "GIS Server health check",
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(type = "application/json")}),
+            @OpenApiResponse(status = "503", content = {@OpenApiContent(type = "application/json")})
+        }
+    )
     private void handleHealthCheck(Context ctx) {
         var components = new LinkedHashMap<String, Object>();
         boolean allHealthy = true;

@@ -9,8 +9,8 @@ import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;
 import net.pkhapps.idispatchx.common.auth.JwksKeyProvider;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
@@ -62,11 +62,11 @@ public final class BackChannelLogoutHandler {
     /**
      * Registers the back-channel logout route on the Javalin instance.
      *
-     * @param app         the Javalin application
+     * @param router      the Javalin routing API
      * @param contextPath configurable URL prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, String contextPath) {
-        app.post(contextPath + "/auth/back-channel-logout", ctx -> {
+    public void registerRoutes(JavalinDefaultRoutingApi router, String contextPath) {
+        router.post(contextPath + "/auth/back-channel-logout", ctx -> {
             var logoutToken = ctx.formParam("logout_token");
             if (logoutToken == null || logoutToken.isBlank()) {
                 throw new BadRequestResponse("Missing logout_token parameter");

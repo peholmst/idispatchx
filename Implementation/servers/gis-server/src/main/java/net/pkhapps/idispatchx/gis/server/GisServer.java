@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import io.javalin.openapi.plugin.OpenApiPlugin;
 import net.pkhapps.idispatchx.common.auth.JwksClient;
 import net.pkhapps.idispatchx.common.auth.LogoutTokenValidator;
 import net.pkhapps.idispatchx.common.auth.Role;
@@ -94,16 +95,16 @@ public final class GisServer implements AutoCloseable {
         var geocodeService = GeocodeService.create(jooqContextProvider.getDslContext());
 
         // Register global exception handler
-        GlobalExceptionHandler.register(javalin);
+        GlobalExceptionHandler.register(javalin.unsafe.routes);
 
         // Register routes
         var contextPath = config.contextPath();
         new HealthController(dataSourceProvider.getDataSource(), config.tileDirectory(), tileService.getLayers())
-                .registerRoutes(javalin, contextPath);
-        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
-        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
-        new LayersController(tileService.getLayers()).registerRoutes(javalin, jwtAuth, roleAuth, contextPath);
-        javalin.post(contextPath + "/api/v1/auth/logout", logoutHandler);
+                .registerRoutes(javalin.unsafe.routes, contextPath);
+        new WmtsController(tileService, capGen).registerRoutes(javalin.unsafe.routes, jwtAuth, roleAuth, contextPath);
+        new GeocodeController(geocodeService).registerRoutes(javalin.unsafe.routes, jwtAuth, roleAuth, contextPath);
+        new LayersController(tileService.getLayers()).registerRoutes(javalin.unsafe.routes, jwtAuth, roleAuth, contextPath);
+        javalin.unsafe.routes.post(contextPath + "/api/v1/auth/logout", logoutHandler);
 
         log.info("GIS Server initialized");
     }
@@ -117,7 +118,15 @@ public final class GisServer implements AutoCloseable {
 
         return Javalin.create(javalinConfig -> {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
-            javalinConfig.showJavalinBanner = false;
+            javalinConfig.startup.showJavalinBanner = false;
+            javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
+                .withDocumentationPath(config.contextPath() + "/openapi")
+                .withDefinitionConfiguration((version, definition) -> definition
+                    .info(info -> info
+                        .title("GIS Server API")
+                        .version("1.0.0")
+                        .description("GIS Server REST API for iDispatchX")))
+            ));
             if (!corsOrigins.isBlank()) {
                 var origins = corsOrigins.split(",");
                 javalinConfig.bundledPlugins.enableCors(cors ->

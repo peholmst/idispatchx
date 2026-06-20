@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import io.javalin.openapi.plugin.OpenApiPlugin;
 import net.pkhapps.idispatchx.cad.adapter.auth.BackChannelLogoutHandler;
 import net.pkhapps.idispatchx.cad.adapter.auth.JwtAuthHandler;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
@@ -182,7 +183,7 @@ public final class CadServer implements AutoCloseable {
         this.javalin = createJavalin();
 
         // Register global exception handler
-        GlobalExceptionHandler.register(javalin);
+        GlobalExceptionHandler.register(javalin.unsafe.routes);
 
         // Register routes
         var contextPath = config.contextPath();
@@ -195,14 +196,14 @@ public final class CadServer implements AutoCloseable {
                 attachCallToIncidentHandler,
                 detachCallFromIncidentHandler,
                 callRepository
-        ).registerRoutes(javalin, jwtAuthHandler, contextPath);
+        ).registerRoutes(javalin.unsafe.routes, jwtAuthHandler, contextPath);
 
         new IncidentController(
                 idempotentDispatcher,
                 createIncidentFromCallHandler,
                 incidentRepository,
                 callRepository
-        ).registerRoutes(javalin, jwtAuthHandler, contextPath);
+        ).registerRoutes(javalin.unsafe.routes, jwtAuthHandler, contextPath);
 
         new DispatcherWebSocketHandler(
                 tokenValidator,
@@ -210,9 +211,9 @@ public final class CadServer implements AutoCloseable {
                 sessionRegistry,
                 createObjectMapper(),
                 walPort
-        ).registerRoutes(javalin, contextPath);
+        ).registerRoutes(javalin.unsafe.routes, contextPath);
 
-        backChannelLogoutHandler.registerRoutes(javalin, contextPath);
+        backChannelLogoutHandler.registerRoutes(javalin.unsafe.routes, contextPath);
 
         // Schedule periodic WAL snapshots
         this.snapshotScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -322,7 +323,15 @@ public final class CadServer implements AutoCloseable {
         var corsOrigins = config.corsAllowedOrigins();
         return Javalin.create(javalinConfig -> {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
-            javalinConfig.showJavalinBanner = false;
+            javalinConfig.startup.showJavalinBanner = false;
+            javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
+                .withDocumentationPath(config.contextPath() + "/openapi")
+                .withDefinitionConfiguration((version, definition) -> definition
+                    .info(info -> info
+                        .title("CAD Server API")
+                        .version("1.0.0")
+                        .description("Computer-Aided Dispatch REST API for iDispatchX")))
+            ));
             if (!corsOrigins.isBlank()) {
                 var origins = corsOrigins.split(",");
                 javalinConfig.bundledPlugins.enableCors(cors ->
