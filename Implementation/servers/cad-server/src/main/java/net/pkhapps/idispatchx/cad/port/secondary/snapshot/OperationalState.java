@@ -1,7 +1,5 @@
 package net.pkhapps.idispatchx.cad.port.secondary.snapshot;
 
-import net.pkhapps.idispatchx.cad.domain.model.call.Call;
-import net.pkhapps.idispatchx.cad.domain.model.incident.Incident;
 import net.pkhapps.idispatchx.cad.domain.model.unit.UnitStatus;
 
 import java.util.Collection;
@@ -13,14 +11,18 @@ import java.util.Objects;
  * <p>
  * This record contains only operational data (not reference data).
  * It is used for snapshot creation and restoration.
+ * <p>
+ * Calls and incidents are stored as serializable snapshot DTOs rather than live
+ * aggregates, so that snapshot serialization does not require Jackson annotations
+ * on domain classes.
  *
- * @param incidents    all active incidents
- * @param calls        all active calls
+ * @param incidents    all active incidents as snapshot DTOs
+ * @param calls        all active calls as snapshot DTOs
  * @param unitStatuses all unit statuses
  */
 public record OperationalState(
-        Collection<Incident> incidents,
-        Collection<Call> calls,
+        Collection<IncidentSnapshot> incidents,
+        Collection<CallSnapshot> calls,
         Collection<UnitStatus> unitStatuses
 ) {
 

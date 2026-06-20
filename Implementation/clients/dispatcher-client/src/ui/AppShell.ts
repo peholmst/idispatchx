@@ -27,6 +27,7 @@ export class AppShell extends HTMLElement {
     #windowType: WindowType = 'launcher';
     #http: HttpClient | null = null;
     #gisServerUrl = '';
+    #cadServerUrl = '';
     #warningBanner: HTMLDivElement | null = null;
     #renderedStatusKind: AuthStatus['kind'] | null = null;
     // BroadcastChannel used by dispatcher windows (primary/secondary) to receive
@@ -47,12 +48,13 @@ export class AppShell extends HTMLElement {
      * Injects dependencies after the element is constructed.
      * Called by main.ts before the element is connected to the DOM.
      */
-    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType, http: HttpClient, gisServerUrl: string): void {
+    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType, http: HttpClient, gisServerUrl: string, cadServerUrl: string): void {
         this.#authState = authState;
         this.#sessionManager = sessionManager;
         this.#windowType = windowType;
         this.#http = http;
         this.#gisServerUrl = gisServerUrl;
+        this.#cadServerUrl = cadServerUrl;
     }
 
     connectedCallback(): void {
@@ -185,7 +187,7 @@ export class AppShell extends HTMLElement {
                     }
                     case 'primary': {
                         const primary = document.createElement(PrimaryWindow.TAG) as PrimaryWindow;
-                        primary.initialize(username);
+                        primary.initialize(username, this.#cadServerUrl, this.#gisServerUrl, this.#http!, this.#authState!);
                         this.#shadow.appendChild(primary);
                         break;
                     }

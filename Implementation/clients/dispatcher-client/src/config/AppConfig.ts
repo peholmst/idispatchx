@@ -20,6 +20,7 @@ export interface AppConfig {
     readonly oidc: OidcConfig;
     readonly session: SessionConfig;
     readonly gisServerUrl: string;
+    readonly cadServerUrl: string;
 }
 
 declare global {
@@ -85,6 +86,7 @@ function validateConfig(raw: unknown): AppConfig {
     requirePositiveNumber(session, 'session.maxLifetimeSeconds');
 
     requireNonBlankString(obj, 'gisServerUrl');
+    requireNonBlankString(obj, 'cadServerUrl');
 
     return {
         oidc: {
@@ -99,6 +101,7 @@ function validateConfig(raw: unknown): AppConfig {
             maxLifetimeSeconds: session['maxLifetimeSeconds'] as number,
         },
         gisServerUrl: obj['gisServerUrl'] as string,
+        cadServerUrl: obj['cadServerUrl'] as string,
     };
 }
 

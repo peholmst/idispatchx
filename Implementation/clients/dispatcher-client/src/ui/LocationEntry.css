@@ -1,0 +1,162 @@
+:host {
+    display: block;
+}
+
+.location-entry {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+}
+
+.location-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs);
+}
+
+.location-title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.variant-badge {
+    font-size: var(--font-size-sm);
+    color: var(--color-accent);
+    background: rgba(0, 120, 212, 0.12);
+    border-radius: var(--radius-sm);
+    padding: 1px 6px;
+}
+
+.field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.field-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.field-input,
+.field-textarea {
+    background: var(--color-bg-base);
+    border: 1px solid var(--color-bg-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-base);
+    padding: 4px 6px;
+    outline: none;
+    resize: vertical;
+}
+
+.field-input:focus,
+.field-textarea:focus {
+    border-color: var(--color-accent);
+}
+
+.field-input.deemphasized {
+    opacity: 0.4;
+}
+
+.field-input-narrow {
+    width: 80px;
+}
+
+.field-textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.field-error {
+    font-size: var(--font-size-sm);
+    color: #f48771;
+}
+
+.field-error.hidden {
+    display: none;
+}
+
+/* Geocoding */
+
+.geocoding-wrapper {
+    position: relative;
+}
+
+.geocoding-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-bg-border);
+    border-radius: var(--radius-sm);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.geocoding-dropdown.hidden {
+    display: none;
+}
+
+.geocoding-item {
+    padding: 6px var(--space-sm);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+    cursor: pointer;
+}
+
+.geocoding-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Number / Cross street row */
+
+.number-cross-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-sm);
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.field-group:first-child {
+    flex: 0 0 auto;
+}
+
+.or-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    padding-bottom: 5px;
+    white-space: nowrap;
+}
+
+/* Approximate checkbox */
+
+.approx-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+}
+
+.approx-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}

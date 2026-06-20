@@ -41,8 +41,11 @@ import net.pkhapps.idispatchx.cad.domain.event.IncidentCreatedEvent;
 import net.pkhapps.idispatchx.cad.domain.event.IncidentLogEntryAddedEvent;
 import net.pkhapps.idispatchx.cad.domain.repository.InMemoryCallRepository;
 import net.pkhapps.idispatchx.cad.domain.repository.InMemoryIncidentRepository;
+import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import net.pkhapps.idispatchx.cad.port.secondary.archive.NoOpArchivePort;
 import net.pkhapps.idispatchx.cad.port.secondary.clock.ClockPort;
+import net.pkhapps.idispatchx.cad.port.secondary.snapshot.CallSnapshot;
+import net.pkhapps.idispatchx.cad.port.secondary.snapshot.IncidentSnapshot;
 import net.pkhapps.idispatchx.cad.port.secondary.snapshot.OperationalState;
 import net.pkhapps.idispatchx.cad.server.config.CadServerConfig;
 import net.pkhapps.idispatchx.common.auth.JwksClient;
@@ -278,8 +281,8 @@ public final class CadServer implements AutoCloseable {
         if (snapshot.isPresent()) {
             var s = snapshot.get();
             log.info("Restoring state from snapshot at seq={}", s.sequenceNumber().value());
-            s.state().calls().forEach(callRepository::add);
-            s.state().incidents().forEach(incidentRepository::add);
+            s.state().calls().stream().map(CallSnapshot::toCall).forEach(callRepository::add);
+            s.state().incidents().stream().map(IncidentSnapshot::toIncident).forEach(incidentRepository::add);
             walReplayService.replayFrom(s.sequenceNumber());
         } else {
             walReplayService.replayAll();
@@ -290,15 +293,25 @@ public final class CadServer implements AutoCloseable {
         try {
             log.info("Creating WAL snapshot...");
             var state = new OperationalState(
-                    incidentRepository.findAll().toList(),
-                    callRepository.findAll().toList(),
+                    incidentRepository.findAll().map(IncidentSnapshot::from).toList(),
+                    callRepository.findAll().map(CallSnapshot::from).toList(),
                     List.of()
             );
-            var currentSeq = walPort.currentSequence();
-            snapshotAdapter.createSnapshot(state, currentSeq);
-            walPort.truncate(currentSeq);
-            snapshotAdapter.purgeOlderSnapshots(currentSeq);
-            log.info("WAL snapshot created at seq={}", currentSeq.value());
+            // Use lastAppliedSequence rather than currentSequence() so the snapshot only
+            // claims up to the highest sequence whose repository mutation is fully applied.
+            // This closes the race where the WAL has event N but its mutation is not yet
+            // reflected in the repository; a snapshot at N would then lose N's effect after
+            // WAL truncation and replay-from(N+1).
+            var lastApplied = walPort.lastAppliedSequence();
+            if (lastApplied == 0) {
+                log.info("Skipping WAL snapshot: no mutations applied yet");
+                return;
+            }
+            var seq = new SequenceNumber(lastApplied);
+            snapshotAdapter.createSnapshot(state, seq);
+            walPort.truncate(seq);
+            snapshotAdapter.purgeOlderSnapshots(seq);
+            log.info("WAL snapshot created at seq={}", lastApplied);
         } catch (Exception e) {
             log.error("Failed to create WAL snapshot", e);
         }

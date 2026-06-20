@@ -161,4 +161,23 @@ public final class Incident extends Entity<IncidentId> {
         return new Incident(e.incidentId(), e.timestamp(),
                 e.incidentType(), e.incidentPriority(), e.location(), e.description());
     }
+
+    /**
+     * Reconstructs an Incident from a snapshot, restoring all fields exactly as persisted.
+     * For snapshot-based startup recovery only — bypasses the normal creation lifecycle.
+     */
+    public static Incident restore(
+            IncidentId id,
+            IncidentState state,
+            Instant incidentCreated,
+            @Nullable IncidentType incidentType,
+            @Nullable IncidentPriority incidentPriority,
+            @Nullable Location location,
+            @Nullable Description description,
+            List<IncidentLogEntry> logEntries) {
+        var incident = new Incident(id, incidentCreated, incidentType, incidentPriority, location, description);
+        incident.state = state;
+        incident.logEntries.addAll(logEntries);
+        return incident;
+    }
 }

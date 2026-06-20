@@ -20,6 +20,10 @@ import { PrimaryWindow } from './ui/PrimaryWindow.ts';
 import { SecondaryWindow } from './ui/SecondaryWindow.ts';
 import { LookupBar } from './ui/LookupBar.ts';
 import { CoordInput } from './ui/CoordInput.ts';
+import { LocationEntry } from './ui/LocationEntry.ts';
+import { CallDetailForm } from './ui/CallDetailForm.ts';
+import { CallList } from './ui/CallList.ts';
+import { IncidentList } from './ui/IncidentList.ts';
 import { WINDOW_TYPE_KEY } from './ui/windowType.ts';
 import type { WindowType } from './ui/windowType.ts';
 
@@ -32,6 +36,10 @@ customElements.define(PrimaryWindow.TAG, PrimaryWindow);
 customElements.define(SecondaryWindow.TAG, SecondaryWindow);
 customElements.define(LookupBar.TAG, LookupBar);
 customElements.define(CoordInput.TAG, CoordInput);
+customElements.define(LocationEntry.TAG, LocationEntry);
+customElements.define(CallDetailForm.TAG, CallDetailForm);
+customElements.define(CallList.TAG, CallList);
+customElements.define(IncidentList.TAG, IncidentList);
 customElements.define(AppShell.TAG, AppShell);
 
 async function boot(): Promise<void> {
@@ -69,7 +77,7 @@ async function boot(): Promise<void> {
     // Mount the AppShell AFTER initialize() so that connectedCallback fires
     // with a fully wired authState — ensuring event listeners are registered.
     const shell = document.createElement(AppShell.TAG) as AppShell;
-    shell.initialize(authState, sessionManager, windowType, httpClient, config.gisServerUrl);
+    shell.initialize(authState, sessionManager, windowType, httpClient, config.gisServerUrl, config.cadServerUrl);
     appEl.appendChild(shell);
 
     // Expose authState for Playwright E2E tests in development mode
