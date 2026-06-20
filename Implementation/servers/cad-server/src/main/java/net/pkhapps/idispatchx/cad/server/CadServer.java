@@ -312,7 +312,7 @@ public final class CadServer implements AutoCloseable {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
             javalinConfig.showJavalinBanner = false;
             javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
-                .withDocumentationPath("/openapi")
+                .withDocumentationPath(config.contextPath() + "/openapi")
                 .withDefinitionConfiguration((version, definition) -> definition
                     .withInfo(info -> info
                         .title("CAD Server API")
