@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.rest.dispatcher;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
@@ -68,19 +68,19 @@ public final class IncidentController {
     /**
      * Registers incident management routes on the Javalin instance.
      *
-     * @param app            the Javalin application
+     * @param router         the Javalin routing API
      * @param jwtAuthHandler before-handler that validates the JWT and populates {@link AuthContext}
      * @param contextPath    configurable URL prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, String contextPath) {
+    public void registerRoutes(JavalinDefaultRoutingApi router, Handler jwtAuthHandler, String contextPath) {
         var base = contextPath + "/api/v1/incidents";
 
-        app.before(base, ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
-        app.before(base + "/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(base, ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(base + "/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
 
-        app.post(base, this::handleCreateIncident);
-        app.get(base, this::handleListIncidents);
-        app.get(base + "/{incidentId}", this::handleGetIncident);
+        router.post(base, this::handleCreateIncident);
+        router.get(base, this::handleListIncidents);
+        router.get(base + "/{incidentId}", this::handleGetIncident);
     }
 
     // -------------------------------------------------------------------------

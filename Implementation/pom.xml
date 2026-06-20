@@ -26,8 +26,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Dependency versions -->
-        <javalin.version>6.7.0</javalin.version>
-        <javalin-openapi.version>6.7.0-1</javalin-openapi.version>
+        <javalin.version>7.2.2</javalin.version>
+        <javalin-openapi.version>7.2.2</javalin-openapi.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.27</logback.version>
         <jackson.version>2.21.0</jackson.version>

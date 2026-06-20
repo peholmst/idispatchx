@@ -104,20 +104,20 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
 
         javalin = Javalin.create(config -> {
             config.jsonMapper(new JavalinJackson(objectMapper, true));
-            config.showJavalinBanner = false;
+            config.startup.showJavalinBanner = false;
         });
 
-        GlobalExceptionHandler.register(javalin);
-        new HealthController(dataSource, tileDirectory, tileService.getLayers()).registerRoutes(javalin, "");
-        new WmtsController(tileService, capGen).registerRoutes(javalin, jwtAuth, roleAuth, "");
-        new GeocodeController(geocodeService).registerRoutes(javalin, jwtAuth, roleAuth, "");
-        new LayersController(tileService.getLayers()).registerRoutes(javalin, jwtAuth, roleAuth, "");
+        GlobalExceptionHandler.register(javalin.unsafe.routes);
+        new HealthController(dataSource, tileDirectory, tileService.getLayers()).registerRoutes(javalin.unsafe.routes, "");
+        new WmtsController(tileService, capGen).registerRoutes(javalin.unsafe.routes, jwtAuth, roleAuth, "");
+        new GeocodeController(geocodeService).registerRoutes(javalin.unsafe.routes, jwtAuth, roleAuth, "");
+        new LayersController(tileService.getLayers()).registerRoutes(javalin.unsafe.routes, jwtAuth, roleAuth, "");
 
         // Back-channel logout (not used in most tests, but registered for completeness)
         JwksKeyProvider logoutKeyProvider = keyId -> TEST_KEY_ID.equals(keyId) ? publicKey : null;
         var logoutValidator = new net.pkhapps.idispatchx.common.auth.LogoutTokenValidator(
                 logoutKeyProvider, TEST_ISSUER, "gis-client");
-        javalin.post("/api/v1/auth/logout", new BackChannelLogoutHandler(logoutValidator, sessionStore));
+        javalin.unsafe.routes.post("/api/v1/auth/logout", new BackChannelLogoutHandler(logoutValidator, sessionStore));
 
         serverPort = findFreePort();
         javalin.start(serverPort);

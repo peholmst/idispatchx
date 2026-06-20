@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.rest.dispatcher;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
@@ -86,24 +86,24 @@ public final class CallController {
     /**
      * Registers all call management routes on the Javalin instance.
      *
-     * @param app             the Javalin application
+     * @param router          the Javalin routing API
      * @param jwtAuthHandler  before-handler that validates the JWT and populates {@link AuthContext}
      * @param contextPath     configurable URL prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, String contextPath) {
+    public void registerRoutes(JavalinDefaultRoutingApi router, Handler jwtAuthHandler, String contextPath) {
         var base = contextPath + "/api/v1/calls";
 
         // Apply JWT auth to all call routes (skip OPTIONS for CORS pre-flight)
-        app.before(base, ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
-        app.before(base + "/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(base, ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(base + "/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
 
-        app.post(base, this::handleCreateCall);
-        app.patch(base + "/{callId}", this::handleUpdateCallDetails);
-        app.post(base + "/{callId}/end", this::handleEndCall);
-        app.post(base + "/{callId}/attach-to-incident", this::handleAttachToIncident);
-        app.post(base + "/{callId}/detach-from-incident", this::handleDetachFromIncident);
-        app.get(base, this::handleListCalls);
-        app.get(base + "/{callId}", this::handleGetCall);
+        router.post(base, this::handleCreateCall);
+        router.patch(base + "/{callId}", this::handleUpdateCallDetails);
+        router.post(base + "/{callId}/end", this::handleEndCall);
+        router.post(base + "/{callId}/attach-to-incident", this::handleAttachToIncident);
+        router.post(base + "/{callId}/detach-from-incident", this::handleDetachFromIncident);
+        router.get(base, this::handleListCalls);
+        router.get(base + "/{callId}", this::handleGetCall);
     }
 
     // -------------------------------------------------------------------------

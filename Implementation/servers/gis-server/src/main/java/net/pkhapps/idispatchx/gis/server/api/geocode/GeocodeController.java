@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.gis.server.api.geocode;
 
-import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
 import io.javalin.openapi.HttpMethod;
@@ -45,15 +45,15 @@ public final class GeocodeController {
     /**
      * Registers all geocoding routes on the given Javalin instance.
      *
-     * @param app             the Javalin application
+     * @param router          the Javalin routing API
      * @param jwtAuthHandler  the JWT authentication handler (applied as before-filter)
      * @param roleAuthHandler the role authorization handler (applied as before-filter)
      * @param contextPath     the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
-        app.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
-        app.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
-        app.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
+    public void registerRoutes(JavalinDefaultRoutingApi router, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
+        router.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(contextPath + "/api/v1/geocode/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
+        router.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
     }
 
     @OpenApi(

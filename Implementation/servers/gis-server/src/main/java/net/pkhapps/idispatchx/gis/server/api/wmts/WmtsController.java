@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.gis.server.api.wmts;
 
-import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
@@ -56,16 +56,16 @@ public final class WmtsController {
     /**
      * Registers all WMTS routes on the given Javalin instance.
      *
-     * @param app             the Javalin application
+     * @param router          the Javalin routing API
      * @param jwtAuthHandler  the JWT authentication handler (applied as before-filter)
      * @param roleAuthHandler the role authorization handler (applied as before-filter)
      * @param contextPath     the URL context path prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
-        app.before(contextPath + "/wmts/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
-        app.before(contextPath + "/wmts/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
-        app.get(contextPath + "/wmts/1.0.0/WMTSCapabilities.xml", this::handleGetCapabilities);
-        app.get(contextPath + "/wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{colFile}", this::handleGetTile);
+    public void registerRoutes(JavalinDefaultRoutingApi router, Handler jwtAuthHandler, Handler roleAuthHandler, String contextPath) {
+        router.before(contextPath + "/wmts/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) jwtAuthHandler.handle(ctx); });
+        router.before(contextPath + "/wmts/*", ctx -> { if (ctx.method() != HandlerType.OPTIONS) roleAuthHandler.handle(ctx); });
+        router.get(contextPath + "/wmts/1.0.0/WMTSCapabilities.xml", this::handleGetCapabilities);
+        router.get(contextPath + "/wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{colFile}", this::handleGetTile);
     }
 
     @OpenApi(

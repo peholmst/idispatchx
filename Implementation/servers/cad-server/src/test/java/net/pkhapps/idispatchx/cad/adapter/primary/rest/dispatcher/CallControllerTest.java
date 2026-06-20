@@ -485,10 +485,10 @@ class CallControllerTest {
                 callRepo);
         var javalinApp = Javalin.create(cfg -> {
             cfg.jsonMapper(new JavalinJackson(objectMapper, true));
-            cfg.showJavalinBanner = false;
+            cfg.startup.showJavalinBanner = false;
         });
-        GlobalExceptionHandler.register(javalinApp);
-        controller.registerRoutes(javalinApp, ctx -> AuthContext.setClaims(ctx, claims), "");
+        GlobalExceptionHandler.register(javalinApp.unsafe.routes);
+        controller.registerRoutes(javalinApp.unsafe.routes, ctx -> AuthContext.setClaims(ctx, claims), "");
         return javalinApp;
     }
 

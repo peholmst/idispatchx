@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.websocket.dispatcher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.javalin.Javalin;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
@@ -61,11 +61,11 @@ public final class DispatcherWebSocketHandler {
     /**
      * Registers the dispatcher WebSocket endpoint.
      *
-     * @param app         the Javalin application
+     * @param router      the Javalin routing API
      * @param contextPath configurable URL prefix (empty or starts with {@code /})
      */
-    public void registerRoutes(Javalin app, String contextPath) {
-        app.ws(contextPath + "/api/v1/ws/dispatcher", ws -> {
+    public void registerRoutes(JavalinDefaultRoutingApi router, String contextPath) {
+        router.ws(contextPath + "/api/v1/ws/dispatcher", ws -> {
             ws.onConnect(ctx -> {
                 var token = ctx.queryParam("token");
                 if (token == null || token.isBlank()) {

@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.gis.server.api.error;
 
-import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.router.JavalinDefaultRoutingApi;
 import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.HttpResponseException;
@@ -42,17 +42,17 @@ public final class GlobalExceptionHandler {
     /**
      * Registers all exception handlers on the given Javalin instance.
      *
-     * @param app the Javalin application
+     * @param router the Javalin routing API
      */
-    public static void register(Javalin app) {
-        app.exception(ValidationException.class, GlobalExceptionHandler::handleValidationException);
-        app.exception(BadRequestResponse.class, GlobalExceptionHandler::handleBadRequest);
-        app.exception(UnauthorizedResponse.class, GlobalExceptionHandler::handleUnauthorized);
-        app.exception(ForbiddenResponse.class, GlobalExceptionHandler::handleForbidden);
-        app.exception(NotFoundResponse.class, GlobalExceptionHandler::handleNotFound);
-        app.exception(DatabaseUnavailableException.class, GlobalExceptionHandler::handleDatabaseUnavailable);
-        app.exception(HttpResponseException.class, GlobalExceptionHandler::handleHttpResponseException);
-        app.exception(Exception.class, GlobalExceptionHandler::handleUnexpected);
+    public static void register(JavalinDefaultRoutingApi router) {
+        router.exception(ValidationException.class, GlobalExceptionHandler::handleValidationException);
+        router.exception(BadRequestResponse.class, GlobalExceptionHandler::handleBadRequest);
+        router.exception(UnauthorizedResponse.class, GlobalExceptionHandler::handleUnauthorized);
+        router.exception(ForbiddenResponse.class, GlobalExceptionHandler::handleForbidden);
+        router.exception(NotFoundResponse.class, GlobalExceptionHandler::handleNotFound);
+        router.exception(DatabaseUnavailableException.class, GlobalExceptionHandler::handleDatabaseUnavailable);
+        router.exception(HttpResponseException.class, GlobalExceptionHandler::handleHttpResponseException);
+        router.exception(Exception.class, GlobalExceptionHandler::handleUnexpected);
     }
 
     private static void handleValidationException(ValidationException e, Context ctx) {

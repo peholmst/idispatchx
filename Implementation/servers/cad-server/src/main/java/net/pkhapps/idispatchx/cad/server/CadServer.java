@@ -180,7 +180,7 @@ public final class CadServer implements AutoCloseable {
         this.javalin = createJavalin();
 
         // Register global exception handler
-        GlobalExceptionHandler.register(javalin);
+        GlobalExceptionHandler.register(javalin.unsafe.routes);
 
         // Register routes
         var contextPath = config.contextPath();
@@ -193,14 +193,14 @@ public final class CadServer implements AutoCloseable {
                 attachCallToIncidentHandler,
                 detachCallFromIncidentHandler,
                 callRepository
-        ).registerRoutes(javalin, jwtAuthHandler, contextPath);
+        ).registerRoutes(javalin.unsafe.routes, jwtAuthHandler, contextPath);
 
         new IncidentController(
                 idempotentDispatcher,
                 createIncidentFromCallHandler,
                 incidentRepository,
                 callRepository
-        ).registerRoutes(javalin, jwtAuthHandler, contextPath);
+        ).registerRoutes(javalin.unsafe.routes, jwtAuthHandler, contextPath);
 
         new DispatcherWebSocketHandler(
                 tokenValidator,
@@ -208,9 +208,9 @@ public final class CadServer implements AutoCloseable {
                 sessionRegistry,
                 createObjectMapper(),
                 walPort
-        ).registerRoutes(javalin, contextPath);
+        ).registerRoutes(javalin.unsafe.routes, contextPath);
 
-        backChannelLogoutHandler.registerRoutes(javalin, contextPath);
+        backChannelLogoutHandler.registerRoutes(javalin.unsafe.routes, contextPath);
 
         // Schedule periodic WAL snapshots
         this.snapshotScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -310,11 +310,11 @@ public final class CadServer implements AutoCloseable {
         var corsOrigins = config.corsAllowedOrigins();
         return Javalin.create(javalinConfig -> {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
-            javalinConfig.showJavalinBanner = false;
+            javalinConfig.startup.showJavalinBanner = false;
             javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
                 .withDocumentationPath(config.contextPath() + "/openapi")
                 .withDefinitionConfiguration((version, definition) -> definition
-                    .withInfo(info -> info
+                    .info(info -> info
                         .title("CAD Server API")
                         .version("1.0.0")
                         .description("Computer-Aided Dispatch REST API for iDispatchX")))
