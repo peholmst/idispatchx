@@ -27,7 +27,7 @@ final class IntersectionSearcher {
                         new IntersectionResult(
                                 r.roadA(),
                                 r.roadB(),
-                                r.municipality(),
+                                Objects.requireNonNull(r.municipality()),
                                 r.coordinates()),
                         r.similarityScore()))
                 .toList();
@@ -43,7 +43,7 @@ final class IntersectionSearcher {
                         new IntersectionResult(
                                 r.roadA(),
                                 r.roadB(),
-                                r.municipality(),
+                                Objects.requireNonNull(r.municipality()),
                                 r.coordinates()),
                         r.similarityScore()))
                 .toList();

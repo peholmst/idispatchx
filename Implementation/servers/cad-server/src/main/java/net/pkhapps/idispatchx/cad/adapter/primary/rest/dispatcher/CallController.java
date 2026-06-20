@@ -198,10 +198,6 @@ public final class CallController {
             return;
         }
 
-        // Parse and validate outcome before dispatching anything so an invalid outcome
-        // does not leave a partial update (detail fields committed, outcome rejected).
-        var outcome = hasOutcomeFields ? CallDtos.parseOutcome(body.outcome()) : null;
-
         if (hasDetailFields) {
             dispatcher.dispatch(updateCallDetailsHandler, new UpdateCallDetailsCommand(
                     commandId,
@@ -215,15 +211,21 @@ public final class CallController {
             ));
         }
 
+        // Parse and validate outcome before dispatching so an invalid outcome does not leave
+        // a partial update (detail fields committed, outcome rejected).
         if (hasOutcomeFields) {
-            dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
-                    CommandIdExtractor.derive(commandId, "set-outcome"),
-                    new UserId(claims.subject()),
-                    extractIpAddress(ctx),
-                    callId,
-                    outcome,
-                    body.outcomeRationale() != null ? new Description(body.outcomeRationale()) : null
-            ));
+            var outcomeStr = body.outcome();
+            if (outcomeStr != null) {
+                var outcome = CallDtos.parseOutcome(outcomeStr);
+                dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
+                        CommandIdExtractor.derive(commandId, "set-outcome"),
+                        new UserId(claims.subject()),
+                        extractIpAddress(ctx),
+                        callId,
+                        outcome,
+                        body.outcomeRationale() != null ? new Description(body.outcomeRationale()) : null
+                ));
+            }
         }
 
         ctx.status(200);
@@ -254,8 +256,9 @@ public final class CallController {
         var body = ctx.bodyAsClass(CallDtos.EndCallRequest.class);
 
         // If outcome is supplied in body, set it before ending
-        if (body.outcome() != null) {
-            var outcome = CallDtos.parseOutcome(body.outcome());
+        var endCallOutcomeStr = body.outcome();
+        if (endCallOutcomeStr != null) {
+            var outcome = CallDtos.parseOutcome(endCallOutcomeStr);
             dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
                     CommandIdExtractor.derive(commandId, "pre-end-set-outcome"),
                     new UserId(claims.subject()),

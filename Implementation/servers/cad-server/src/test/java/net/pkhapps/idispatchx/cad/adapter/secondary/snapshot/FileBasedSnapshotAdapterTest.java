@@ -1,6 +1,6 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.snapshot;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import net.pkhapps.idispatchx.cad.adapter.secondary.wal.DomainEventSerializer;
 import net.pkhapps.idispatchx.cad.adapter.secondary.wal.JsonDomainEventSerializer;
 import net.pkhapps.idispatchx.cad.adapter.secondary.wal.SmileDomainEventSerializer;

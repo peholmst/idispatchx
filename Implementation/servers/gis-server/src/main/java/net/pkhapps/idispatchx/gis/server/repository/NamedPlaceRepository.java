@@ -236,11 +236,11 @@ public final class NamedPlaceRepository {
     private static class NamedPlaceBuilder {
         final long karttanimiId;
         final Map<Language, String> names = new HashMap<>();
-        Integer placeClass;
-        Municipality municipality;
-        Double longitude;
-        Double latitude;
-        Double similarityScore;
+        @Nullable Integer placeClass;
+        @Nullable Municipality municipality;
+        @Nullable Double longitude;
+        @Nullable Double latitude;
+        @Nullable Double similarityScore;
 
         NamedPlaceBuilder(long karttanimiId) {
             this.karttanimiId = karttanimiId;

@@ -99,7 +99,8 @@ public final class GeocodeController {
         try {
             request = SearchRequest.of(q, limitStr, municipality);
         } catch (IllegalArgumentException e) {
-            throw new ValidationException(GisErrorCode.INVALID_PARAMETER, e.getMessage());
+            throw new ValidationException(GisErrorCode.INVALID_PARAMETER,
+                    e.getMessage() != null ? e.getMessage() : "Invalid parameter");
         }
 
         try {

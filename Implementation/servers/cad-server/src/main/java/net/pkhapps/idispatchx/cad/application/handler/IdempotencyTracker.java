@@ -67,7 +67,7 @@ final class IdempotencyTracker implements AutoCloseable {
      * execution finishes and then receives the same result (or exception).
      * If execution fails the result is not cached, so the command remains retryable.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"}) // NULL_RESULT sentinel substitutes null for Void commands; R may be null
     <R> R executeOnce(CommandId commandId, Supplier<R> execution) {
         Objects.requireNonNull(commandId, "commandId must not be null");
         Objects.requireNonNull(execution, "execution must not be null");

@@ -4,6 +4,7 @@ import net.pkhapps.idispatchx.cad.domain.command.Command;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.port.secondary.publisher.DomainEventPublisher;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -101,7 +102,7 @@ public abstract class CommandHandler<C extends Command, R> {
      * @param command the command being handled
      * @return the batch mutation, or {@code null} to fall back to {@link #prepareExecution}
      */
-    protected PendingBatchMutation<? extends DomainEvent> prepareBatchExecution(C command) {
+    protected @Nullable PendingBatchMutation<? extends DomainEvent> prepareBatchExecution(C command) {
         return null;
     }
 

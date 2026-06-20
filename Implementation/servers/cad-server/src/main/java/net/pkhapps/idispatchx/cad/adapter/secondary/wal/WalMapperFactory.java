@@ -51,6 +51,7 @@ final class WalMapperFactory {
         public long seq;
         public DomainEvent event;
 
+        @SuppressWarnings("NullAway") // Fields are populated by Jackson after construction
         WalEntryDocument() {
         }
 

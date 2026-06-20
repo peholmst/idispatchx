@@ -41,9 +41,10 @@ public final class GlobalExceptionHandler {
     public static void register(JavalinDefaultRoutingApi router) {
         router.exception(ValidationException.class, (e, ctx) -> {
             ctx.status(400);
+            var msg = e.getMessage() != null ? e.getMessage() : "Validation error";
             ctx.json(e.getDetails() != null
-                    ? ErrorResponse.of(e.getErrorCode(), e.getMessage(), e.getDetails(), ctx.path())
-                    : ErrorResponse.of(e.getErrorCode(), e.getMessage(), ctx.path()));
+                    ? ErrorResponse.of(e.getErrorCode(), msg, e.getDetails(), ctx.path())
+                    : ErrorResponse.of(e.getErrorCode(), msg, ctx.path()));
         });
 
         router.exception(IllegalArgumentException.class, (e, ctx) -> {
@@ -66,17 +67,20 @@ public final class GlobalExceptionHandler {
 
         router.exception(UnauthorizedResponse.class, (e, ctx) -> {
             ctx.status(401);
-            ctx.json(ErrorResponse.of(CommonErrorCode.UNAUTHORIZED, e.getMessage(), ctx.path()));
+            ctx.json(ErrorResponse.of(CommonErrorCode.UNAUTHORIZED,
+                    e.getMessage() != null ? e.getMessage() : "Unauthorized", ctx.path()));
         });
 
         router.exception(ForbiddenResponse.class, (e, ctx) -> {
             ctx.status(403);
-            ctx.json(ErrorResponse.of(CommonErrorCode.FORBIDDEN, e.getMessage(), ctx.path()));
+            ctx.json(ErrorResponse.of(CommonErrorCode.FORBIDDEN,
+                    e.getMessage() != null ? e.getMessage() : "Forbidden", ctx.path()));
         });
 
         router.exception(HttpResponseException.class, (e, ctx) -> {
             ctx.status(e.getStatus());
-            ctx.json(ErrorResponse.of(CommonErrorCode.INTERNAL_ERROR, e.getMessage(), ctx.path()));
+            ctx.json(ErrorResponse.of(CommonErrorCode.INTERNAL_ERROR,
+                    e.getMessage() != null ? e.getMessage() : "Internal error", ctx.path()));
         });
 
         router.exception(Exception.class, (e, ctx) -> {

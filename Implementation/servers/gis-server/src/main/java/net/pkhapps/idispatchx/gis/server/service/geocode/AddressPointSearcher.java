@@ -27,7 +27,7 @@ final class AddressPointSearcher {
                         new AddressResult(
                                 r.streetName(),
                                 r.number(),
-                                r.municipality(),
+                                Objects.requireNonNull(r.municipality()),
                                 r.coordinates(),
                                 AddressSource.ADDRESS_POINT),
                         r.similarityScore()))
@@ -44,7 +44,7 @@ final class AddressPointSearcher {
                         new AddressResult(
                                 r.streetName(),
                                 r.number(),
-                                r.municipality(),
+                                Objects.requireNonNull(r.municipality()),
                                 r.coordinates(),
                                 AddressSource.ADDRESS_POINT),
                         r.similarityScore()))

@@ -61,7 +61,7 @@ public final class EventBroadcaster {
      * @param event the domain event that was just applied
      * @return the call payload map, or {@code null} for non-call events
      */
-    public @Nullable Map<String, Object> captureCallSnapshot(DomainEvent event) {
+    public @Nullable Map<String, @Nullable Object> captureCallSnapshot(DomainEvent event) {
         net.pkhapps.idispatchx.cad.domain.model.shared.CallId callId = switch (event) {
             case CallCreatedEvent e -> e.callId();
             case CallUpdatedEvent e -> e.callId();
@@ -87,7 +87,7 @@ public final class EventBroadcaster {
      * @param walSequenceNumber the WAL sequence number assigned to the event
      * @param callSnapshot      pre-captured call state map, or {@code null} to read from repo
      */
-    public void broadcast(DomainEvent event, long walSequenceNumber, @Nullable Map<String, Object> callSnapshot) {
+    public void broadcast(DomainEvent event, long walSequenceNumber, @Nullable Map<String, @Nullable Object> callSnapshot) {
         Objects.requireNonNull(event, "event must not be null");
         try {
             dispatch(event, walSequenceNumber, callSnapshot);
@@ -107,7 +107,7 @@ public final class EventBroadcaster {
         broadcast(event, walSequenceNumber, null);
     }
 
-    private void dispatch(DomainEvent event, long seq, @Nullable Map<String, Object> callSnapshot) {
+    private void dispatch(DomainEvent event, long seq, @Nullable Map<String, @Nullable Object> callSnapshot) {
         var ts = event.timestamp();
         switch (event) {
             case CallCreatedEvent e -> dispatcherBroadcastService.sendCallCreated(
@@ -152,7 +152,7 @@ public final class EventBroadcaster {
     }
 
     private static Map<String, @Nullable Object> buildCallMapFromAggregate(Call call) {
-        var map = new LinkedHashMap<String, Object>();
+        var map = new LinkedHashMap<String, @Nullable Object>();
         map.put("callId", call.id().value());
         map.put("state", call.state().name().toLowerCase());
         map.put("receivingDispatcher", call.receivingDispatcher().value());
@@ -168,7 +168,7 @@ public final class EventBroadcaster {
     }
 
     private static Map<String, @Nullable Object> buildEmptyCallMap(String callId, @Nullable String state) {
-        var map = new LinkedHashMap<String, Object>();
+        var map = new LinkedHashMap<String, @Nullable Object>();
         map.put("callId", callId);
         map.put("state", state);
         map.put("receivingDispatcher", null);
@@ -184,7 +184,7 @@ public final class EventBroadcaster {
     }
 
     private static Map<String, @Nullable Object> buildIncidentCreatedPayload(IncidentCreatedEvent e) {
-        var map = new LinkedHashMap<String, Object>();
+        var map = new LinkedHashMap<String, @Nullable Object>();
         map.put("incidentId", e.incidentId().value());
         map.put("state", "new");
         map.put("incidentCreated", e.timestamp());

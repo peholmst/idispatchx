@@ -71,11 +71,12 @@ public final class BackChannelLogoutHandler implements Handler {
         try {
             var claims = logoutTokenValidator.validate(logoutToken);
 
-            if (claims.hasSessionId()) {
+            var sessionId = claims.sessionId();
+            if (claims.hasSessionId() && sessionId != null) {
                 // Revoke specific session
-                sessionStore.revokeSession(claims.sessionId());
+                sessionStore.revokeSession(sessionId);
                 log.info("Revoked session: {} for subject: {}",
-                        claims.sessionId(), claims.subject());
+                        sessionId, claims.subject());
             } else if (claims.isSubjectLogout()) {
                 // Subject-only logout - this implementation only supports session-based logout
                 // For full subject logout, you would need to track all sessions per subject
