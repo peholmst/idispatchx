@@ -82,12 +82,7 @@
                                     <port>db.port:5432</port>
                                 </ports>
                                 <wait>
-                                    <tcp>
-                                        <host>localhost</host>
-                                        <ports>
-                                            <port>5432</port>
-                                        </ports>
-                                    </tcp>
+                                    <log>(?s).*PostgreSQL init process complete; ready for start up\..*database system is ready to accept connections.*</log>
                                     <time>60000</time>
                                 </wait>
                             </run>
