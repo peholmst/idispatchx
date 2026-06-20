@@ -30,7 +30,7 @@
         <javalin-openapi.version>7.2.2</javalin-openapi.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.27</logback.version>
-        <jackson.version>2.21.0</jackson.version>
+        <jackson3.version>3.2.0</jackson3.version>
         <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <jooq.version>3.20.11</jooq.version>
         <flyway.version>12.0.0</flyway.version>
@@ -58,21 +58,16 @@
                 <version>${logback.version}</version>
             </dependency>
 
-            <!-- JSON -->
+            <!-- JSON (Jackson 3) -->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
+                <groupId>tools.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson3.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <groupId>tools.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-smile</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson3.version}</version>
             </dependency>
 
             <!-- JWT -->

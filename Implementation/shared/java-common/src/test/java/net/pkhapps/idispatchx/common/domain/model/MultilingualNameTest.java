@@ -1,9 +1,10 @@
 package net.pkhapps.idispatchx.common.domain.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.ValueInstantiationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -20,7 +21,7 @@ class MultilingualNameTest {
     private static final Language ENGLISH = Language.of("en");
     private static final Language NORTHERN_SAMI = Language.of("sme");
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     // === Construction Tests ===
 
@@ -274,7 +275,7 @@ class MultilingualNameTest {
     // === Jackson Serialization Tests ===
 
     @Test
-    void jackson_serializeMultipleLanguages_correctJson() throws JsonProcessingException {
+    void jackson_serializeMultipleLanguages_correctJson() {
         var name = MultilingualName.of(Map.of(FINNISH, "Helsinki", SWEDISH, "Helsingfors"));
         var json = objectMapper.writeValueAsString(name);
         assertTrue(json.contains("\"fi\""));
@@ -284,7 +285,7 @@ class MultilingualNameTest {
     }
 
     @Test
-    void jackson_deserializeValidJson_correctObject() throws JsonProcessingException {
+    void jackson_deserializeValidJson_correctObject() {
         var json = """
                 {"fi":"Helsinki","sv":"Helsingfors"}
                 """;
@@ -294,20 +295,20 @@ class MultilingualNameTest {
     }
 
     @Test
-    void jackson_serializeEmpty_correctJson() throws JsonProcessingException {
+    void jackson_serializeEmpty_correctJson() {
         var json = objectMapper.writeValueAsString(MultilingualName.empty());
         assertEquals("{}", json);
     }
 
     @Test
-    void jackson_deserializeEmpty_correctObject() throws JsonProcessingException {
+    void jackson_deserializeEmpty_correctObject() {
         var json = "{}";
         var name = objectMapper.readValue(json, MultilingualName.class);
         assertTrue(name.isEmpty());
     }
 
     @Test
-    void jackson_serializeUnspecifiedLanguage_correctJson() throws JsonProcessingException {
+    void jackson_serializeUnspecifiedLanguage_correctJson() {
         var name = MultilingualName.withUnspecifiedLanguage("Manual Entry");
         var json = objectMapper.writeValueAsString(name);
         assertTrue(json.contains("\"\""));
@@ -315,7 +316,7 @@ class MultilingualNameTest {
     }
 
     @Test
-    void jackson_deserializeUnspecifiedLanguage_correctObject() throws JsonProcessingException {
+    void jackson_deserializeUnspecifiedLanguage_correctObject() {
         var json = """
                 {"":"Manual Entry"}
                 """;
@@ -324,7 +325,7 @@ class MultilingualNameTest {
     }
 
     @Test
-    void jackson_roundTrip_preservesData() throws JsonProcessingException {
+    void jackson_roundTrip_preservesData() {
         var original = MultilingualName.of(Map.of(
                 FINNISH, "Helsinki",
                 SWEDISH, "Helsingfors",
@@ -340,7 +341,7 @@ class MultilingualNameTest {
         var json = """
                 {"invalid-code":"value"}
                 """;
-        assertThrows(JsonMappingException.class,
+        assertThrows(DatabindException.class,
                 () -> objectMapper.readValue(json, MultilingualName.class));
     }
 

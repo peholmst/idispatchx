@@ -1,6 +1,6 @@
 package net.pkhapps.idispatchx.cad.domain.model.incident;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import net.pkhapps.idispatchx.cad.domain.model.shared.Description;
 import net.pkhapps.idispatchx.common.auth.UserId;
 

@@ -1,7 +1,8 @@
 package net.pkhapps.idispatchx.gis.server.service.geocode;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.common.domain.model.Coordinates;
 import net.pkhapps.idispatchx.common.domain.model.Language;
 import net.pkhapps.idispatchx.common.domain.model.MultilingualName;
@@ -30,7 +31,7 @@ class LocationResultTest {
             MunicipalityCode.of("091"), HELSINKI_NAME);
     private static final Coordinates.Epsg4326 COORDS = Coordinates.Epsg4326.of(60.169857, 24.938379);
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     // === AddressResult Tests ===
 
@@ -224,7 +225,7 @@ class LocationResultTest {
     // === Jackson Serialization Tests ===
 
     @Test
-    void jackson_serializeAddressResult_includesTypeDiscriminator() throws JsonProcessingException {
+    void jackson_serializeAddressResult_includesTypeDiscriminator() {
         var result = new AddressResult(STREET_NAME, "1", HELSINKI, COORDS, AddressSource.ADDRESS_POINT);
         var json = objectMapper.writeValueAsString(result);
 
@@ -239,7 +240,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_serializePlaceResult_includesTypeDiscriminator() throws JsonProcessingException {
+    void jackson_serializePlaceResult_includesTypeDiscriminator() {
         var result = new PlaceResult(PLACE_NAME, 48111, HELSINKI, COORDS);
         var json = objectMapper.writeValueAsString(result);
 
@@ -251,7 +252,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_serializeIntersectionResult_includesTypeDiscriminator() throws JsonProcessingException {
+    void jackson_serializeIntersectionResult_includesTypeDiscriminator() {
         var result = new IntersectionResult(STREET_NAME, STREET_NAME_2, HELSINKI, COORDS);
         var json = objectMapper.writeValueAsString(result);
 
@@ -263,7 +264,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_deserializeAddressResult_correctType() throws JsonProcessingException {
+    void jackson_deserializeAddressResult_correctType() {
         var json = """
                 {
                   "type": "address",
@@ -283,7 +284,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_deserializePlaceResult_correctType() throws JsonProcessingException {
+    void jackson_deserializePlaceResult_correctType() {
         var json = """
                 {
                   "type": "place",
@@ -301,7 +302,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_deserializeIntersectionResult_correctType() throws JsonProcessingException {
+    void jackson_deserializeIntersectionResult_correctType() {
         var json = """
                 {
                   "type": "intersection",
@@ -320,7 +321,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_roundTripAddressResult_preservesData() throws JsonProcessingException {
+    void jackson_roundTripAddressResult_preservesData() {
         var original = new AddressResult(STREET_NAME, "5A", HELSINKI, COORDS, AddressSource.ROAD_SEGMENT);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, LocationResult.class);
@@ -329,7 +330,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_roundTripPlaceResult_preservesData() throws JsonProcessingException {
+    void jackson_roundTripPlaceResult_preservesData() {
         var original = new PlaceResult(PLACE_NAME, 48111, HELSINKI, COORDS);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, LocationResult.class);
@@ -338,7 +339,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_roundTripIntersectionResult_preservesData() throws JsonProcessingException {
+    void jackson_roundTripIntersectionResult_preservesData() {
         var original = new IntersectionResult(STREET_NAME, STREET_NAME_2, HELSINKI, COORDS);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, LocationResult.class);
@@ -347,7 +348,7 @@ class LocationResultTest {
     }
 
     @Test
-    void jackson_addressSource_serializesAsSnakeCase() throws JsonProcessingException {
+    void jackson_addressSource_serializesAsSnakeCase() {
         var addressPoint = new AddressResult(STREET_NAME, "1", HELSINKI, COORDS, AddressSource.ADDRESS_POINT);
         var roadSegment = new AddressResult(STREET_NAME, "2", HELSINKI, COORDS, AddressSource.ROAD_SEGMENT);
 

@@ -1,6 +1,6 @@
 package net.pkhapps.idispatchx.gis.server.api;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import net.pkhapps.idispatchx.common.auth.Role;
 import net.pkhapps.idispatchx.gis.server.ApiIntegrationTestBase;
 import org.junit.jupiter.api.AfterEach;

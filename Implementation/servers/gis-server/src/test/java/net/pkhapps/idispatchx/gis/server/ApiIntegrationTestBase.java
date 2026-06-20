@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.gis.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
@@ -10,7 +10,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.javalin.Javalin;
-import io.javalin.json.JavalinJackson;
+import io.javalin.json.JavalinJackson3;
 import net.pkhapps.idispatchx.common.auth.JwksKeyProvider;
 import net.pkhapps.idispatchx.common.auth.Role;
 import net.pkhapps.idispatchx.common.auth.SessionStore;
@@ -98,12 +98,11 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
 
         var geocodeService = GeocodeService.create(dsl);
 
-        var objectMapper = new ObjectMapper()
-                .findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        var objectMapper = JsonMapper.builder()
+                .build();
 
         javalin = Javalin.create(config -> {
-            config.jsonMapper(new JavalinJackson(objectMapper, true));
+            config.jsonMapper(new JavalinJackson3(objectMapper, true));
             config.startup.showJavalinBanner = false;
         });
 
@@ -197,8 +196,8 @@ public abstract class ApiIntegrationTestBase extends IntegrationTestBase {
      * Returns a pre-built ObjectMapper for parsing JSON responses.
      */
     protected ObjectMapper objectMapper() {
-        return new ObjectMapper().findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return JsonMapper.builder()
+                .build();
     }
 
     private static int findFreePort() throws IOException {

@@ -1,6 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.rest.dispatcher;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.cad.adapter.primary.rest.shared.LocationDto;
 import net.pkhapps.idispatchx.cad.domain.model.incident.Incident;
 import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntry;
@@ -125,7 +126,7 @@ public final class IncidentDtos {
                     "automatic",
                     // Convert JsonNode to Map for serialization
                     ae.changeData().isObject()
-                            ? (Map<String, Object>) new com.fasterxml.jackson.databind.ObjectMapper()
+                            ? (Map<String, Object>) JsonMapper.builder().build()
                             .convertValue(ae.changeData(), Map.class)
                             : null,
                     null

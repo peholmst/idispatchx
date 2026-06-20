@@ -1,6 +1,6 @@
 package net.pkhapps.idispatchx.cad.domain.model.incident;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import net.pkhapps.idispatchx.cad.application.handler.PendingMutation;
 import net.pkhapps.idispatchx.cad.domain.command.CommandId;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;

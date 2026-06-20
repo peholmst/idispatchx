@@ -117,7 +117,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
             currentSegmentEntries++;
             checkRolloverAfterWrite();
             return new SequenceNumber(seq);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new WalWriteException("Failed to write WAL entry seq=" + currentSeq.get(), e);
         }
     }
@@ -143,7 +143,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
                 appendEntry(new WalEntry(new SequenceNumber(seq), event));
             }
             currentChannel.force(true);
-        } catch (IOException e) {
+        } catch (Exception e) {
             // Rollback: truncate the channel back to the pre-batch position.
             currentSeq.set(firstSeq - 1);
             if (positionBefore >= 0) {
