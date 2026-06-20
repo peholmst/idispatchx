@@ -275,4 +275,31 @@ public final class Call extends Entity<CallId> {
         return new Call(e.callId(), e.causedByUser(), e.timestamp(),
                 e.callerName(), e.callerPhoneNumber(), e.location(), e.description());
     }
+
+    /**
+     * Reconstructs a Call from a snapshot, restoring all fields exactly as persisted.
+     * For snapshot-based startup recovery only — bypasses the normal creation lifecycle.
+     */
+    public static Call restore(
+            CallId id,
+            CallState state,
+            UserId receivingDispatcher,
+            Instant callStarted,
+            @Nullable Instant callEnded,
+            @Nullable CallerName callerName,
+            @Nullable PhoneNumber callerPhoneNumber,
+            @Nullable Location location,
+            @Nullable Description description,
+            @Nullable CallOutcome outcome,
+            @Nullable Description outcomeRationale,
+            @Nullable IncidentId incidentId) {
+        var call = new Call(id, receivingDispatcher, callStarted,
+                callerName, callerPhoneNumber, location, description);
+        call.state = state;
+        call.callEnded = callEnded;
+        call.outcome = outcome;
+        call.outcomeRationale = outcomeRationale;
+        call.incidentId = incidentId;
+        return call;
+    }
 }
