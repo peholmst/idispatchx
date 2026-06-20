@@ -7,6 +7,12 @@ import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import net.pkhapps.idispatchx.common.api.ErrorResponse;
 import net.pkhapps.idispatchx.gis.server.model.TileCoordinates;
 import net.pkhapps.idispatchx.gis.server.service.tile.TileService;
 
@@ -62,11 +68,45 @@ public final class WmtsController {
         app.get(contextPath + "/wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{colFile}", this::handleGetTile);
     }
 
+    @OpenApi(
+        path = "/wmts/1.0.0/WMTSCapabilities.xml",
+        methods = {HttpMethod.GET},
+        operationId = "getWmtsCapabilities",
+        tags = {"WMTS"},
+        summary = "Get WMTS capabilities document",
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(type = "application/xml")}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleGetCapabilities(Context ctx) {
         ctx.contentType(CONTENT_TYPE_XML);
         ctx.result(capabilitiesGenerator.getCapabilitiesXml());
     }
 
+    @OpenApi(
+        path = "/wmts/{layer}/ETRS-TM35FIN/{zoom}/{row}/{colFile}",
+        methods = {HttpMethod.GET},
+        operationId = "getWmtsTile",
+        tags = {"WMTS"},
+        summary = "Get a WMTS map tile",
+        pathParams = {
+            @OpenApiParam(name = "layer", description = "Tile layer name", required = true),
+            @OpenApiParam(name = "zoom", description = "Zoom level", type = Integer.class, required = true),
+            @OpenApiParam(name = "row", description = "Tile row", type = Integer.class, required = true),
+            @OpenApiParam(name = "colFile", description = "Tile column with .png extension", required = true)
+        },
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(type = "image/png")}),
+            @OpenApiResponse(status = "204"),
+            @OpenApiResponse(status = "304"),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleGetTile(Context ctx) {
         var layerName = ctx.pathParam("layer");
         var zoomStr = ctx.pathParam("zoom");

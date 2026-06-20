@@ -4,6 +4,12 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import net.pkhapps.idispatchx.common.api.ErrorResponse;
 import net.pkhapps.idispatchx.common.api.ValidationException;
 import net.pkhapps.idispatchx.gis.server.api.error.GisErrorCode;
 import net.pkhapps.idispatchx.gis.server.service.geocode.DatabaseUnavailableException;
@@ -50,6 +56,25 @@ public final class GeocodeController {
         app.get(contextPath + "/api/v1/geocode/search", this::handleSearch);
     }
 
+    @OpenApi(
+        path = "/api/v1/geocode/search",
+        methods = {HttpMethod.GET},
+        operationId = "geocodeSearch",
+        tags = {"Geocode"},
+        summary = "Search for addresses, places, and intersections",
+        queryParams = {
+            @OpenApiParam(name = "q", description = "Search query (minimum 3 characters)", required = true),
+            @OpenApiParam(name = "limit", description = "Maximum number of results to return", type = Integer.class),
+            @OpenApiParam(name = "municipality", description = "Filter results by municipality code")
+        },
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = SearchResponse.class)}),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "503", content = {@OpenApiContent(from = SearchResponse.class)})
+        }
+    )
     private void handleSearch(Context ctx) {
         var q = ctx.queryParam("q");
         var limitStr = ctx.queryParam("limit");

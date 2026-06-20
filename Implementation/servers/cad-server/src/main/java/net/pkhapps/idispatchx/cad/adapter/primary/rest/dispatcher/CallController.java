@@ -5,6 +5,12 @@ import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import net.pkhapps.idispatchx.cad.adapter.auth.AuthContext;
 import net.pkhapps.idispatchx.cad.adapter.primary.rest.shared.CadErrorCode;
 import net.pkhapps.idispatchx.cad.adapter.primary.rest.shared.CommandIdExtractor;
@@ -28,6 +34,7 @@ import net.pkhapps.idispatchx.cad.domain.model.shared.CallId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.Description;
 import net.pkhapps.idispatchx.cad.domain.model.shared.PhoneNumber;
 import net.pkhapps.idispatchx.cad.domain.repository.CallRepository;
+import net.pkhapps.idispatchx.common.api.ErrorResponse;
 import net.pkhapps.idispatchx.common.api.ValidationException;
 import net.pkhapps.idispatchx.common.auth.IPAddress;
 import net.pkhapps.idispatchx.common.auth.Role;
@@ -103,6 +110,21 @@ public final class CallController {
     // Handlers
     // -------------------------------------------------------------------------
 
+    @OpenApi(
+        path = "/api/v1/calls",
+        methods = {HttpMethod.POST},
+        operationId = "createCall",
+        tags = {"Calls"},
+        summary = "Create a new call",
+        headers = {@OpenApiParam(name = "X-Command-Id", description = "Idempotency key", required = true)},
+        requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = CallDtos.CreateCallRequest.class)}),
+        responses = {
+            @OpenApiResponse(status = "201", content = {@OpenApiContent(from = CallDtos.CreateCallResponse.class)}),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleCreateCall(Context ctx) {
         requireRole(ctx, Role.DISPATCHER);
         var commandId = CommandIdExtractor.extract(ctx);
@@ -130,6 +152,24 @@ public final class CallController {
         ));
     }
 
+    @OpenApi(
+        path = "/api/v1/calls/{callId}",
+        methods = {HttpMethod.PATCH},
+        operationId = "updateCallDetails",
+        tags = {"Calls"},
+        summary = "Update call details",
+        headers = {@OpenApiParam(name = "X-Command-Id", description = "Idempotency key", required = true)},
+        pathParams = {@OpenApiParam(name = "callId", description = "The call ID", required = true)},
+        requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = CallDtos.UpdateCallDetailsRequest.class)}),
+        responses = {
+            @OpenApiResponse(status = "200"),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "409", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleUpdateCallDetails(Context ctx) {
         requireRole(ctx, Role.DISPATCHER);
         var commandId = CommandIdExtractor.extract(ctx);
@@ -189,6 +229,23 @@ public final class CallController {
         ctx.status(200);
     }
 
+    @OpenApi(
+        path = "/api/v1/calls/{callId}/end",
+        methods = {HttpMethod.POST},
+        operationId = "endCall",
+        tags = {"Calls"},
+        summary = "End a call",
+        headers = {@OpenApiParam(name = "X-Command-Id", description = "Idempotency key", required = true)},
+        pathParams = {@OpenApiParam(name = "callId", description = "The call ID", required = true)},
+        requestBody = @OpenApiRequestBody(required = false, content = {@OpenApiContent(from = CallDtos.EndCallRequest.class)}),
+        responses = {
+            @OpenApiResponse(status = "200"),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleEndCall(Context ctx) {
         requireRole(ctx, Role.DISPATCHER);
         var commandId = CommandIdExtractor.extract(ctx);
@@ -232,6 +289,23 @@ public final class CallController {
         ctx.status(200);
     }
 
+    @OpenApi(
+        path = "/api/v1/calls/{callId}/attach-to-incident",
+        methods = {HttpMethod.POST},
+        operationId = "attachCallToIncident",
+        tags = {"Calls"},
+        summary = "Attach a call to an incident",
+        headers = {@OpenApiParam(name = "X-Command-Id", description = "Idempotency key", required = true)},
+        pathParams = {@OpenApiParam(name = "callId", description = "The call ID", required = true)},
+        requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = CallDtos.AttachCallToIncidentRequest.class)}),
+        responses = {
+            @OpenApiResponse(status = "200"),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleAttachToIncident(Context ctx) {
         requireRole(ctx, Role.DISPATCHER);
         var commandId = CommandIdExtractor.extract(ctx);
@@ -253,6 +327,21 @@ public final class CallController {
         ctx.status(200);
     }
 
+    @OpenApi(
+        path = "/api/v1/calls/{callId}/detach-from-incident",
+        methods = {HttpMethod.POST},
+        operationId = "detachCallFromIncident",
+        tags = {"Calls"},
+        summary = "Detach a call from its incident",
+        headers = {@OpenApiParam(name = "X-Command-Id", description = "Idempotency key", required = true)},
+        pathParams = {@OpenApiParam(name = "callId", description = "The call ID", required = true)},
+        responses = {
+            @OpenApiResponse(status = "200"),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleDetachFromIncident(Context ctx) {
         requireRole(ctx, Role.DISPATCHER);
         var commandId = CommandIdExtractor.extract(ctx);
@@ -268,6 +357,18 @@ public final class CallController {
         ctx.status(200);
     }
 
+    @OpenApi(
+        path = "/api/v1/calls",
+        methods = {HttpMethod.GET},
+        operationId = "listCalls",
+        tags = {"Calls"},
+        summary = "List active calls",
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = CallDtos.CallListResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleListCalls(Context ctx) {
         requireAnyRole(ctx, Role.DISPATCHER, Role.OBSERVER);
         var calls = callRepository.findActive()
@@ -276,6 +377,20 @@ public final class CallController {
         ctx.json(new CallDtos.CallListResponse(calls));
     }
 
+    @OpenApi(
+        path = "/api/v1/calls/{callId}",
+        methods = {HttpMethod.GET},
+        operationId = "getCall",
+        tags = {"Calls"},
+        summary = "Get a specific call",
+        pathParams = {@OpenApiParam(name = "callId", description = "The call ID", required = true)},
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = CallDtos.CallResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleGetCall(Context ctx) {
         requireAnyRole(ctx, Role.DISPATCHER, Role.OBSERVER);
         var callId = new CallId(ctx.pathParam("callId"));

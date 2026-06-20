@@ -5,6 +5,12 @@ import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import net.pkhapps.idispatchx.cad.adapter.auth.AuthContext;
 import net.pkhapps.idispatchx.cad.adapter.primary.rest.shared.CadErrorCode;
 import net.pkhapps.idispatchx.cad.adapter.primary.rest.shared.CommandIdExtractor;
@@ -81,6 +87,22 @@ public final class IncidentController {
     // Handlers
     // -------------------------------------------------------------------------
 
+    @OpenApi(
+        path = "/api/v1/incidents",
+        methods = {HttpMethod.POST},
+        operationId = "createIncident",
+        tags = {"Incidents"},
+        summary = "Create an incident from a call",
+        headers = {@OpenApiParam(name = "X-Command-Id", description = "Idempotency key", required = true)},
+        requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = IncidentDtos.CreateIncidentRequest.class)}),
+        responses = {
+            @OpenApiResponse(status = "201", content = {@OpenApiContent(from = IncidentDtos.CreateIncidentResponse.class)}),
+            @OpenApiResponse(status = "400", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "501", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleCreateIncident(Context ctx) {
         requireRole(ctx, Role.DISPATCHER);
         var commandId = CommandIdExtractor.extract(ctx);
@@ -110,6 +132,19 @@ public final class IncidentController {
         ctx.status(201).json(new IncidentDtos.CreateIncidentResponse(incidentId.value()));
     }
 
+    @OpenApi(
+        path = "/api/v1/incidents",
+        methods = {HttpMethod.GET},
+        operationId = "listIncidents",
+        tags = {"Incidents"},
+        summary = "List incidents",
+        queryParams = {@OpenApiParam(name = "includeEnded", description = "Include ended incidents", type = Boolean.class)},
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = IncidentDtos.IncidentListResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleListIncidents(Context ctx) {
         requireAnyRole(ctx, Role.DISPATCHER, Role.OBSERVER);
         var includeEnded = Boolean.parseBoolean(ctx.queryParam("includeEnded"));
@@ -123,6 +158,20 @@ public final class IncidentController {
         ctx.json(new IncidentDtos.IncidentListResponse(incidents));
     }
 
+    @OpenApi(
+        path = "/api/v1/incidents/{incidentId}",
+        methods = {HttpMethod.GET},
+        operationId = "getIncident",
+        tags = {"Incidents"},
+        summary = "Get a specific incident",
+        pathParams = {@OpenApiParam(name = "incidentId", description = "The incident ID", required = true)},
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = IncidentDtos.IncidentDetailResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "404", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleGetIncident(Context ctx) {
         requireAnyRole(ctx, Role.DISPATCHER, Role.OBSERVER);
         var incidentId = new IncidentId(ctx.pathParam("incidentId"));

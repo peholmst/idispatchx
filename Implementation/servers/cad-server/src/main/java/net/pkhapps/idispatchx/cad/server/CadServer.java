@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
+import io.javalin.openapi.plugin.OpenApiPlugin;
 import net.pkhapps.idispatchx.cad.adapter.auth.BackChannelLogoutHandler;
 import net.pkhapps.idispatchx.cad.adapter.auth.JwtAuthHandler;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
@@ -310,6 +311,14 @@ public final class CadServer implements AutoCloseable {
         return Javalin.create(javalinConfig -> {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
             javalinConfig.showJavalinBanner = false;
+            javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
+                .withDocumentationPath("/openapi")
+                .withDefinitionConfiguration((version, definition) -> definition
+                    .withInfo(info -> info
+                        .title("CAD Server API")
+                        .version("1.0.0")
+                        .description("Computer-Aided Dispatch REST API for iDispatchX")))
+            ));
             if (!corsOrigins.isBlank()) {
                 var origins = corsOrigins.split(",");
                 javalinConfig.bundledPlugins.enableCors(cors ->

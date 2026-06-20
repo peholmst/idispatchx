@@ -4,6 +4,11 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiResponse;
+import net.pkhapps.idispatchx.common.api.ErrorResponse;
 import net.pkhapps.idispatchx.gis.server.model.TileLayer;
 
 import java.util.List;
@@ -47,6 +52,18 @@ public final class LayersController {
         app.get(contextPath + "/api/v1/layers", this::handleGetLayers);
     }
 
+    @OpenApi(
+        path = "/api/v1/layers",
+        methods = {HttpMethod.GET},
+        operationId = "listLayers",
+        tags = {"Layers"},
+        summary = "List available WMTS tile layers",
+        responses = {
+            @OpenApiResponse(status = "200", content = {@OpenApiContent(from = LayersResponse.class)}),
+            @OpenApiResponse(status = "401", content = {@OpenApiContent(from = ErrorResponse.class)}),
+            @OpenApiResponse(status = "403", content = {@OpenApiContent(from = ErrorResponse.class)})
+        }
+    )
     private void handleGetLayers(Context ctx) {
         var layerInfos = layers.entrySet().stream()
                 .map(entry -> new LayerInfo(entry.getKey(), toTitle(entry.getKey())))
