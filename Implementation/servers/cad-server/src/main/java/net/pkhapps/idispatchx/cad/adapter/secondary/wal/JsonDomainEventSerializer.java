@@ -1,10 +1,10 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -23,13 +23,13 @@ public final class JsonDomainEventSerializer implements DomainEventSerializer {
     }
 
     @Override
-    public byte[] serialize(WalEntry entry) throws IOException {
+    public byte[] serialize(WalEntry entry) {
         return mapper.writeValueAsBytes(
                 new WalMapperFactory.WalEntryDocument(entry.sequenceNumber().value(), entry.event()));
     }
 
     @Override
-    public WalEntry deserialize(byte[] data) throws IOException {
+    public WalEntry deserialize(byte[] data) {
         var doc = mapper.readValue(data, WalMapperFactory.WalEntryDocument.class);
         return new WalEntry(new SequenceNumber(doc.seq), doc.event);
     }

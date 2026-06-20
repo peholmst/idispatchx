@@ -1,6 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.websocket.dispatcher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.javalin.router.JavalinDefaultRoutingApi;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;

@@ -1,9 +1,8 @@
 package net.pkhapps.idispatchx.cad.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
-import io.javalin.json.JavalinJackson;
+import io.javalin.json.JavalinJackson3;
+import tools.jackson.databind.json.JsonMapper;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import net.pkhapps.idispatchx.cad.adapter.auth.BackChannelLogoutHandler;
 import net.pkhapps.idispatchx.cad.adapter.auth.JwtAuthHandler;
@@ -309,7 +308,7 @@ public final class CadServer implements AutoCloseable {
         var objectMapper = createObjectMapper();
         var corsOrigins = config.corsAllowedOrigins();
         return Javalin.create(javalinConfig -> {
-            javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
+            javalinConfig.jsonMapper(new JavalinJackson3(objectMapper, true));
             javalinConfig.startup.showJavalinBanner = false;
             javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
                 .withDocumentationPath(config.contextPath() + "/openapi")
@@ -332,9 +331,7 @@ public final class CadServer implements AutoCloseable {
         });
     }
 
-    private static ObjectMapper createObjectMapper() {
-        return new ObjectMapper()
-                .findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private static JsonMapper createObjectMapper() {
+        return JsonMapper.builder().build();
     }
 }

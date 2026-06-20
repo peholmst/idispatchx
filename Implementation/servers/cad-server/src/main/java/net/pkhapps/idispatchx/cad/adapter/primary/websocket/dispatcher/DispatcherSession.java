@@ -1,7 +1,8 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.websocket.dispatcher;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import io.javalin.websocket.WsContext;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public final class DispatcherSession {
         try {
             var json = objectMapper.writeValueAsString(message);
             ctx.send(json);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Failed to serialize WebSocket message for session {}: {}", sessionId, e.getMessage(), e);
         } catch (Exception e) {
             log.warn("Failed to send WebSocket message to session {}: {}", sessionId, e.getMessage());

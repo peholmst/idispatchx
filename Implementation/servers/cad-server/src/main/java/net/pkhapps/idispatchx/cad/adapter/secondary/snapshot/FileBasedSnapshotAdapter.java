@@ -1,6 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.snapshot;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.cad.adapter.secondary.wal.DomainEventSerializer;
 import net.pkhapps.idispatchx.cad.adapter.secondary.wal.WalFormat;
 import net.pkhapps.idispatchx.cad.port.secondary.snapshot.OperationalState;
@@ -111,7 +112,7 @@ public final class FileBasedSnapshotAdapter implements SnapshotPort {
                 var snapshot = new Snapshot(doc.state, new SequenceNumber(doc.sequenceNumber));
                 log.info("Loaded snapshot: {} (seq={})", path.getFileName(), doc.sequenceNumber);
                 return Optional.of(snapshot);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.warn("Snapshot {} is corrupt and will be skipped: {}", path.getFileName(), e.getMessage());
             }
         }

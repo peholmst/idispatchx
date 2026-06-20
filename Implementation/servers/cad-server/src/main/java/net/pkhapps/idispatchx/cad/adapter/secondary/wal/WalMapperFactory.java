@@ -2,10 +2,9 @@ package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.dataformat.smile.SmileMapper;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
 import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentLogEntry;
 import net.pkhapps.idispatchx.cad.domain.model.shared.location.Location;
@@ -70,7 +69,14 @@ final class WalMapperFactory {
      * @param eventTypes concrete {@link DomainEvent} subtypes to pre-register
      */
     static ObjectMapper buildJson(List<? extends Class<? extends DomainEvent>> eventTypes) {
-        return configure(new ObjectMapper(), eventTypes);
+        var builder = JsonMapper.builder()
+                .addMixIn(DomainEvent.class, DomainEventMixin.class)
+                .addMixIn(Location.class, LocationMixin.class)
+                .addMixIn(IncidentLogEntry.class, IncidentLogEntryMixin.class);
+        if (!eventTypes.isEmpty()) {
+            builder.registerSubtypes(eventTypes.toArray(new Class[0]));
+        }
+        return builder.build();
     }
 
     /**
@@ -79,18 +85,13 @@ final class WalMapperFactory {
      * @param eventTypes concrete {@link DomainEvent} subtypes to pre-register
      */
     static ObjectMapper buildSmile(List<? extends Class<? extends DomainEvent>> eventTypes) {
-        return configure(new ObjectMapper(new SmileFactory()), eventTypes);
-    }
-
-    private static ObjectMapper configure(ObjectMapper mapper, List<? extends Class<? extends DomainEvent>> eventTypes) {
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.addMixIn(DomainEvent.class, DomainEventMixin.class);
-        mapper.addMixIn(Location.class, LocationMixin.class);
-        mapper.addMixIn(IncidentLogEntry.class, IncidentLogEntryMixin.class);
+        var builder = SmileMapper.builder()
+                .addMixIn(DomainEvent.class, DomainEventMixin.class)
+                .addMixIn(Location.class, LocationMixin.class)
+                .addMixIn(IncidentLogEntry.class, IncidentLogEntryMixin.class);
         if (!eventTypes.isEmpty()) {
-            mapper.registerSubtypes(eventTypes.toArray(new Class[0]));
+            builder.registerSubtypes(eventTypes.toArray(new Class[0]));
         }
-        return mapper;
+        return builder.build();
     }
 }

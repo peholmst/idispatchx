@@ -1,6 +1,6 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import net.pkhapps.idispatchx.cad.domain.event.EventId;
 import net.pkhapps.idispatchx.cad.domain.event.IncidentLogEntryAddedEvent;
 import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentId;

@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.primary.websocket.dispatcher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;
 import net.pkhapps.idispatchx.cad.domain.event.DomainEvent;
@@ -90,16 +90,14 @@ class DispatcherWebSocketHandlerTest {
     void handler_constructsWithoutError() {
         var tokenValidator = buildTokenValidator();
         var sessionStore = new SessionStore();
-        var objectMapper = new ObjectMapper()
-                .findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        var objectMapper = JsonMapper.builder().build();
         assertDoesNotThrow(() -> new DispatcherWebSocketHandler(
                 tokenValidator, sessionStore, sessionRegistry, objectMapper, noopWalPort()));
     }
 
     @Test
     void handler_nullArgs_throwNPE() {
-        var om = new ObjectMapper();
+        var om = JsonMapper.builder().build();
         var wal = noopWalPort();
         assertThrows(NullPointerException.class, () ->
                 new DispatcherWebSocketHandler(null, new SessionStore(), sessionRegistry, om, wal));

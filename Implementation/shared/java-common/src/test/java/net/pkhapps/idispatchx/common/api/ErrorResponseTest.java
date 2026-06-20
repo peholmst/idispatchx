@@ -1,7 +1,7 @@
 package net.pkhapps.idispatchx.common.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -11,9 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ErrorResponseTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .findAndRegisterModules()
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @Test
     void of_withoutDetails_createsResponseWithNullDetails() {

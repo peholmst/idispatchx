@@ -1,9 +1,8 @@
 package net.pkhapps.idispatchx.gis.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.javalin.Javalin;
-import io.javalin.json.JavalinJackson;
+import io.javalin.json.JavalinJackson3;
+import tools.jackson.databind.json.JsonMapper;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import net.pkhapps.idispatchx.common.auth.JwksClient;
 import net.pkhapps.idispatchx.common.auth.LogoutTokenValidator;
@@ -110,14 +109,12 @@ public final class GisServer implements AutoCloseable {
     }
 
     private Javalin createJavalin() {
-        var objectMapper = new ObjectMapper()
-                .findAndRegisterModules()
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        var objectMapper = JsonMapper.builder().build();
 
         var corsOrigins = config.corsAllowedOrigins();
 
         return Javalin.create(javalinConfig -> {
-            javalinConfig.jsonMapper(new JavalinJackson(objectMapper, true));
+            javalinConfig.jsonMapper(new JavalinJackson3(objectMapper, true));
             javalinConfig.startup.showJavalinBanner = false;
             javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
                 .withDocumentationPath(config.contextPath() + "/openapi")

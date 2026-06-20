@@ -1,15 +1,16 @@
 package net.pkhapps.idispatchx.common.domain.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.exc.ValueInstantiationException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class CoordinatesTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     // === EPSG:4326 Construction Tests ===
 
@@ -304,7 +305,7 @@ class CoordinatesTest {
     // === Jackson Serialization Tests ===
 
     @Test
-    void jackson_serializeEpsg4326_correctJson() throws JsonProcessingException {
+    void jackson_serializeEpsg4326_correctJson() {
         var coords = Coordinates.Epsg4326.of(60.169857, 24.938379);
         var json = objectMapper.writeValueAsString(coords);
         assertTrue(json.contains("\"crs\":\"EPSG:4326\""));
@@ -313,7 +314,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_serializeEpsg3067_correctJson() throws JsonProcessingException {
+    void jackson_serializeEpsg3067_correctJson() {
         var coords = Coordinates.Epsg3067.of(385784.0, 6672298.0);
         var json = objectMapper.writeValueAsString(coords);
         assertTrue(json.contains("\"crs\":\"EPSG:3067\""));
@@ -322,7 +323,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_deserializeEpsg4326_correctObject() throws JsonProcessingException {
+    void jackson_deserializeEpsg4326_correctObject() {
         var json = """
                 {"crs":"EPSG:4326","latitude":60.169857,"longitude":24.938379}""";
         var coords = objectMapper.readValue(json, Coordinates.class);
@@ -333,7 +334,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_deserializeEpsg3067_correctObject() throws JsonProcessingException {
+    void jackson_deserializeEpsg3067_correctObject() {
         var json = """
                 {"crs":"EPSG:3067","easting":385784.0,"northing":6672298.0}""";
         var coords = objectMapper.readValue(json, Coordinates.class);
@@ -344,7 +345,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_roundTripEpsg4326_preservesData() throws JsonProcessingException {
+    void jackson_roundTripEpsg4326_preservesData() {
         var original = Coordinates.Epsg4326.of(60.169857, 24.938379);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, Coordinates.class);
@@ -352,7 +353,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_roundTripEpsg3067_preservesData() throws JsonProcessingException {
+    void jackson_roundTripEpsg3067_preservesData() {
         var original = Coordinates.Epsg3067.of(385784.0, 6672298.0);
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, Coordinates.class);
@@ -360,7 +361,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_deserializeEpsg4326_asConcreteType_correctObject() throws JsonProcessingException {
+    void jackson_deserializeEpsg4326_asConcreteType_correctObject() {
         var json = """
                 {"crs":"EPSG:4326","latitude":60.169857,"longitude":24.938379}""";
         var coords = objectMapper.readValue(json, Coordinates.Epsg4326.class);
@@ -369,7 +370,7 @@ class CoordinatesTest {
     }
 
     @Test
-    void jackson_deserializeEpsg3067_asConcreteType_correctObject() throws JsonProcessingException {
+    void jackson_deserializeEpsg3067_asConcreteType_correctObject() {
         var json = """
                 {"crs":"EPSG:3067","easting":385784.0,"northing":6672298.0}""";
         var coords = objectMapper.readValue(json, Coordinates.Epsg3067.class);

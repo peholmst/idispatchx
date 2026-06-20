@@ -1,8 +1,7 @@
 package net.pkhapps.idispatchx.cad.adapter.secondary.wal;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Serializes and deserializes {@link WalEntry} objects to/from bytes.
@@ -21,18 +20,18 @@ public interface DomainEventSerializer {
      *
      * @param entry the entry to serialize
      * @return the serialized bytes
-     * @throws IOException if serialization fails
+     * @throws tools.jackson.core.JacksonException if serialization fails
      */
-    byte[] serialize(WalEntry entry) throws IOException;
+    byte[] serialize(WalEntry entry);
 
     /**
      * Deserializes bytes (previously produced by {@link #serialize}) back to a WAL entry.
      *
      * @param data the raw bytes (no framing)
      * @return the deserialized entry
-     * @throws IOException if deserialization fails, including unknown event type
+     * @throws tools.jackson.core.JacksonException if deserialization fails, including unknown event type
      */
-    WalEntry deserialize(byte[] data) throws IOException;
+    WalEntry deserialize(byte[] data);
 
     /**
      * Returns the configured {@link ObjectMapper} used by this serializer.

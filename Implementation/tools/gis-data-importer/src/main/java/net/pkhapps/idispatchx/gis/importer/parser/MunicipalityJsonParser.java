@@ -1,8 +1,9 @@
 package net.pkhapps.idispatchx.gis.importer.parser;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import net.pkhapps.idispatchx.gis.importer.parser.model.MunicipalityEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,7 @@ import java.util.List;
 public final class MunicipalityJsonParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(MunicipalityJsonParser.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = JsonMapper.builder().build();
 
     private MunicipalityJsonParser() {
     }
@@ -35,7 +36,7 @@ public final class MunicipalityJsonParser {
      */
     public static List<MunicipalityEntry> parse(InputStream input) throws IOException {
         var entries = new ArrayList<MunicipalityEntry>();
-        try (var parser = MAPPER.getFactory().createParser(input)) {
+        try (var parser = MAPPER.tokenStreamFactory().createParser(input)) {
             navigateToCodesArray(parser);
             if (parser.currentToken() == JsonToken.START_ARRAY) {
                 while (parser.nextToken() != JsonToken.END_ARRAY) {
@@ -55,7 +56,7 @@ public final class MunicipalityJsonParser {
     private static void navigateToCodesArray(JsonParser parser) throws IOException {
         // Navigate to the top-level "codes" field
         while (parser.nextToken() != null) {
-            if (parser.currentToken() == JsonToken.FIELD_NAME && "codes".equals(parser.currentName())) {
+            if (parser.currentToken() == JsonToken.PROPERTY_NAME && "codes".equals(parser.currentName())) {
                 parser.nextToken(); // move to START_ARRAY
                 return;
             }
@@ -78,7 +79,7 @@ public final class MunicipalityJsonParser {
         String nameSme = null;
 
         while (parser.nextToken() != JsonToken.END_OBJECT) {
-            if (parser.currentToken() == JsonToken.FIELD_NAME) {
+            if (parser.currentToken() == JsonToken.PROPERTY_NAME) {
                 var fieldName = parser.currentName();
                 parser.nextToken();
                 switch (fieldName) {
@@ -87,7 +88,7 @@ public final class MunicipalityJsonParser {
                     case "prefLabel" -> {
                         if (parser.currentToken() == JsonToken.START_OBJECT) {
                             while (parser.nextToken() != JsonToken.END_OBJECT) {
-                                if (parser.currentToken() == JsonToken.FIELD_NAME) {
+                                if (parser.currentToken() == JsonToken.PROPERTY_NAME) {
                                     var lang = parser.currentName();
                                     parser.nextToken();
                                     switch (lang) {

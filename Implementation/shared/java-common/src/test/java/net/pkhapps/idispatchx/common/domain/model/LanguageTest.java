@@ -1,8 +1,9 @@
 package net.pkhapps.idispatchx.common.domain.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.exc.ValueInstantiationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LanguageTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = JsonMapper.builder().build();
 
     // === Construction Tests ===
 
@@ -168,31 +169,31 @@ class LanguageTest {
     // === Jackson Serialization Tests ===
 
     @Test
-    void jackson_serialize_correctJson() throws JsonProcessingException {
+    void jackson_serialize_correctJson() {
         var json = objectMapper.writeValueAsString(Language.of("fi"));
         assertEquals("\"fi\"", json);
     }
 
     @Test
-    void jackson_serializeUnspecified_correctJson() throws JsonProcessingException {
+    void jackson_serializeUnspecified_correctJson() {
         var json = objectMapper.writeValueAsString(Language.unspecified());
         assertEquals("\"\"", json);
     }
 
     @Test
-    void jackson_deserialize_correctObject() throws JsonProcessingException {
+    void jackson_deserialize_correctObject() {
         var language = objectMapper.readValue("\"fi\"", Language.class);
         assertEquals(Language.of("fi"), language);
     }
 
     @Test
-    void jackson_deserializeUnspecified_correctObject() throws JsonProcessingException {
+    void jackson_deserializeUnspecified_correctObject() {
         var language = objectMapper.readValue("\"\"", Language.class);
         assertTrue(language.isUnspecified());
     }
 
     @Test
-    void jackson_roundTrip_preservesData() throws JsonProcessingException {
+    void jackson_roundTrip_preservesData() {
         var original = Language.of("sme");
         var json = objectMapper.writeValueAsString(original);
         var restored = objectMapper.readValue(json, Language.class);
