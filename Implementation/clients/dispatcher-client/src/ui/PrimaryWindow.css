@@ -1,6 +1,6 @@
 /*
  * Styles for <idispatch-primary-window>.
- * Column flex layout: header (fixed) → body (fills remaining space) → footer (fixed).
+ * Three-column flex layout: header (fixed) → body (fills remaining) → footer (fixed).
  */
 
 :host {
@@ -12,14 +12,73 @@
     box-sizing: border-box;
 }
 
-.window-body {
-    flex: 1;
-    background: var(--color-bg-base);
-    overflow: hidden;
-    /* Operational content (call/incident columns) will be placed here */
+/* ---- Connection banner ---- */
+
+.connection-banner {
+    padding: var(--space-xs) var(--space-md);
+    background: rgba(255, 152, 0, 0.18);
+    border-bottom: 1px solid rgba(255, 152, 0, 0.35);
+    color: #ffb74d;
+    font-size: var(--font-size-sm);
+    text-align: center;
 }
 
-/* ---- Layout preset buttons (header-right slot) ---- */
+.connection-banner.hidden {
+    display: none;
+}
+
+/* ---- Body — three-column flex ---- */
+
+.window-body {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    background: var(--color-bg-base);
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--color-bg-border);
+}
+
+.col:last-child {
+    border-right: none;
+}
+
+/* Default column proportions — equal thirds */
+.col-left   { flex: 1; min-width: 260px; }
+.col-centre { flex: 1; min-width: 260px; }
+.col-right  { flex: 1; min-width: 240px; }
+
+/* Right column stacks call list (top) and incident list (bottom) */
+.right-top {
+    flex: 1;
+    border-bottom: 1px solid var(--color-bg-border);
+    overflow: hidden;
+}
+
+.right-bottom {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ---- Incident placeholder (centre column empty state) ---- */
+
+.incident-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-base);
+    padding: var(--space-lg);
+    text-align: center;
+}
+
+/* ---- Layout preset buttons (header layout slot) ---- */
 
 .layout-btn {
     display: inline-flex;
@@ -48,4 +107,21 @@
 
 .layout-btn.active .layout-bar {
     background: #0078d4;
+}
+
+/* ---- Header action buttons ---- */
+
+.header-action-btn {
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.header-action-btn:hover {
+    background: var(--color-accent-hover);
 }

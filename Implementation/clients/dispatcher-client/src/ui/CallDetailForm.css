@@ -1,0 +1,204 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-base);
+}
+
+.form-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.form-body.hidden,
+.empty-state.hidden {
+    display: none;
+}
+
+.field-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-xs) var(--space-sm) 0;
+}
+
+.field-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.field-input,
+.field-textarea,
+.field-select {
+    background: var(--color-bg-base);
+    border: 1px solid var(--color-bg-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-size-base);
+    padding: 4px 6px;
+    outline: none;
+    resize: vertical;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.field-input:focus,
+.field-textarea:focus,
+.field-select:focus {
+    border-color: var(--color-accent);
+}
+
+.field-section {
+    padding: var(--space-xs) var(--space-sm) 0;
+}
+
+.outcome-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.outcome-readonly {
+    font-size: var(--font-size-base);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.outcome-readonly.hidden,
+.field-select.hidden {
+    display: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.status-msg {
+    margin: var(--space-xs) var(--space-sm);
+    padding: 4px var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.status-msg.hidden {
+    display: none;
+}
+
+.status-error {
+    background: rgba(244, 135, 113, 0.15);
+    color: #f48771;
+    border: 1px solid rgba(244, 135, 113, 0.3);
+}
+
+.status-info {
+    background: rgba(0, 120, 212, 0.12);
+    color: #4fc3f7;
+    border: 1px solid rgba(0, 120, 212, 0.3);
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    border-top: 1px solid var(--color-bg-border);
+    margin-top: auto;
+}
+
+.action-btn {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family-ui);
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.action-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: #fff;
+    border-color: var(--color-accent);
+}
+
+.btn-primary:not(:disabled):hover {
+    background: var(--color-accent-hover);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border-color: var(--color-bg-border);
+}
+
+.btn-secondary:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Incident picker overlay */
+
+.incident-picker-overlay {
+    position: absolute;
+    inset: var(--space-md);
+    background: var(--color-bg-surface);
+    border: 1px solid var(--color-bg-border);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    z-index: 200;
+    padding: var(--space-md);
+    gap: var(--space-sm);
+}
+
+.picker-title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.picker-list {
+    flex: 1;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.picker-item {
+    padding: 6px var(--space-sm);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    color: var(--color-text-primary);
+}
+
+.picker-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.picker-cancel {
+    align-self: flex-end;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--color-bg-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}

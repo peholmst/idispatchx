@@ -10,5 +10,6 @@
     "idleTimeoutSeconds": 900,
     "maxLifetimeSeconds": 28800
   },
-  "gisServerUrl": "http://localhost:8081"
+  "gisServerUrl": "http://localhost:8081",
+  "cadServerUrl": "http://localhost:8080"
 }
