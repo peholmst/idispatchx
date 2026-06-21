@@ -5,6 +5,7 @@ import net.pkhapps.idispatchx.cad.domain.model.shared.SequenceNumber;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalReplayException;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalWriteException;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +77,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
      * @param serializer the event serializer matching the configured {@link WalFormat}
      * @throws IOException if the WAL directory cannot be created or the last segment cannot be read
      */
+    @SuppressWarnings("NullAway") // currentSegmentPath and currentChannel are initialized via initialize() → openNewSegment()
     public FileBasedWalAdapter(WalConfig config, DomainEventSerializer serializer) throws IOException {
         this.config = config;
         this.serializer = serializer;
@@ -411,7 +413,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
         return total;
     }
 
-    private void handleReplayError(String message, Exception cause, Long seq) {
+    private void handleReplayError(String message, @Nullable Exception cause, @Nullable Long seq) {
         String fullMessage = seq != null ? message + " (seq=" + seq + ")" : message;
         if (config.corruptionMode() == CorruptionMode.STRICT) {
             if (cause != null) {

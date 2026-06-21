@@ -34,7 +34,7 @@ import java.util.function.Consumer;
  */
 public final class EventPublishingWalPort implements WalPort, DomainEventPublisher {
 
-    private record PendingBroadcast(DomainEvent event, @Nullable Map<String, Object> callSnapshot) {}
+    private record PendingBroadcast(DomainEvent event, @Nullable Map<String, @Nullable Object> callSnapshot) {}
 
     private final WalPort delegate;
     private final EventBroadcaster broadcaster;

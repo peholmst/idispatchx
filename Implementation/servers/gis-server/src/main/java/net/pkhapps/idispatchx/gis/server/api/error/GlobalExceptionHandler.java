@@ -58,35 +58,40 @@ public final class GlobalExceptionHandler {
     private static void handleValidationException(ValidationException e, Context ctx) {
         log.debug("Validation error on {}: {} - {}", ctx.path(), e.getErrorCode(), e.getMessage());
         ctx.status(400);
+        var msg = e.getMessage() != null ? e.getMessage() : "Validation error";
         if (e.getDetails() != null) {
-            ctx.json(ErrorResponse.of(e.getErrorCode(), e.getMessage(), e.getDetails(), ctx.path()));
+            ctx.json(ErrorResponse.of(e.getErrorCode(), msg, e.getDetails(), ctx.path()));
         } else {
-            ctx.json(ErrorResponse.of(e.getErrorCode(), e.getMessage(), ctx.path()));
+            ctx.json(ErrorResponse.of(e.getErrorCode(), msg, ctx.path()));
         }
     }
 
     private static void handleBadRequest(BadRequestResponse e, Context ctx) {
         log.debug("Bad request on {}: {}", ctx.path(), e.getMessage());
         ctx.status(400);
-        ctx.json(ErrorResponse.of(GisErrorCode.INVALID_PARAMETER, e.getMessage(), ctx.path()));
+        ctx.json(ErrorResponse.of(GisErrorCode.INVALID_PARAMETER,
+                e.getMessage() != null ? e.getMessage() : "Bad request", ctx.path()));
     }
 
     private static void handleUnauthorized(UnauthorizedResponse e, Context ctx) {
         log.debug("Unauthorized request on {}: {}", ctx.path(), e.getMessage());
         ctx.status(401);
-        ctx.json(ErrorResponse.of(CommonErrorCode.UNAUTHORIZED, e.getMessage(), ctx.path()));
+        ctx.json(ErrorResponse.of(CommonErrorCode.UNAUTHORIZED,
+                e.getMessage() != null ? e.getMessage() : "Unauthorized", ctx.path()));
     }
 
     private static void handleForbidden(ForbiddenResponse e, Context ctx) {
         log.debug("Forbidden request on {}: {}", ctx.path(), e.getMessage());
         ctx.status(403);
-        ctx.json(ErrorResponse.of(CommonErrorCode.FORBIDDEN, e.getMessage(), ctx.path()));
+        ctx.json(ErrorResponse.of(CommonErrorCode.FORBIDDEN,
+                e.getMessage() != null ? e.getMessage() : "Forbidden", ctx.path()));
     }
 
     private static void handleNotFound(NotFoundResponse e, Context ctx) {
         log.debug("Not found on {}: {}", ctx.path(), e.getMessage());
         ctx.status(404);
-        ctx.json(ErrorResponse.of(GisErrorCode.LAYER_NOT_FOUND, e.getMessage(), ctx.path()));
+        ctx.json(ErrorResponse.of(GisErrorCode.LAYER_NOT_FOUND,
+                e.getMessage() != null ? e.getMessage() : "Not found", ctx.path()));
     }
 
     private static void handleDatabaseUnavailable(DatabaseUnavailableException e, Context ctx) {
@@ -98,7 +103,8 @@ public final class GlobalExceptionHandler {
     private static void handleHttpResponseException(HttpResponseException e, Context ctx) {
         log.debug("HTTP error {} on {}: {}", e.getStatus(), ctx.path(), e.getMessage());
         ctx.status(e.getStatus());
-        ctx.json(ErrorResponse.of(CommonErrorCode.INTERNAL_ERROR, e.getMessage(), ctx.path()));
+        ctx.json(ErrorResponse.of(CommonErrorCode.INTERNAL_ERROR,
+                e.getMessage() != null ? e.getMessage() : "Internal error", ctx.path()));
     }
 
     private static void handleUnexpected(Exception e, Context ctx) {

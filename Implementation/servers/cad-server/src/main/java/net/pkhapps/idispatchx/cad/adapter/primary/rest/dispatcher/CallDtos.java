@@ -79,7 +79,7 @@ public final class CallDtos {
         );
     }
 
-    static @Nullable CallOutcome parseOutcome(String value) {
+    static CallOutcome parseOutcome(String value) {
         return switch (value) {
             case "incident_created" -> CallOutcome.INCIDENT_CREATED;
             case "attached_to_incident" -> CallOutcome.ATTACHED_TO_INCIDENT;

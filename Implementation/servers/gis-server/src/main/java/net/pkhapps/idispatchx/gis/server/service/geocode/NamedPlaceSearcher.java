@@ -26,7 +26,7 @@ final class NamedPlaceSearcher {
                         new PlaceResult(
                                 r.name(),
                                 r.placeClass(),
-                                r.municipality(),
+                                Objects.requireNonNull(r.municipality()),
                                 r.coordinates()),
                         r.similarityScore()))
                 .toList();

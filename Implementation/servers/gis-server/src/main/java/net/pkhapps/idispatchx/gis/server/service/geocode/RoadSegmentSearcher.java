@@ -31,7 +31,7 @@ final class RoadSegmentSearcher {
                         new AddressResult(
                                 r.streetName(),
                                 r.number(),
-                                r.municipality(),
+                                Objects.requireNonNull(r.municipality()),
                                 r.coordinates(),
                                 AddressSource.ROAD_SEGMENT),
                         INTERPOLATED_SCORE))

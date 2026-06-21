@@ -42,6 +42,7 @@
         <jspecify.version>1.0.0</jspecify.version>
         <testcontainers.version>2.0.3</testcontainers.version>
         <archunit.version>1.3.0</archunit.version>
+        <nullability-maven-plugin.version>0.4.0</nullability-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -212,6 +213,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.5.4</version>
+                </plugin>
+                <plugin>
+                    <groupId>am.ik.maven</groupId>
+                    <artifactId>nullability-maven-plugin</artifactId>
+                    <version>${nullability-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

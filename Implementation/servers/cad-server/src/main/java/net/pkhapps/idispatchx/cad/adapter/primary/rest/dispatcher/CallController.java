@@ -27,6 +27,7 @@ import net.pkhapps.idispatchx.cad.domain.command.DetachCallFromIncidentCommand;
 import net.pkhapps.idispatchx.cad.domain.command.EndCallCommand;
 import net.pkhapps.idispatchx.cad.domain.command.SetCallOutcomeCommand;
 import net.pkhapps.idispatchx.cad.domain.command.UpdateCallDetailsCommand;
+import net.pkhapps.idispatchx.cad.domain.model.call.CallOutcome;
 import net.pkhapps.idispatchx.cad.domain.model.call.CallState;
 import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallerName;
@@ -198,9 +199,15 @@ public final class CallController {
             return;
         }
 
-        // Parse and validate outcome before dispatching anything so an invalid outcome
-        // does not leave a partial update (detail fields committed, outcome rejected).
-        var outcome = hasOutcomeFields ? CallDtos.parseOutcome(body.outcome()) : null;
+        // Parse and validate outcome before any dispatch so an invalid value does not leave
+        // detail fields committed while the outcome command is rejected.
+        @Nullable CallOutcome outcome = null;
+        if (hasOutcomeFields) {
+            var outcomeStr = body.outcome();
+            if (outcomeStr != null) {
+                outcome = CallDtos.parseOutcome(outcomeStr);
+            }
+        }
 
         if (hasDetailFields) {
             dispatcher.dispatch(updateCallDetailsHandler, new UpdateCallDetailsCommand(
@@ -215,7 +222,7 @@ public final class CallController {
             ));
         }
 
-        if (hasOutcomeFields) {
+        if (outcome != null) {
             dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
                     CommandIdExtractor.derive(commandId, "set-outcome"),
                     new UserId(claims.subject()),
@@ -254,8 +261,9 @@ public final class CallController {
         var body = ctx.bodyAsClass(CallDtos.EndCallRequest.class);
 
         // If outcome is supplied in body, set it before ending
-        if (body.outcome() != null) {
-            var outcome = CallDtos.parseOutcome(body.outcome());
+        var endCallOutcomeStr = body.outcome();
+        if (endCallOutcomeStr != null) {
+            var outcome = CallDtos.parseOutcome(endCallOutcomeStr);
             dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
                     CommandIdExtractor.derive(commandId, "pre-end-set-outcome"),
                     new UserId(claims.subject()),

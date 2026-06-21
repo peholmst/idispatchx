@@ -184,7 +184,8 @@ public final class FileBasedSnapshotAdapter implements SnapshotPort {
         public long sequenceNumber;
         public OperationalState state;
 
-        /** For Jackson deserialization. */
+        /** For Jackson deserialization. Fields are populated by Jackson after construction. */
+        @SuppressWarnings("NullAway")
         public SnapshotDocument() {
         }
 

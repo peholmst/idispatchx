@@ -62,7 +62,7 @@ final class TileCache {
      * @param col   the column index
      * @return the cached tile data, or null if not in the cache
      */
-    public synchronized @Nullable byte[] get(String layer, int zoom, int row, int col) {
+    public synchronized byte @Nullable [] get(String layer, int zoom, int row, int col) {
         var key = new CacheKey(layer, zoom, row, col);
         var data = cache.get(key);
         if (data != null) {
