@@ -114,7 +114,7 @@ describe('AppShell — token-refresh re-render guard', () => {
         const http = makeHttpClient();
 
         const shell = document.createElement(AppShell.TAG) as AppShell;
-        shell.initialize(authState as never, sessionManager as never, 'secondary', http as never, 'http://gis', 'http://cad');
+        shell.initialize(authState as never, sessionManager as never, 'secondary', http as never, http as never, 'http://gis', 'http://cad');
         container.appendChild(shell);
 
         // First authenticated event — window is rendered for the first time
@@ -137,7 +137,7 @@ describe('AppShell — token-refresh re-render guard', () => {
         const http = makeHttpClient();
 
         const shell = document.createElement(AppShell.TAG) as AppShell;
-        shell.initialize(authState as never, sessionManager as never, 'secondary', http as never, 'http://gis', 'http://cad');
+        shell.initialize(authState as never, sessionManager as never, 'secondary', http as never, http as never, 'http://gis', 'http://cad');
         container.appendChild(shell);
 
         authState.dispatchEvent(new AuthChangedEvent({ kind: 'authenticated', tokenSet: makeTokenSet() }));

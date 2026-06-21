@@ -103,6 +103,16 @@
     background: #4daafc;
 }
 
+.gis-error-banner {
+    padding: var(--space-xs) var(--space-md);
+    background: rgba(255, 152, 0, 0.18);
+    border-bottom: 1px solid rgba(255, 152, 0, 0.35);
+    color: #ffb74d;
+    font-size: var(--font-size-sm);
+    text-align: center;
+    flex-shrink: 0;
+}
+
 .ol-map-target {
     flex: 1;
     min-height: 0;

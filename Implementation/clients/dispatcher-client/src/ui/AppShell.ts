@@ -26,6 +26,7 @@ export class AppShell extends HTMLElement {
     #sessionManager: SessionManager | null = null;
     #windowType: WindowType = 'launcher';
     #http: HttpClient | null = null;
+    #gisHttp: HttpClient | null = null;
     #gisServerUrl = '';
     #cadServerUrl = '';
     #warningBanner: HTMLDivElement | null = null;
@@ -48,11 +49,12 @@ export class AppShell extends HTMLElement {
      * Injects dependencies after the element is constructed.
      * Called by main.ts before the element is connected to the DOM.
      */
-    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType, http: HttpClient, gisServerUrl: string, cadServerUrl: string): void {
+    initialize(authState: AuthState, sessionManager: SessionManager, windowType: WindowType, http: HttpClient, gisHttp: HttpClient, gisServerUrl: string, cadServerUrl: string): void {
         this.#authState = authState;
         this.#sessionManager = sessionManager;
         this.#windowType = windowType;
         this.#http = http;
+        this.#gisHttp = gisHttp;
         this.#gisServerUrl = gisServerUrl;
         this.#cadServerUrl = cadServerUrl;
     }
@@ -187,13 +189,13 @@ export class AppShell extends HTMLElement {
                     }
                     case 'primary': {
                         const primary = document.createElement(PrimaryWindow.TAG) as PrimaryWindow;
-                        primary.initialize(username, this.#cadServerUrl, this.#gisServerUrl, this.#http!, this.#authState!);
+                        primary.initialize(username, this.#cadServerUrl, this.#gisServerUrl, this.#http!, this.#gisHttp!, this.#authState!);
                         this.#shadow.appendChild(primary);
                         break;
                     }
                     case 'secondary': {
                         const secondary = document.createElement(SecondaryWindow.TAG) as SecondaryWindow;
-                        secondary.initialize(username, this.#gisServerUrl, this.#authState!, this.#http!);
+                        secondary.initialize(username, this.#gisServerUrl, this.#authState!, this.#gisHttp!);
                         this.#shadow.appendChild(secondary);
                         break;
                     }
