@@ -1,15 +1,21 @@
 package net.pkhapps.idispatchx.gis.importer.raster;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TileExtractorTest {
+
+    @TempDir
+    Path tempDir;
 
     /**
      * Creates a solid-color ARGB image of the given size.
@@ -133,5 +139,44 @@ class TileExtractorTest {
         var count = TileExtractor.extract(source, 14, bounds.west(), bounds.north(), 0.5, -0.5, tiles::add);
 
         assertEquals(tiles.size(), count);
+    }
+
+    // === Region reading extraction ===
+
+    @Test
+    void extract_imageReader_producesSameTilesAsBufferedImage() throws IOException {
+        var bounds = TileMatrixSet.tileBounds(14, 13364, 6035);
+        var source = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
+        var g = source.createGraphics();
+        g.setColor(Color.RED);
+        g.fillRect(0, 0, 256, 256);
+        g.setColor(Color.BLUE);
+        g.fillRect(256, 256, 256, 256);
+        g.dispose();
+
+        var pngPath = tempDir.resolve("source.png");
+        ImageIO.write(source, "png", pngPath.toFile());
+
+        var bufferedTiles = new ArrayList<TileExtractor.ExtractedTile>();
+        TileExtractor.extract(source, 14, bounds.west(), bounds.north(), 0.5, -0.5, bufferedTiles::add);
+
+        var readerTiles = new ArrayList<TileExtractor.ExtractedTile>();
+        try (var imageInput = ImageIO.createImageInputStream(pngPath.toFile())) {
+            var readers = ImageIO.getImageReaders(imageInput);
+            assertTrue(readers.hasNext());
+            var reader = readers.next();
+            try {
+                reader.setInput(imageInput, true, true);
+                TileExtractor.extract(reader, 0, 14, bounds.west(), bounds.north(), 0.5, -0.5, readerTiles::add);
+            } finally {
+                reader.dispose();
+            }
+        }
+
+        assertEquals(bufferedTiles.size(), readerTiles.size());
+        for (var i = 0; i < bufferedTiles.size(); i++) {
+            assertEquals(bufferedTiles.get(i).coordinate(), readerTiles.get(i).coordinate());
+            assertEquals(bufferedTiles.get(i).image().getRGB(128, 128), readerTiles.get(i).image().getRGB(128, 128));
+        }
     }
 }

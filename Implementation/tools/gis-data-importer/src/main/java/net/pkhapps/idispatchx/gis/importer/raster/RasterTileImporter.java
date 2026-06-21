@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,31 +62,37 @@ public final class RasterTileImporter {
             return 0;
         }
 
-        BufferedImage source;
-        try {
-            source = ImageIO.read(pngFile.toFile());
+        var imageIndex = 0;
+        int sourceWidth;
+        int sourceHeight;
+        try (var imageInput = ImageIO.createImageInputStream(pngFile.toFile())) {
+            if (imageInput == null) {
+                LOG.warn("Skipping {}: cannot open image input", pngFile.getFileName());
+                return 0;
+            }
+            var readers = ImageIO.getImageReaders(imageInput);
+            if (!readers.hasNext()) {
+                LOG.warn("Skipping {}: unsupported image format", pngFile.getFileName());
+                return 0;
+            }
+
+            var reader = readers.next();
+            try {
+                reader.setInput(imageInput, true, true);
+                sourceWidth = reader.getWidth(imageIndex);
+                sourceHeight = reader.getHeight(imageIndex);
+            } finally {
+                reader.dispose();
+            }
         } catch (IOException e) {
             LOG.warn("Skipping {}: cannot read image: {}", pngFile.getFileName(), e.getMessage());
             return 0;
         }
-        if (source == null) {
-            LOG.warn("Skipping {}: unsupported image format", pngFile.getFileName());
-            return 0;
-        }
-
-        // Convert indexed color to ARGB
-        if (source.getType() == BufferedImage.TYPE_BYTE_INDEXED) {
-            var converted = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            var g = converted.createGraphics();
-            g.drawImage(source, 0, 0, null);
-            g.dispose();
-            source = converted;
-        }
 
         var ulX = worldData.ulCornerX();
         var ulY = worldData.ulCornerY();
-        var lrX = ulX + source.getWidth() * worldData.pixelWidth();
-        var lrY = ulY + source.getHeight() * worldData.pixelHeight();
+        var lrX = ulX + sourceWidth * worldData.pixelWidth();
+        var lrY = ulY + sourceHeight * worldData.pixelHeight();
 
         LOG.info("Importing {}: zoom={}, pixelSize={}m, bounds=({}, {}) to ({}, {}), tiles={}x{}",
                 pngFile.getFileName(), zoom, worldData.pixelWidth(),
@@ -97,11 +102,27 @@ public final class RasterTileImporter {
 
         var start = System.currentTimeMillis();
         int tilesWritten;
-        try {
-            tilesWritten = TileExtractor.extract(source, zoom, ulX, ulY,
-                    worldData.pixelWidth(), worldData.pixelHeight(), tileWriter::write);
+        try (var imageInput = ImageIO.createImageInputStream(pngFile.toFile())) {
+            if (imageInput == null) {
+                LOG.warn("Skipping {}: cannot open image input", pngFile.getFileName());
+                return 0;
+            }
+            var readers = ImageIO.getImageReaders(imageInput);
+            if (!readers.hasNext()) {
+                LOG.warn("Skipping {}: unsupported image format", pngFile.getFileName());
+                return 0;
+            }
+
+            var reader = readers.next();
+            try {
+                reader.setInput(imageInput, true, true);
+                tilesWritten = TileExtractor.extract(reader, imageIndex, zoom, ulX, ulY,
+                        worldData.pixelWidth(), worldData.pixelHeight(), tileWriter::write);
+            } finally {
+                reader.dispose();
+            }
         } catch (IOException e) {
-            LOG.error("Error writing tiles for {}: {}", pngFile.getFileName(), e.getMessage());
+            LOG.error("Error reading or writing tiles for {}: {}", pngFile.getFileName(), e.getMessage());
             return 0;
         }
 

@@ -1,5 +1,7 @@
 package net.pkhapps.idispatchx.gis.importer.raster;
 
+import javax.imageio.ImageReader;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
@@ -46,6 +48,67 @@ public final class TileExtractor {
                               double pixelWidth, double pixelHeight, TileConsumer consumer) throws IOException {
         var srcWidth = source.getWidth();
         var srcHeight = source.getHeight();
+        return extract(zoom, ulX, ulY, pixelWidth, pixelHeight, srcWidth, srcHeight,
+                (clampedSrcX, clampedSrcY, clampedSrcEndX, clampedSrcEndY, destX, destY, destEndX, destEndY) -> {
+                    var tile = new BufferedImage(TileMatrixSet.TILE_SIZE, TileMatrixSet.TILE_SIZE,
+                            BufferedImage.TYPE_INT_ARGB);
+                    var g = tile.createGraphics();
+                    try {
+                        g.drawImage(source,
+                                destX, destY, destEndX, destEndY,
+                                clampedSrcX, clampedSrcY, clampedSrcEndX, clampedSrcEndY,
+                                null);
+                    } finally {
+                        g.dispose();
+                    }
+                    return tile;
+                }, consumer);
+    }
+
+    /**
+     * Extracts tiles from an image reader and passes each non-empty tile to the consumer.
+     * The reader is asked for only the source region needed for each output tile, which keeps
+     * peak heap usage bounded for large source rasters.
+     *
+     * @param reader      image reader positioned at the PNG input
+     * @param imageIndex  image index to read, usually 0
+     * @param zoom        the zoom level
+     * @param ulX         upper-left corner easting (edge of first pixel)
+     * @param ulY         upper-left corner northing (edge of first pixel)
+     * @param pixelWidth  pixel width in meters (positive)
+     * @param pixelHeight pixel height in meters (negative)
+     * @param consumer    consumer for non-empty extracted tiles
+     * @return number of tiles passed to the consumer
+     * @throws IOException if image reading or the consumer throws an IOException
+     */
+    public static int extract(ImageReader reader, int imageIndex, int zoom, double ulX, double ulY,
+                              double pixelWidth, double pixelHeight, TileConsumer consumer) throws IOException {
+        var srcWidth = reader.getWidth(imageIndex);
+        var srcHeight = reader.getHeight(imageIndex);
+        return extract(zoom, ulX, ulY, pixelWidth, pixelHeight, srcWidth, srcHeight,
+                (clampedSrcX, clampedSrcY, clampedSrcEndX, clampedSrcEndY, destX, destY, destEndX, destEndY) -> {
+                    var param = reader.getDefaultReadParam();
+                    var width = clampedSrcEndX - clampedSrcX;
+                    var height = clampedSrcEndY - clampedSrcY;
+                    param.setSourceRegion(new Rectangle(clampedSrcX, clampedSrcY, width, height));
+                    var region = reader.read(imageIndex, param);
+
+                    var tile = new BufferedImage(TileMatrixSet.TILE_SIZE, TileMatrixSet.TILE_SIZE,
+                            BufferedImage.TYPE_INT_ARGB);
+                    var g = tile.createGraphics();
+                    try {
+                        g.drawImage(region, destX, destY, destEndX, destEndY, 0, 0, width, height, null);
+                    } finally {
+                        g.dispose();
+                        region.flush();
+                    }
+                    return tile;
+                }, consumer);
+    }
+
+    private static int extract(int zoom, double ulX, double ulY, double pixelWidth, double pixelHeight,
+                               int srcWidth, int srcHeight, TileRenderer tileRenderer,
+                               TileConsumer consumer) throws IOException {
         var lrX = ulX + srcWidth * pixelWidth;
         var lrY = ulY + srcHeight * pixelHeight; // pixelHeight is negative, so lrY < ulY
         var absPixelHeight = Math.abs(pixelHeight);
@@ -77,32 +140,30 @@ public final class TileExtractor {
                     continue;
                 }
 
-                // Create 256x256 transparent ARGB tile
-                var tile = new BufferedImage(TileMatrixSet.TILE_SIZE, TileMatrixSet.TILE_SIZE,
-                        BufferedImage.TYPE_INT_ARGB);
-                var g = tile.createGraphics();
-                try {
-                    // Compute destination pixel positions on the tile
-                    var destX = (int) Math.round((clampedSrcX - srcX) * pixelWidth / pixelWidth);
-                    var destY = (int) Math.round((clampedSrcY - srcY) * absPixelHeight / absPixelHeight);
-                    var destEndX = destX + (clampedSrcEndX - clampedSrcX);
-                    var destEndY = destY + (clampedSrcEndY - clampedSrcY);
+                // Compute destination pixel positions on the tile
+                var destX = (int) Math.round((clampedSrcX - srcX) * pixelWidth / pixelWidth);
+                var destY = (int) Math.round((clampedSrcY - srcY) * absPixelHeight / absPixelHeight);
+                var destEndX = destX + (clampedSrcEndX - clampedSrcX);
+                var destEndY = destY + (clampedSrcEndY - clampedSrcY);
 
-                    g.drawImage(source,
-                            destX, destY, destEndX, destEndY,
-                            clampedSrcX, clampedSrcY, clampedSrcEndX, clampedSrcEndY,
-                            null);
-                } finally {
-                    g.dispose();
-                }
+                var tile = tileRenderer.render(clampedSrcX, clampedSrcY, clampedSrcEndX, clampedSrcEndY,
+                        destX, destY, destEndX, destEndY);
 
                 if (!isFullyTransparent(tile)) {
                     consumer.accept(new ExtractedTile(new TileMatrixSet.TileCoordinate(zoom, row, col), tile));
                     count++;
+                } else {
+                    tile.flush();
                 }
             }
         }
         return count;
+    }
+
+    @FunctionalInterface
+    private interface TileRenderer {
+        BufferedImage render(int clampedSrcX, int clampedSrcY, int clampedSrcEndX, int clampedSrcEndY,
+                             int destX, int destY, int destEndX, int destEndY) throws IOException;
     }
 
     private static boolean isFullyTransparent(BufferedImage image) {
