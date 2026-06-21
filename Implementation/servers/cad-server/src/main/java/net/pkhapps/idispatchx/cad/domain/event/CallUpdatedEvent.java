@@ -19,6 +19,12 @@ import java.util.Objects;
  * <p>
  * {@code incidentId} is set when this update links the call to an incident
  * (e.g. in {@code CreateIncidentFromCallCommandHandler}); null for ordinary field updates.
+ * <p>
+ * The {@code clearXxx} flags signal an explicit field clear. When {@code true}, the corresponding
+ * field is set to {@code null} during replay even if the field value is {@code null} in the event
+ * (which is otherwise used to mean "field not changed by this event"). {@code null} clear flags
+ * (absent in serialized form) are treated as {@code false} for backward compatibility with
+ * older WAL entries.
  */
 public record CallUpdatedEvent(
         EventId eventId,
@@ -32,7 +38,11 @@ public record CallUpdatedEvent(
         @Nullable Description description,
         @Nullable CallOutcome outcome,
         @Nullable Description outcomeRationale,
-        @Nullable IncidentId incidentId
+        @Nullable IncidentId incidentId,
+        @Nullable Boolean clearCallerName,
+        @Nullable Boolean clearCallerPhoneNumber,
+        @Nullable Boolean clearLocation,
+        @Nullable Boolean clearDescription
 ) implements DomainEvent {
 
     public CallUpdatedEvent {

@@ -50,7 +50,8 @@ public class SetCallOutcomeCommandHandler extends CommandHandler<SetCallOutcomeC
                 EventId.generate(), now, command.commandId(), command.userId(),
                 orig.callId(), orig.callerName(), orig.callerPhoneNumber(),
                 orig.location(), orig.description(), orig.outcome(),
-                orig.outcomeRationale(), orig.incidentId());
+                orig.outcomeRationale(), orig.incidentId(),
+                null, null, null, null);
 
         return new PendingMutation<>(event, pending.applyMutation());
     }

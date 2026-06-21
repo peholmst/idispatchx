@@ -268,7 +268,10 @@ export class CallDetailForm extends HTMLElement {
 
         this.#outcomeSelect.addEventListener('change', () => {
             const outcome = (this.#outcomeSelect.value as CallOutcome) || null;
-            this.#scheduleSave({ outcome });
+            // Clearing the outcome is not supported — only schedule a save when a value is selected.
+            if (outcome !== null) {
+                this.#scheduleSave({ outcome });
+            }
             this.#toggleRationaleField(outcome);
         });
 
@@ -283,6 +286,10 @@ export class CallDetailForm extends HTMLElement {
 
         this.#locationEntry.addEventListener(LocationChangedEvent.TYPE, () => {
             const loc = this.#locationEntry.value;
+            // null from LocationEntry can mean intentional clear (all fields empty) OR invalid/
+            // incomplete input. Only schedule a clear when the form is genuinely blank; skip
+            // invalid states so transient editing does not overwrite a saved location.
+            if (loc === null && !this.#locationEntry.isBlank) return;
             this.#scheduleSave({ location: loc });
 
             const coords = loc?.coordinates ?? null;
@@ -304,15 +311,14 @@ export class CallDetailForm extends HTMLElement {
         if (!this.#currentCall || !this.#cadRest || Object.keys(this.#pendingUpdate).length === 0) return;
         const update = { ...this.#pendingUpdate };
         this.#pendingUpdate = {};
-        // The server treats null/undefined the same as an absent field (null = skip).
-        // Strip them so we never send a no-op PATCH and so callers can distinguish
-        // "nothing to save" from "save failed".
-        const nonNullUpdate = Object.fromEntries(
-            Object.entries(update).filter(([, v]) => v !== null && v !== undefined)
+        // Strip only undefined (absent fields). null values represent explicit clears and must
+        // be included in the PATCH payload so the server can clear the field.
+        const filteredUpdate = Object.fromEntries(
+            Object.entries(update).filter(([, v]) => v !== undefined)
         );
-        if (Object.keys(nonNullUpdate).length === 0) return;
+        if (Object.keys(filteredUpdate).length === 0) return;
         try {
-            await this.#cadRest.updateCall(this.#currentCall.callId, nonNullUpdate as UpdateCallParams);
+            await this.#cadRest.updateCall(this.#currentCall.callId, filteredUpdate as UpdateCallParams);
         } catch (err) {
             console.error('[CallDetailForm] Auto-save failed:', err);
             Object.assign(this.#pendingUpdate, update); // restore for retry

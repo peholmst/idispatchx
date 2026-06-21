@@ -41,6 +41,7 @@ import net.pkhapps.idispatchx.common.auth.IPAddress;
 import net.pkhapps.idispatchx.common.auth.Role;
 import net.pkhapps.idispatchx.common.auth.UserId;
 import org.jspecify.annotations.Nullable;
+import tools.jackson.databind.JsonNode;
 
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -176,17 +177,27 @@ public final class CallController {
         var commandId = CommandIdExtractor.extract(ctx);
         var claims = AuthContext.requireClaims(ctx);
         var callId = new CallId(ctx.pathParam("callId"));
+
+        // Parse as JsonNode to distinguish absent fields from explicit-null (clear) fields
+        var jsonBody = ctx.bodyAsClass(JsonNode.class);
         var body = ctx.bodyAsClass(CallDtos.UpdateCallDetailsRequest.class);
 
-        // outcomeRationale without outcome cannot be applied — reject rather than silently discard
-        if (body.outcomeRationale() != null && body.outcome() == null) {
+        boolean callerNamePresent = jsonBody.has("callerName");
+        boolean callerPhonePresent = jsonBody.has("callerPhoneNumber");
+        boolean locationPresent = jsonBody.has("location");
+        boolean descriptionPresent = jsonBody.has("description");
+        boolean outcomePresent = jsonBody.has("outcome");
+        boolean outcomeRationalePresent = jsonBody.has("outcomeRationale");
+
+        // outcomeRationale requires a non-null outcome — reject when outcome is absent or explicitly null
+        boolean outcomeIsAbsentOrNull = !outcomePresent || body.outcome() == null;
+        if (outcomeRationalePresent && body.outcomeRationale() != null && outcomeIsAbsentOrNull) {
             throw new ValidationException(CadErrorCode.VALIDATION_ERROR,
                     "outcomeRationale requires outcome to also be present");
         }
 
-        boolean hasDetailFields = body.callerName() != null || body.callerPhoneNumber() != null
-                || body.location() != null || body.description() != null;
-        boolean hasOutcomeFields = body.outcome() != null;
+        boolean hasDetailFields = callerNamePresent || callerPhonePresent || locationPresent || descriptionPresent;
+        boolean hasOutcomeFields = outcomePresent && body.outcome() != null;
 
         if (!hasDetailFields && !hasOutcomeFields) {
             // No-op body: validate the target so 404/409 are returned as documented
@@ -210,15 +221,24 @@ public final class CallController {
         }
 
         if (hasDetailFields) {
+            boolean clearCallerName = callerNamePresent && body.callerName() == null;
+            boolean clearCallerPhone = callerPhonePresent && body.callerPhoneNumber() == null;
+            boolean clearLocation = locationPresent && body.location() == null;
+            boolean clearDescription = descriptionPresent && body.description() == null;
+
             dispatcher.dispatch(updateCallDetailsHandler, new UpdateCallDetailsCommand(
                     commandId,
                     new UserId(claims.subject()),
                     extractIpAddress(ctx),
                     callId,
                     body.callerName() != null ? new CallerName(body.callerName()) : null,
+                    clearCallerName,
                     body.callerPhoneNumber() != null ? new PhoneNumber(body.callerPhoneNumber()) : null,
+                    clearCallerPhone,
                     body.location() != null ? body.location().toDomain() : null,
-                    body.description() != null ? new Description(body.description()) : null
+                    clearLocation,
+                    body.description() != null ? new Description(body.description()) : null,
+                    clearDescription
             ));
         }
 

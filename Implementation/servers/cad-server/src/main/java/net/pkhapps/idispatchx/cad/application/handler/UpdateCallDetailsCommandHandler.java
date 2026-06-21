@@ -15,7 +15,8 @@ import java.util.Objects;
 /**
  * Handles {@link UpdateCallDetailsCommand}: partially updates call detail fields.
  * <p>
- * Only non-null fields in the command are applied; existing values are preserved for nulls.
+ * Non-null field values replace existing values. A {@code null} value with {@code clearXxx = true}
+ * explicitly clears the field. A {@code null} value with {@code clearXxx = false} leaves the field unchanged.
  */
 public class UpdateCallDetailsCommandHandler extends CommandHandler<UpdateCallDetailsCommand, Void> {
 
@@ -46,8 +47,10 @@ public class UpdateCallDetailsCommandHandler extends CommandHandler<UpdateCallDe
         var now = clock.now();
         var pending = call.prepareUpdate(
                 now,
-                command.callerName(), command.callerPhoneNumber(),
-                command.location(), command.description());
+                command.callerName(), command.clearCallerName(),
+                command.callerPhoneNumber(), command.clearCallerPhoneNumber(),
+                command.location(), command.clearLocation(),
+                command.description(), command.clearDescription());
 
         // Rebuild event with causedBy and causedByUser from the command
         var orig = pending.event();
@@ -55,7 +58,9 @@ public class UpdateCallDetailsCommandHandler extends CommandHandler<UpdateCallDe
                 EventId.generate(), now, command.commandId(), command.userId(),
                 orig.callId(), orig.callerName(), orig.callerPhoneNumber(),
                 orig.location(), orig.description(), orig.outcome(),
-                orig.outcomeRationale(), orig.incidentId());
+                orig.outcomeRationale(), orig.incidentId(),
+                orig.clearCallerName(), orig.clearCallerPhoneNumber(),
+                orig.clearLocation(), orig.clearDescription());
 
         return new PendingMutation<>(event, pending.applyMutation());
     }

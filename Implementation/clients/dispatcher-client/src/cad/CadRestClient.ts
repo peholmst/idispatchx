@@ -29,10 +29,10 @@ export interface CreateCallParams {
 }
 
 export interface UpdateCallParams {
-    callerName?: string;
-    callerPhoneNumber?: string;
-    location?: Location;
-    description?: string;
+    callerName?: string | null;
+    callerPhoneNumber?: string | null;
+    location?: Location | null;
+    description?: string | null;
     outcome?: CallOutcome;
     outcomeRationale?: string;
 }
