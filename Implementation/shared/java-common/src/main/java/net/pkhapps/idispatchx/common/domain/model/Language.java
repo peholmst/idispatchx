@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
  */
 public record Language(String code) {
 
-    private static final Language UNSPECIFIED = new Language("");
     private static final Pattern ISO_639_PATTERN = Pattern.compile("^[a-z]{2,3}$");
+    private static final Language UNSPECIFIED = new Language("");
 
     /**
      * Compact constructor that validates and normalizes the language code.

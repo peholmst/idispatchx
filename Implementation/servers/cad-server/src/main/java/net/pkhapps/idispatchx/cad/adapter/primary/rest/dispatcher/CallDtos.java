@@ -59,23 +59,33 @@ public final class CallDtos {
             @Nullable String incidentId
     ) {}
 
-    public record CallListResponse(List<CallResponse> calls) {}
+    public record CallListResponse(List<CallResponse> calls) {
+        public CallListResponse {
+            calls = List.copyOf(calls);
+        }
+    }
 
     // --- Conversion helpers ---
 
     static CallResponse fromDomain(Call call) {
+        var callerName = call.callerName();
+        var callerPhoneNumber = call.callerPhoneNumber();
+        var description = call.description();
+        var outcome = call.outcome();
+        var outcomeRationale = call.outcomeRationale();
+        var incidentId = call.incidentId();
         return new CallResponse(
                 call.id().value(),
                 call.state().name().toLowerCase(),
                 call.receivingDispatcher().value(),
                 call.callStarted(),
-                call.callerName() != null ? call.callerName().value() : null,
-                call.callerPhoneNumber() != null ? call.callerPhoneNumber().value() : null,
+                callerName != null ? callerName.value() : null,
+                callerPhoneNumber != null ? callerPhoneNumber.value() : null,
                 LocationDto.fromDomain(call.location()),
-                call.description() != null ? call.description().value() : null,
-                call.outcome() != null ? serializeOutcome(call.outcome()) : null,
-                call.outcomeRationale() != null ? call.outcomeRationale().value() : null,
-                call.incidentId() != null ? call.incidentId().value() : null
+                description != null ? description.value() : null,
+                outcome != null ? serializeOutcome(outcome) : null,
+                outcomeRationale != null ? outcomeRationale.value() : null,
+                incidentId != null ? incidentId.value() : null
         );
     }
 

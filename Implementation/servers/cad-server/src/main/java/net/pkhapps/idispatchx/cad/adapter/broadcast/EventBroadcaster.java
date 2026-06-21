@@ -157,13 +157,19 @@ public final class EventBroadcaster {
         map.put("state", call.state().name().toLowerCase());
         map.put("receivingDispatcher", call.receivingDispatcher().value());
         map.put("callStarted", call.callStarted());
-        map.put("callerName", call.callerName() != null ? call.callerName().value() : null);
-        map.put("callerPhoneNumber", call.callerPhoneNumber() != null ? call.callerPhoneNumber().value() : null);
+        var callerName = call.callerName();
+        var callerPhoneNumber = call.callerPhoneNumber();
+        var description = call.description();
+        var outcome = call.outcome();
+        var outcomeRationale = call.outcomeRationale();
+        var incidentId = call.incidentId();
+        map.put("callerName", callerName != null ? callerName.value() : null);
+        map.put("callerPhoneNumber", callerPhoneNumber != null ? callerPhoneNumber.value() : null);
         map.put("location", LocationDto.fromDomain(call.location()));
-        map.put("description", call.description() != null ? call.description().value() : null);
-        map.put("outcome", call.outcome() != null ? serializeOutcome(call.outcome()) : null);
-        map.put("outcomeRationale", call.outcomeRationale() != null ? call.outcomeRationale().value() : null);
-        map.put("incidentId", call.incidentId() != null ? call.incidentId().value() : null);
+        map.put("description", description != null ? description.value() : null);
+        map.put("outcome", outcome != null ? serializeOutcome(outcome) : null);
+        map.put("outcomeRationale", outcomeRationale != null ? outcomeRationale.value() : null);
+        map.put("incidentId", incidentId != null ? incidentId.value() : null);
         return map;
     }
 
@@ -188,10 +194,13 @@ public final class EventBroadcaster {
         map.put("incidentId", e.incidentId().value());
         map.put("state", "new");
         map.put("incidentCreated", e.timestamp());
-        map.put("incidentType", e.incidentType() != null ? e.incidentType().code() : null);
-        map.put("incidentPriority", e.incidentPriority() != null ? e.incidentPriority().name() : null);
+        var incidentType = e.incidentType();
+        var incidentPriority = e.incidentPriority();
+        var description = e.description();
+        map.put("incidentType", incidentType != null ? incidentType.code() : null);
+        map.put("incidentPriority", incidentPriority != null ? incidentPriority.name() : null);
         map.put("location", LocationDto.fromDomain(e.location()));
-        map.put("description", e.description() != null ? e.description().value() : null);
+        map.put("description", description != null ? description.value() : null);
         return map;
     }
 

@@ -238,7 +238,8 @@ public final class Main {
             var extracted = new ArrayList<Path>();
             var remaining = new ArrayList<Path>();
             for (var p : gmlPaths) {
-                var name = p.getFileName().toString().toLowerCase();
+                var fileName = p.getFileName();
+                var name = (fileName == null ? p.toString() : fileName.toString()).toLowerCase();
                 if (name.endsWith(".zip")) {
                     remaining.add(p); // will be processed below
                 } else {

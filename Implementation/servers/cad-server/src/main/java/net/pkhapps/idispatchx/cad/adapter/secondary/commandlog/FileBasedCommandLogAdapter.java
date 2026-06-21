@@ -105,7 +105,8 @@ public final class FileBasedCommandLogAdapter implements CommandLogPort, AutoClo
     }
 
     private static String formatEntry(CommandLogEntry entry) {
-        String ip = entry.ipAddress() != null ? entry.ipAddress().value() : "";
+        var ipAddress = entry.ipAddress();
+        String ip = ipAddress != null ? ipAddress.value() : "";
         return entry.timestamp().toString()
                 + "\t" + entry.commandId().value()
                 + "\t" + entry.userId().value()

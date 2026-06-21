@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static net.pkhapps.idispatchx.gis.database.jooq.tables.ImportLog.IMPORT_LOG;
@@ -50,9 +51,9 @@ public final class ImportCommand {
     private final NamedPlaceImporter namedPlaceImporter;
 
     public ImportCommand(DSLContext dsl, CoordinateTransformer transformer, boolean truncate, Set<FeatureType> featureFilter) {
-        this.dsl = dsl;
+        this.dsl = Objects.requireNonNull(dsl, "dsl must not be null");
         this.truncate = truncate;
-        this.featureFilter = featureFilter;
+        this.featureFilter = Set.copyOf(Objects.requireNonNull(featureFilter, "featureFilter must not be null"));
         this.municipalityImporter = new MunicipalityImporter(dsl, transformer);
         this.addressPointImporter = new AddressPointImporter(transformer);
         this.roadSegmentImporter = new RoadSegmentImporter(transformer);
@@ -63,12 +64,12 @@ public final class ImportCommand {
      * Pass 1: Import municipality names from JSON.
      */
     public void importMunicipalities(Path jsonFile) throws IOException {
-        LOG.info("Pass 1: Importing municipality names from {}", jsonFile.getFileName());
+        LOG.info("Pass 1: Importing municipality names from {}", displayName(jsonFile));
         var startedAt = OffsetDateTime.now();
         try (var input = new FileInputStream(jsonFile.toFile())) {
             var entries = MunicipalityJsonParser.parse(input);
             int count = municipalityImporter.importNames(entries);
-            logImport(dsl, jsonFile.getFileName().toString(), "municipality_names", count, startedAt);
+            logImport(dsl, displayName(jsonFile), "municipality_names", count, startedAt);
         }
     }
 
@@ -131,7 +132,7 @@ public final class ImportCommand {
                         }
                     }, EnumSet.of(FeatureType.KUNTA));
                 }
-                logImport(tx, file.getFileName().toString(), "kunta", counter[0], startedAt);
+                logImport(tx, displayName(file), "kunta", counter[0], startedAt);
             }
         }
 
@@ -191,7 +192,7 @@ public final class ImportCommand {
                 addressPointImporter.flush(tx);
                 namedPlaceImporter.flush(tx);
 
-                var fileName = file.getFileName().toString();
+                var fileName = displayName(file);
                 if (counters[0] > 0) logImport(tx, fileName, "tieviiva", counters[0], startedAt);
                 if (counters[1] > 0) logImport(tx, fileName, "osoitepiste", counters[1], startedAt);
                 if (counters[2] > 0) logImport(tx, fileName, "paikannimi", counters[2], startedAt);
@@ -210,5 +211,10 @@ public final class ImportCommand {
                 .set(IMPORT_LOG.STARTED_AT, startedAt)
                 .set(IMPORT_LOG.COMPLETED_AT, OffsetDateTime.now())
                 .execute();
+    }
+
+    private static String displayName(Path path) {
+        var fileName = path.getFileName();
+        return fileName == null ? path.toString() : fileName.toString();
     }
 }

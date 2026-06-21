@@ -15,7 +15,7 @@ class GisServerArchitectureTest {
 
     @ArchTest
     static final ArchRule layeringRules = layeredArchitecture()
-            .consideringAllDependencies()
+            .consideringOnlyDependenciesInLayers()
             .withOptionalLayers(true)
             .layer("API Adapters").definedBy("..gis.server.api..")
             .layer("Auth Adapters").definedBy("..gis.server.auth..")

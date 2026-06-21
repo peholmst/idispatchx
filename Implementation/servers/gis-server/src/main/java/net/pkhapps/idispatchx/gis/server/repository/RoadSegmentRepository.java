@@ -332,7 +332,7 @@ public final class RoadSegmentRepository {
         log.debug("Interpolating address: roadName='{}', number={}, municipality={}",
                 roadName, number, municipality);
 
-        boolean isOdd = (number % 2) == 1;
+        boolean isOdd = (number & 1) == 1;
 
         // Build address range condition based on odd/even parity
         Condition addressInRange;
@@ -591,11 +591,7 @@ public final class RoadSegmentRepository {
                 .from(rs1)
                 .join(rs2).on(intersects.and(differentSegments))
                 .leftJoin(MUNICIPALITY).on(rs1.MUNICIPALITY_CODE.eq(MUNICIPALITY.MUNICIPALITY_CODE))
-                .where(hasNames.and(nameMatches)
-                        .and(municipality != null
-                                ? rs1.MUNICIPALITY_CODE.eq(municipality.code())
-                                        .or(rs2.MUNICIPALITY_CODE.eq(municipality.code()))
-                                : DSL.trueCondition()))
+                .where(whereCondition)
                 .orderBy(maxSimilarity.desc())
                 .limit(limit)
                 .fetch();

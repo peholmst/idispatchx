@@ -41,7 +41,11 @@ public final class IncidentDtos {
             @Nullable LocationDto location,
             @Nullable String description,
             List<String> callIds
-    ) {}
+    ) {
+        public IncidentSummaryResponse {
+            callIds = List.copyOf(callIds);
+        }
+    }
 
     /** Full detail view returned by single-incident endpoint. */
     public record IncidentDetailResponse(
@@ -55,9 +59,18 @@ public final class IncidentDtos {
             @Nullable String description,
             List<String> callIds,
             List<LogEntryDto> logEntries
-    ) {}
+    ) {
+        public IncidentDetailResponse {
+            callIds = List.copyOf(callIds);
+            logEntries = List.copyOf(logEntries);
+        }
+    }
 
-    public record IncidentListResponse(List<IncidentSummaryResponse> incidents) {}
+    public record IncidentListResponse(List<IncidentSummaryResponse> incidents) {
+        public IncidentListResponse {
+            incidents = List.copyOf(incidents);
+        }
+    }
 
     public record LogEntryDto(
             String logEntryId,
@@ -66,7 +79,11 @@ public final class IncidentDtos {
             String entryType,
             @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable Map<String, Object> changeData,
             @JsonInclude(JsonInclude.Include.NON_NULL) @Nullable String description
-    ) {}
+    ) {
+        public LogEntryDto {
+            changeData = changeData == null ? null : Map.copyOf(changeData);
+        }
+    }
 
     // --- Conversion helpers ---
 
@@ -82,15 +99,18 @@ public final class IncidentDtos {
         var callIds = callRepository.findByIncidentId(incident.id())
                 .map(c -> c.id().value())
                 .toList();
+        var incidentType = incident.incidentType();
+        var incidentPriority = incident.incidentPriority();
+        var description = incident.description();
         return new IncidentSummaryResponse(
                 incident.id().value(),
                 incident.state().name().toLowerCase(),
                 incident.incidentCreated(),
                 null, // incidentEnded not yet implemented in domain
-                incident.incidentType() != null ? incident.incidentType().code() : null,
-                incident.incidentPriority() != null ? incident.incidentPriority().name() : null,
+                incidentType != null ? incidentType.code() : null,
+                incidentPriority != null ? incidentPriority.name() : null,
                 LocationDto.fromDomain(incident.location()),
-                incident.description() != null ? incident.description().value() : null,
+                description != null ? description.value() : null,
                 callIds
         );
     }
@@ -102,15 +122,18 @@ public final class IncidentDtos {
         var logEntries = incident.logEntries().stream()
                 .map(IncidentDtos::toLogEntryDto)
                 .toList();
+        var incidentType = incident.incidentType();
+        var incidentPriority = incident.incidentPriority();
+        var description = incident.description();
         return new IncidentDetailResponse(
                 incident.id().value(),
                 incident.state().name().toLowerCase(),
                 incident.incidentCreated(),
                 null, // incidentEnded not yet implemented in domain
-                incident.incidentType() != null ? incident.incidentType().code() : null,
-                incident.incidentPriority() != null ? incident.incidentPriority().name() : null,
+                incidentType != null ? incidentType.code() : null,
+                incidentPriority != null ? incidentPriority.name() : null,
                 LocationDto.fromDomain(incident.location()),
-                incident.description() != null ? incident.description().value() : null,
+                description != null ? description.value() : null,
                 callIds,
                 logEntries
         );

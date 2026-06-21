@@ -171,7 +171,8 @@ public final class RasterTileImporter {
      * Derives the world file path from a PNG file path (same base name, .pgw extension).
      */
     static Path deriveWorldFilePath(Path pngFile) {
-        var fileName = pngFile.getFileName().toString();
+        var pathFileName = pngFile.getFileName();
+        var fileName = pathFileName == null ? pngFile.toString() : pathFileName.toString();
         var dotIndex = fileName.lastIndexOf('.');
         var baseName = dotIndex >= 0 ? fileName.substring(0, dotIndex) : fileName;
         return pngFile.resolveSibling(baseName + ".pgw");

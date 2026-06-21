@@ -48,7 +48,10 @@ public final class TileWriter {
                 .resolve(String.valueOf(coord.row()))
                 .resolve(coord.col() + ".png");
 
-        Files.createDirectories(tilePath.getParent());
+        var parent = tilePath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
 
         BufferedImage output;
         if (Files.exists(tilePath)) {

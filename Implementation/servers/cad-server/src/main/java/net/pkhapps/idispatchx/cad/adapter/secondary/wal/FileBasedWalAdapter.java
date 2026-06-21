@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
  * </ul>
  *
  * <h3>Thread safety</h3>
- * Write methods ({@code write}, {@code writeBatch}) are {@code synchronized}.
+ * Write methods ({@code write}, {@code writeBatch}) synchronize on a private lock.
  * Read methods ({@code replay}, {@code replayFrom}) may run concurrently with writes
  * because they read immutable closed segments and the already-written portion of the
  * current segment sequentially.
@@ -68,6 +68,7 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
     private int currentSegmentEntries;
     private boolean needsRollover = false;
     private boolean closed = false;
+    private final Object writeLock = new Object();
 
     /**
      * Creates the adapter, scanning the WAL directory for existing segments and resuming
@@ -108,60 +109,64 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
     // -------------------------------------------------------------------------
 
     @Override
-    public synchronized SequenceNumber write(DomainEvent event) {
-        ensureOpen();
-        try {
-            maybeRolloverBeforeWrite();
-            long seq = currentSeq.incrementAndGet();
-            var entry = new WalEntry(new SequenceNumber(seq), event);
-            appendEntry(entry);
-            currentChannel.force(true);
-            currentSegmentEntries++;
-            checkRolloverAfterWrite();
-            return new SequenceNumber(seq);
-        } catch (Exception e) {
-            throw new WalWriteException("Failed to write WAL entry seq=" + currentSeq.get(), e);
+    public SequenceNumber write(DomainEvent event) {
+        synchronized (writeLock) {
+            ensureOpen();
+            try {
+                maybeRolloverBeforeWrite();
+                long seq = currentSeq.incrementAndGet();
+                var entry = new WalEntry(new SequenceNumber(seq), event);
+                appendEntry(entry);
+                currentChannel.force(true);
+                currentSegmentEntries++;
+                checkRolloverAfterWrite();
+                return new SequenceNumber(seq);
+            } catch (Exception e) {
+                throw new WalWriteException("Failed to write WAL entry seq=" + currentSeq.get(), e);
+            }
         }
     }
 
     @Override
-    public synchronized SequenceNumber writeBatch(List<? extends DomainEvent> events) {
-        ensureOpen();
-        if (events.isEmpty()) {
-            return currentSequence();
-        }
-
-        long firstSeq = currentSeq.get() + 1;
-        long lastSeq = firstSeq + events.size() - 1;
-        // positionBefore is captured after maybeRolloverBeforeWrite() so that, if a segment
-        // rollover occurs, the offset refers to the new segment rather than the closed one.
-        long positionBefore = -1;
-
-        try {
-            maybeRolloverBeforeWrite();
-            positionBefore = currentChannel.position();
-            for (DomainEvent event : events) {
-                long seq = currentSeq.incrementAndGet();
-                appendEntry(new WalEntry(new SequenceNumber(seq), event));
+    public SequenceNumber writeBatch(List<? extends DomainEvent> events) {
+        synchronized (writeLock) {
+            ensureOpen();
+            if (events.isEmpty()) {
+                return currentSequence();
             }
-            currentChannel.force(true);
-        } catch (Exception e) {
-            // Rollback: truncate the channel back to the pre-batch position.
-            currentSeq.set(firstSeq - 1);
-            if (positionBefore >= 0) {
-                try {
-                    currentChannel.truncate(positionBefore);
-                    currentChannel.position(positionBefore);
-                } catch (IOException truncateEx) {
-                    log.error("Failed to roll back WAL batch starting at seq={}", firstSeq, truncateEx);
+
+            long firstSeq = currentSeq.get() + 1;
+            long lastSeq = firstSeq + events.size() - 1;
+            // positionBefore is captured after maybeRolloverBeforeWrite() so that, if a segment
+            // rollover occurs, the offset refers to the new segment rather than the closed one.
+            long positionBefore = -1;
+
+            try {
+                maybeRolloverBeforeWrite();
+                positionBefore = currentChannel.position();
+                for (DomainEvent event : events) {
+                    long seq = currentSeq.incrementAndGet();
+                    appendEntry(new WalEntry(new SequenceNumber(seq), event));
                 }
+                currentChannel.force(true);
+            } catch (Exception e) {
+                // Rollback: truncate the channel back to the pre-batch position.
+                currentSeq.set(firstSeq - 1);
+                if (positionBefore >= 0) {
+                    try {
+                        currentChannel.truncate(positionBefore);
+                        currentChannel.position(positionBefore);
+                    } catch (IOException truncateEx) {
+                        log.error("Failed to roll back WAL batch starting at seq={}", firstSeq, truncateEx);
+                    }
+                }
+                throw new WalWriteException("Failed to write WAL batch starting at seq=" + firstSeq, e);
             }
-            throw new WalWriteException("Failed to write WAL batch starting at seq=" + firstSeq, e);
-        }
 
-        currentSegmentEntries += events.size();
-        checkRolloverAfterWrite();
-        return new SequenceNumber(lastSeq);
+            currentSegmentEntries += events.size();
+            checkRolloverAfterWrite();
+            return new SequenceNumber(lastSeq);
+        }
     }
 
     @Override
@@ -233,14 +238,16 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
     }
 
     @Override
-    public synchronized void close() throws IOException {
-        if (!closed) {
-            closed = true;
-            if (currentChannel != null && currentChannel.isOpen()) {
-                currentChannel.force(true);
-                currentChannel.close();
+    public void close() throws IOException {
+        synchronized (writeLock) {
+            if (!closed) {
+                closed = true;
+                if (currentChannel != null && currentChannel.isOpen()) {
+                    currentChannel.force(true);
+                    currentChannel.close();
+                }
+                log.info("WAL adapter closed (currentSeq={})", currentSeq.get());
             }
-            log.info("WAL adapter closed (currentSeq={})", currentSeq.get());
         }
     }
 
@@ -455,7 +462,8 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
     }
 
     static long extractFirstSeq(Path segmentPath) {
-        String name = segmentPath.getFileName().toString();
+        var fileName = segmentPath.getFileName();
+        String name = fileName == null ? segmentPath.toString() : fileName.toString();
         // Name format: wal-{16 digits}.ext
         int dashPos = name.indexOf('-');
         int dotPos = name.lastIndexOf('.');
@@ -473,7 +481,8 @@ public final class FileBasedWalAdapter implements WalPort, AutoCloseable {
     private static long countLines(Path path) throws IOException {
         long count = 0;
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-            while (reader.readLine() != null) {
+            String line;
+            while ((line = reader.readLine()) != null) {
                 count++;
             }
         }
