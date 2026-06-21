@@ -27,6 +27,7 @@ import net.pkhapps.idispatchx.cad.domain.command.DetachCallFromIncidentCommand;
 import net.pkhapps.idispatchx.cad.domain.command.EndCallCommand;
 import net.pkhapps.idispatchx.cad.domain.command.SetCallOutcomeCommand;
 import net.pkhapps.idispatchx.cad.domain.command.UpdateCallDetailsCommand;
+import net.pkhapps.idispatchx.cad.domain.model.call.CallOutcome;
 import net.pkhapps.idispatchx.cad.domain.model.call.CallState;
 import net.pkhapps.idispatchx.cad.domain.model.incident.IncidentId;
 import net.pkhapps.idispatchx.cad.domain.model.shared.CallerName;
@@ -198,6 +199,16 @@ public final class CallController {
             return;
         }
 
+        // Parse and validate outcome before any dispatch so an invalid value does not leave
+        // detail fields committed while the outcome command is rejected.
+        @Nullable CallOutcome outcome = null;
+        if (hasOutcomeFields) {
+            var outcomeStr = body.outcome();
+            if (outcomeStr != null) {
+                outcome = CallDtos.parseOutcome(outcomeStr);
+            }
+        }
+
         if (hasDetailFields) {
             dispatcher.dispatch(updateCallDetailsHandler, new UpdateCallDetailsCommand(
                     commandId,
@@ -211,21 +222,15 @@ public final class CallController {
             ));
         }
 
-        // Parse and validate outcome before dispatching so an invalid outcome does not leave
-        // a partial update (detail fields committed, outcome rejected).
-        if (hasOutcomeFields) {
-            var outcomeStr = body.outcome();
-            if (outcomeStr != null) {
-                var outcome = CallDtos.parseOutcome(outcomeStr);
-                dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
-                        CommandIdExtractor.derive(commandId, "set-outcome"),
-                        new UserId(claims.subject()),
-                        extractIpAddress(ctx),
-                        callId,
-                        outcome,
-                        body.outcomeRationale() != null ? new Description(body.outcomeRationale()) : null
-                ));
-            }
+        if (outcome != null) {
+            dispatcher.dispatch(setCallOutcomeHandler, new SetCallOutcomeCommand(
+                    CommandIdExtractor.derive(commandId, "set-outcome"),
+                    new UserId(claims.subject()),
+                    extractIpAddress(ctx),
+                    callId,
+                    outcome,
+                    body.outcomeRationale() != null ? new Description(body.outcomeRationale()) : null
+            ));
         }
 
         ctx.status(200);
