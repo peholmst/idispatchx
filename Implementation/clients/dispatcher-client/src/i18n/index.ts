@@ -26,6 +26,10 @@ export type TranslationKey =
     | 'primaryWindow.newIncident'
     | 'primaryWindow.empty'
     | 'footer.normalMode'
+    | 'footer.degradedMode'
+    | 'footer.degradedMode.noServer'
+    | 'footer.degradedMode.noArchive'
+    | 'footer.degradedMode.noGis'
     | 'login.signingIn'
     | 'login.sessionExpired'
     | 'login.idleTimeout'
@@ -136,6 +140,10 @@ const EN: Translations = {
     'primaryWindow.newCall':        'New Call',
     'primaryWindow.newIncident':    'New Incident',
     'footer.normalMode':            'Normal',
+    'footer.degradedMode':          'Degraded',
+    'footer.degradedMode.noServer': 'Degraded — CAD server unreachable',
+    'footer.degradedMode.noArchive':'Degraded — archive database unavailable',
+    'footer.degradedMode.noGis':    'Degraded — GIS server unavailable',
     // NOTE: the word "inactivity" in the idle-timeout string is load-bearing —
     // auth.spec.ts asserts that the message contains this word.
     'login.signingIn':              'Signing in\u2026',
@@ -244,6 +252,10 @@ const FI: Translations = {
     'primaryWindow.newCall':        'Uusi puhelu',
     'primaryWindow.newIncident':    'Uusi tehtävä',
     'footer.normalMode':            'Normaali',
+    'footer.degradedMode':          'Alennettu',
+    'footer.degradedMode.noServer': 'Alennettu — CAD-palvelin ei tavoitettavissa',
+    'footer.degradedMode.noArchive':'Alennettu — arkistotietokanta ei käytettävissä',
+    'footer.degradedMode.noGis':    'Alennettu — GIS-palvelin ei käytettävissä',
     'login.signingIn':              'Kirjaudutaan sisään\u2026',
     'login.sessionExpired':         'Sinut on kirjattu ulos.',
     'login.idleTimeout':            'Sinut kirjattiin ulos passiivisuuden vuoksi.',
@@ -350,6 +362,10 @@ const SV: Translations = {
     'primaryWindow.newCall':        'Nytt samtal',
     'primaryWindow.newIncident':    'Nytt uppdrag',
     'footer.normalMode':            'Normal',
+    'footer.degradedMode':          'Degraderat',
+    'footer.degradedMode.noServer': 'Degraderat — CAD-servern är inte nåbar',
+    'footer.degradedMode.noArchive':'Degraderat — arkivdatabasen är inte tillgänglig',
+    'footer.degradedMode.noGis':    'Degraderat — GIS-servern är inte tillgänglig',
     'login.signingIn':              'Loggar in\u2026',
     'login.sessionExpired':         'Du har loggats ut.',
     'login.idleTimeout':            'Du loggades ut på grund av inaktivitet.',

@@ -20,21 +20,23 @@ import java.util.Objects;
  *   <li>{@code CAD_CORS_ALLOWED_ORIGINS} - Comma-separated CORS origins (default: empty)</li>
  *   <li>{@code CAD_SNAPSHOT_INTERVAL_SECONDS} - Snapshot interval in seconds (default: 3600)</li>
  *   <li>{@code CAD_IDEMPOTENCY_RETENTION_HOURS} - Idempotency cache retention in hours (default: 24)</li>
+ *   <li>{@code CAD_ARCHIVE_HEALTH_CHECK_INTERVAL_SECONDS} - Archive health probe interval in seconds (default: 30)</li>
  *   <li>WAL settings via {@link WalConfig}: {@code CAD_WAL_*}</li>
  *   <li>Snapshot settings via {@link SnapshotConfig}: {@code CAD_SNAPSHOT_*}</li>
  *   <li>Command log settings via {@link CommandLogConfig}: {@code CAD_COMMAND_LOG_*}</li>
  *   <li>OIDC settings via {@link OidcConfig}: {@code CAD_OIDC_*}</li>
  * </ul>
  *
- * @param port                       the HTTP server port
- * @param contextPath                the URL context path prefix (empty or starts with {@code /})
- * @param corsAllowedOrigins         comma-separated CORS origins, or empty to disable CORS
- * @param walConfig                  WAL configuration
- * @param snapshotConfig             snapshot configuration
- * @param commandLogConfig           command audit log configuration
- * @param oidcConfig                 OIDC provider configuration
- * @param snapshotIntervalSeconds    how often to create a WAL snapshot (seconds)
- * @param idempotencyRetentionPeriod how long to retain processed command IDs for idempotency
+ * @param port                              the HTTP server port
+ * @param contextPath                       the URL context path prefix (empty or starts with {@code /})
+ * @param corsAllowedOrigins                comma-separated CORS origins, or empty to disable CORS
+ * @param walConfig                         WAL configuration
+ * @param snapshotConfig                    snapshot configuration
+ * @param commandLogConfig                  command audit log configuration
+ * @param oidcConfig                        OIDC provider configuration
+ * @param snapshotIntervalSeconds           how often to create a WAL snapshot (seconds)
+ * @param idempotencyRetentionPeriod        how long to retain processed command IDs for idempotency
+ * @param archiveHealthCheckIntervalSeconds how often to probe the archive backend (seconds)
  */
 public record CadServerConfig(
         int port,
@@ -45,18 +47,21 @@ public record CadServerConfig(
         CommandLogConfig commandLogConfig,
         OidcConfig oidcConfig,
         long snapshotIntervalSeconds,
-        Duration idempotencyRetentionPeriod
+        Duration idempotencyRetentionPeriod,
+        long archiveHealthCheckIntervalSeconds
 ) {
 
     public static final int DEFAULT_PORT = 8080;
     public static final long DEFAULT_SNAPSHOT_INTERVAL_SECONDS = 3600L;
     public static final int DEFAULT_IDEMPOTENCY_RETENTION_HOURS = 24;
+    public static final long DEFAULT_ARCHIVE_HEALTH_CHECK_INTERVAL_SECONDS = 30L;
 
     private static final String ENV_PORT = "CAD_SERVER_PORT";
     private static final String ENV_CONTEXT_PATH = "CAD_CONTEXT_PATH";
     private static final String ENV_CORS_ALLOWED_ORIGINS = "CAD_CORS_ALLOWED_ORIGINS";
     private static final String ENV_SNAPSHOT_INTERVAL_SECONDS = "CAD_SNAPSHOT_INTERVAL_SECONDS";
     private static final String ENV_IDEMPOTENCY_RETENTION_HOURS = "CAD_IDEMPOTENCY_RETENTION_HOURS";
+    private static final String ENV_ARCHIVE_HEALTH_CHECK_INTERVAL_SECONDS = "CAD_ARCHIVE_HEALTH_CHECK_INTERVAL_SECONDS";
 
     public CadServerConfig {
         if (port < 1 || port > 65535) {
@@ -82,6 +87,9 @@ public record CadServerConfig(
             throw new IllegalArgumentException("snapshotIntervalSeconds must be at least 1");
         }
         Objects.requireNonNull(idempotencyRetentionPeriod, "idempotencyRetentionPeriod must not be null");
+        if (archiveHealthCheckIntervalSeconds < 1) {
+            throw new IllegalArgumentException("archiveHealthCheckIntervalSeconds must be at least 1");
+        }
     }
 
     /**
@@ -99,6 +107,9 @@ public record CadServerConfig(
                 ConfigProperty.optionalInt(ENV_SNAPSHOT_INTERVAL_SECONDS, (int) DEFAULT_SNAPSHOT_INTERVAL_SECONDS));
         var idempotencyRetentionHours = loader.get(
                 ConfigProperty.optionalInt(ENV_IDEMPOTENCY_RETENTION_HOURS, DEFAULT_IDEMPOTENCY_RETENTION_HOURS));
+        var archiveHealthCheckIntervalSeconds = loader.get(
+                ConfigProperty.optionalInt(ENV_ARCHIVE_HEALTH_CHECK_INTERVAL_SECONDS,
+                        (int) DEFAULT_ARCHIVE_HEALTH_CHECK_INTERVAL_SECONDS));
 
         var walConfig = WalConfig.builder().load(loader);
         var snapshotConfig = SnapshotConfig.builder().load(loader);
@@ -122,7 +133,8 @@ public record CadServerConfig(
                 commandLogConfig,
                 oidcConfig,
                 snapshotIntervalSeconds,
-                Duration.ofHours(idempotencyRetentionHours)
+                Duration.ofHours(idempotencyRetentionHours),
+                archiveHealthCheckIntervalSeconds
         );
     }
 }

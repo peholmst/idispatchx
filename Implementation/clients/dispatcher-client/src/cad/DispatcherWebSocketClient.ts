@@ -9,6 +9,8 @@ import type {
     IncidentDetailsUpdatedPayload,
     IncidentStateChangedPayload,
     IncidentLogEntryAddedPayload,
+    ConnectedPayload,
+    SystemStatusChangedPayload,
 } from './types.ts';
 
 const INITIAL_RECONNECT_DELAY_MS = 1_000;
@@ -33,6 +35,7 @@ interface HandlerMap {
     'incident.details_updated': Handler<IncidentDetailsUpdatedPayload>[];
     'incident.state_changed': Handler<IncidentStateChangedPayload>[];
     'incident.log_entry_added': Handler<IncidentLogEntryAddedPayload>[];
+    'system.status_changed': Handler<SystemStatusChangedPayload>[];
 }
 
 export class DispatcherWebSocketClient {
@@ -55,8 +58,10 @@ export class DispatcherWebSocketClient {
         'incident.details_updated': [],
         'incident.state_changed': [],
         'incident.log_entry_added': [],
+        'system.status_changed': [],
     };
     #connectionHandlers: Handler<boolean>[] = [];
+    #connectedHandlers: Handler<ConnectedPayload>[] = [];
 
     constructor(cadServerUrl: string, authState: AuthState) {
         this.#wsUrl = cadServerUrl.replace(/^http/, 'ws') + '/api/v1/ws/dispatcher';
@@ -117,9 +122,18 @@ export class DispatcherWebSocketClient {
         this.#handlers['incident.log_entry_added'].push(handler);
     }
 
+    onSystemStatusChanged(handler: Handler<SystemStatusChangedPayload>): void {
+        this.#handlers['system.status_changed'].push(handler);
+    }
+
     /** Register a handler that receives `true` on connect and `false` on disconnect. */
     onConnectionChanged(handler: Handler<boolean>): void {
         this.#connectionHandlers.push(handler);
+    }
+
+    /** Register a handler called with the connected payload on each successful WebSocket handshake. */
+    onConnected(handler: Handler<ConnectedPayload>): void {
+        this.#connectedHandlers.push(handler);
     }
 
     #openConnection(): void {
@@ -166,7 +180,7 @@ export class DispatcherWebSocketClient {
         }
 
         if (msg.type === 'connected') {
-            // Server acknowledged connection — no additional action required
+            this.#notifyConnected(msg.payload as ConnectedPayload);
             return;
         }
 
@@ -192,6 +206,16 @@ export class DispatcherWebSocketClient {
                 h(connected);
             } catch (err) {
                 console.error('[DispatcherWebSocketClient] Connection handler threw:', err);
+            }
+        }
+    }
+
+    #notifyConnected(payload: ConnectedPayload): void {
+        for (const h of this.#connectedHandlers) {
+            try {
+                h(payload);
+            } catch (err) {
+                console.error('[DispatcherWebSocketClient] Connected handler threw:', err);
             }
         }
     }

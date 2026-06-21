@@ -5,7 +5,10 @@ import { CallList, CallSelectedEvent } from './CallList.ts';
 import { IncidentList } from './IncidentList.ts';
 import { CadRestClient } from '../cad/CadRestClient.ts';
 import { DispatcherWebSocketClient } from '../cad/DispatcherWebSocketClient.ts';
+import { OperationalStatusService } from '../cad/OperationalStatusService.ts';
 import { GeocodingClient } from '../gis/GeocodingClient.ts';
+import type { Geocoder } from '../gis/GeocodingClient.ts';
+import { GisStatusMonitor } from '../gis/GisStatusMonitor.ts';
 import type { HttpClient } from '../http/HttpClient.ts';
 import type { AuthState } from '../auth/AuthState.ts';
 import { t } from '../i18n/index.ts';
@@ -23,6 +26,7 @@ export class PrimaryWindow extends HTMLElement {
     #username = '';
     #cadRest: CadRestClient | null = null;
     #wsClient: DispatcherWebSocketClient | null = null;
+    #operationalStatus: OperationalStatusService | null = null;
 
     #callDetailForm: CallDetailForm | null = null;
     #callList: CallList | null = null;
@@ -48,12 +52,18 @@ export class PrimaryWindow extends HTMLElement {
         this.#wsClient = new DispatcherWebSocketClient(cadServerUrl, authState);
 
         const geocodingClient = new GeocodingClient(gisServerUrl, gisHttp);
+        const gisMonitor = new GisStatusMonitor(geocodingClient);
+        this.#stashedGeocodingClient = gisMonitor;
 
-        this.#stashedGeocodingClient = geocodingClient;
+        this.#operationalStatus = new OperationalStatusService();
+        this.#operationalStatus.attachWebSocketClient(this.#wsClient);
+        gisMonitor.onAvailabilityChanged(available => {
+            this.#operationalStatus?.notifyGisAvailability(available);
+        });
     }
 
     // Temporary stash between initialize() and connectedCallback()
-    #stashedGeocodingClient: GeocodingClient | null = null;
+    #stashedGeocodingClient: Geocoder | null = null;
 
     connectedCallback(): void {
         this.#registerOpenFlag();
@@ -138,6 +148,9 @@ export class PrimaryWindow extends HTMLElement {
         // Footer
         const footer = document.createElement(WindowFooter.TAG) as WindowFooter;
         footer.username = this.#username;
+        if (this.#operationalStatus) {
+            footer.operationalStatusService = this.#operationalStatus;
+        }
 
         this.#shadow.append(header, this.#connectionBanner, body, footer);
 

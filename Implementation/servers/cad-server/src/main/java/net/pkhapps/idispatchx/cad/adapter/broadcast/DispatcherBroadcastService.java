@@ -59,6 +59,12 @@ public class DispatcherBroadcastService {
         broadcast("incident.log_entry_added", sequenceNumber, timestamp, logEntryPayload);
     }
 
+    public void sendSystemStatusChanged(long sequenceNumber, Instant timestamp,
+                                        boolean cadArchiveAvailable) {
+        broadcast("system.status_changed", sequenceNumber, timestamp,
+                Map.of("cadArchiveAvailable", cadArchiveAvailable));
+    }
+
     private void broadcast(String type, long sequenceNumber, Instant timestamp, Object payload) {
         var envelope = new WsEnvelope(type, sequenceNumber, timestamp, payload);
         var sessions = sessionRegistry.getDispatcherSessions();

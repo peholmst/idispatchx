@@ -3,6 +3,7 @@ package net.pkhapps.idispatchx.cad.adapter.primary.websocket.dispatcher;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import io.javalin.router.JavalinDefaultRoutingApi;
+import net.pkhapps.idispatchx.cad.adapter.broadcast.ArchiveHealthMonitor;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;
 import net.pkhapps.idispatchx.cad.port.secondary.wal.WalPort;
@@ -27,10 +28,10 @@ import java.util.UUID;
  * The JWT is passed as a {@code ?token=} query parameter on the HTTP upgrade request.
  * <p>
  * On successful connect, a {@code connected} message is sent to the client with the
- * current WAL sequence number. The session is registered in {@link SessionRegistry}
- * — keyed by a generated connection ID and also indexed by the OIDC {@code sid} claim
- * so that back-channel logout can close active connections immediately.
- * On close or error, the session is unregistered.
+ * current WAL sequence number and system status. The session is registered in
+ * {@link SessionRegistry} — keyed by a generated connection ID and also indexed by
+ * the OIDC {@code sid} claim so that back-channel logout can close active connections
+ * immediately. On close or error, the session is unregistered.
  * <p>
  * Per ADR-0005: WebSocket sessions are not preserved across failover. On reconnect the client
  * must re-authenticate and re-fetch state via REST.
@@ -45,18 +46,21 @@ public final class DispatcherWebSocketHandler {
     private final SessionRegistry sessionRegistry;
     private final ObjectMapper objectMapper;
     private final WalPort walPort;
+    private final ArchiveHealthMonitor archiveHealthMonitor;
 
     public DispatcherWebSocketHandler(
             TokenValidator tokenValidator,
             SessionStore sessionStore,
             SessionRegistry sessionRegistry,
             ObjectMapper objectMapper,
-            WalPort walPort) {
+            WalPort walPort,
+            ArchiveHealthMonitor archiveHealthMonitor) {
         this.tokenValidator = Objects.requireNonNull(tokenValidator, "tokenValidator must not be null");
         this.sessionStore = Objects.requireNonNull(sessionStore, "sessionStore must not be null");
         this.sessionRegistry = Objects.requireNonNull(sessionRegistry, "sessionRegistry must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.walPort = Objects.requireNonNull(walPort, "walPort must not be null");
+        this.archiveHealthMonitor = Objects.requireNonNull(archiveHealthMonitor, "archiveHealthMonitor must not be null");
     }
 
     /**
@@ -113,7 +117,12 @@ public final class DispatcherWebSocketHandler {
                         "type", "connected",
                         "sequenceNumber", currentSeq,
                         "timestamp", Instant.now().toString(),
-                        "payload", Map.of("serverTime", Instant.now().toString())
+                        "payload", Map.of(
+                                "serverTime", Instant.now().toString(),
+                                "systemStatus", Map.of(
+                                        "cadArchiveAvailable", archiveHealthMonitor.isCadArchiveAvailable()
+                                )
+                        )
                 ));
             });
 

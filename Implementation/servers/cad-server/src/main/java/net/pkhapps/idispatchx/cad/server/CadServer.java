@@ -6,6 +6,7 @@ import tools.jackson.databind.json.JsonMapper;
 import io.javalin.openapi.plugin.OpenApiPlugin;
 import net.pkhapps.idispatchx.cad.adapter.auth.BackChannelLogoutHandler;
 import net.pkhapps.idispatchx.cad.adapter.auth.JwtAuthHandler;
+import net.pkhapps.idispatchx.cad.adapter.broadcast.ArchiveHealthMonitor;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.DispatcherBroadcastService;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.EventBroadcaster;
 import net.pkhapps.idispatchx.cad.adapter.broadcast.SessionRegistry;
@@ -101,6 +102,7 @@ public final class CadServer implements AutoCloseable {
     private final SessionStore sessionStore;
     private final Javalin javalin;
     private final ScheduledExecutorService snapshotScheduler;
+    private final ScheduledExecutorService healthCheckScheduler;
     private final ExecutorService broadcastExecutor;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -142,6 +144,16 @@ public final class CadServer implements AutoCloseable {
         // Wrap WAL adapter with event-publishing decorator
         this.walPort = new EventPublishingWalPort(walAdapter, eventBroadcaster, broadcastExecutor);
 
+        // Initialize archive health monitoring
+        var archivePort = new NoOpArchivePort();
+        var archiveHealthMonitor = new ArchiveHealthMonitor(archivePort, dispatcherBroadcastService, walPort);
+        this.healthCheckScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            var t = new Thread(r, "archive-health-checker");
+            t.setDaemon(true);
+            return t;
+        });
+        archiveHealthMonitor.start(healthCheckScheduler, config.archiveHealthCheckIntervalSeconds());
+
         // Initialize command infrastructure
         var lockManager = new EntityLockManager();
         ClockPort clock = Instant::now;
@@ -156,7 +168,7 @@ public final class CadServer implements AutoCloseable {
         var setCallOutcomeHandler = new SetCallOutcomeCommandHandler(
                 walPort, lockManager, callRepository, clock);
         var endCallHandler = new EndCallCommandHandler(
-                walPort, lockManager, callRepository, clock, new NoOpArchivePort());
+                walPort, lockManager, callRepository, clock, archivePort);
         var attachCallToIncidentHandler = new AttachCallToIncidentCommandHandler(
                 walPort, lockManager, callRepository, incidentRepository, clock);
         var detachCallFromIncidentHandler = new DetachCallFromIncidentCommandHandler(
@@ -209,7 +221,8 @@ public final class CadServer implements AutoCloseable {
                 sessionStore,
                 sessionRegistry,
                 createObjectMapper(),
-                walPort
+                walPort,
+                archiveHealthMonitor
         ).registerRoutes(javalin.unsafe.routes, contextPath);
 
         backChannelLogoutHandler.registerRoutes(javalin.unsafe.routes, contextPath);
@@ -249,6 +262,7 @@ public final class CadServer implements AutoCloseable {
         if (running.compareAndSet(true, false)) {
             log.info("Stopping CAD Server...");
             snapshotScheduler.shutdown();
+            healthCheckScheduler.shutdown();
             javalin.stop();
             broadcastExecutor.shutdown();
             sessionStore.close();
