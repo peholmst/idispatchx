@@ -12,7 +12,7 @@ import java.util.Objects;
  * used by the global exception handler to produce a standardized
  * {@link ErrorResponse} with HTTP 400 status.
  */
-public class ValidationException extends RuntimeException {
+public final class ValidationException extends RuntimeException {
 
     private final String errorCode;
     private final @Nullable Map<String, Object> details;
@@ -37,7 +37,7 @@ public class ValidationException extends RuntimeException {
     public ValidationException(String errorCode, String message, @Nullable Map<String, Object> details) {
         super(message);
         this.errorCode = Objects.requireNonNull(errorCode, "errorCode must not be null");
-        this.details = details;
+        this.details = details == null ? null : Map.copyOf(details);
     }
 
     /**

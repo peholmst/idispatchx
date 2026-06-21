@@ -46,4 +46,20 @@ public record TieviivaFeature(
         @Nullable String kuntatunnus,
         double[][] lineCoordinates
 ) {
+    public TieviivaFeature {
+        lineCoordinates = copy(lineCoordinates);
+    }
+
+    @Override
+    public double[][] lineCoordinates() {
+        return copy(lineCoordinates);
+    }
+
+    private static double[][] copy(double[][] coordinates) {
+        var copied = new double[coordinates.length][];
+        for (int i = 0; i < coordinates.length; i++) {
+            copied[i] = coordinates[i].clone();
+        }
+        return copied;
+    }
 }

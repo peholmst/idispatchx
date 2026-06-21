@@ -35,6 +35,14 @@ public final class TileService {
          * @param data the raw PNG byte data
          */
         record PreRendered(byte[] data) implements TileResult {
+            public PreRendered {
+                data = data.clone();
+            }
+
+            @Override
+            public byte[] data() {
+                return data.clone();
+            }
         }
 
         /**
@@ -43,6 +51,14 @@ public final class TileService {
          * @param data the raw PNG byte data
          */
         record Resampled(byte[] data) implements TileResult {
+            public Resampled {
+                data = data.clone();
+            }
+
+            @Override
+            public byte[] data() {
+                return data.clone();
+            }
         }
     }
 

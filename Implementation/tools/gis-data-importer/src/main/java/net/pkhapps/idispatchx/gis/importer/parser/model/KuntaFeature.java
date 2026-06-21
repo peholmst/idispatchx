@@ -20,4 +20,20 @@ public record KuntaFeature(
         String kuntatunnus,
         double[][] polygonCoordinates
 ) {
+    public KuntaFeature {
+        polygonCoordinates = copy(polygonCoordinates);
+    }
+
+    @Override
+    public double[][] polygonCoordinates() {
+        return copy(polygonCoordinates);
+    }
+
+    private static double[][] copy(double[][] coordinates) {
+        var copied = new double[coordinates.length][];
+        for (int i = 0; i < coordinates.length; i++) {
+            copied[i] = coordinates[i].clone();
+        }
+        return copied;
+    }
 }

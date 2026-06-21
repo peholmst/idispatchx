@@ -69,13 +69,14 @@ public final class RoadSegmentImporter {
         for (var feature : batch) {
             var coords = transformer.transformLineString(feature.lineCoordinates());
             var geometry = stGeomFromText(lineStringWkt(coords), 4326);
+            var administrativeClass = feature.hallinnollinenLuokka();
+            Short administrativeClassValue = administrativeClass == null ? null : administrativeClass.shortValue();
 
             tx.insertInto(ROAD_SEGMENT)
                     .set(ROAD_SEGMENT.ID, feature.gid())
                     .set(ROAD_SEGMENT.ROAD_CLASS, feature.kohdeluokka())
                     .set(ROAD_SEGMENT.SURFACE_TYPE, (short) feature.paallyste())
-                    .set(ROAD_SEGMENT.ADMINISTRATIVE_CLASS,
-                            feature.hallinnollinenLuokka() != null ? feature.hallinnollinenLuokka().shortValue() : null)
+                    .set(ROAD_SEGMENT.ADMINISTRATIVE_CLASS, administrativeClassValue)
                     .set(ROAD_SEGMENT.ONE_WAY, (short) feature.yksisuuntaisuus())
                     .set(ROAD_SEGMENT.NAME_FI, feature.nameFi())
                     .set(ROAD_SEGMENT.NAME_SV, feature.nameSv())
@@ -92,8 +93,7 @@ public final class RoadSegmentImporter {
                     .doUpdate()
                     .set(ROAD_SEGMENT.ROAD_CLASS, feature.kohdeluokka())
                     .set(ROAD_SEGMENT.SURFACE_TYPE, (short) feature.paallyste())
-                    .set(ROAD_SEGMENT.ADMINISTRATIVE_CLASS,
-                            feature.hallinnollinenLuokka() != null ? feature.hallinnollinenLuokka().shortValue() : null)
+                    .set(ROAD_SEGMENT.ADMINISTRATIVE_CLASS, administrativeClassValue)
                     .set(ROAD_SEGMENT.ONE_WAY, (short) feature.yksisuuntaisuus())
                     .set(ROAD_SEGMENT.NAME_FI, feature.nameFi())
                     .set(ROAD_SEGMENT.NAME_SV, feature.nameSv())

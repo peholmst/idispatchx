@@ -48,7 +48,7 @@ final class TileCache {
         this.cache = new LinkedHashMap<>(maxSize, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<CacheKey, byte[]> eldest) {
-                return size() > maxSize;
+                return super.size() > maxSize;
             }
         };
     }
@@ -67,6 +67,7 @@ final class TileCache {
         var data = cache.get(key);
         if (data != null) {
             hits++;
+            data = data.clone();
         } else {
             misses++;
         }
@@ -83,7 +84,7 @@ final class TileCache {
      * @param data  the tile data to cache
      */
     public synchronized void put(String layer, int zoom, int row, int col, byte[] data) {
-        cache.put(new CacheKey(layer, zoom, row, col), data);
+        cache.put(new CacheKey(layer, zoom, row, col), data.clone());
     }
 
     /**

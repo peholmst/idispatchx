@@ -46,8 +46,9 @@ public final class SessionRegistry {
      */
     public void unregisterDispatcherSession(String sessionId) {
         var session = dispatcherSessions.remove(sessionId);
-        if (session != null && session.oidcSessionId() != null) {
-            var connectionIds = oidcSessionIndex.get(session.oidcSessionId());
+        if (session != null) {
+            var oidcSessionId = session.oidcSessionId();
+            var connectionIds = oidcSessionId == null ? null : oidcSessionIndex.get(oidcSessionId);
             if (connectionIds != null) {
                 connectionIds.remove(sessionId);
             }

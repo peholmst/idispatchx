@@ -29,6 +29,22 @@ public final class TileExtractor {
      * @param image      the 256x256 ARGB tile image
      */
     public record ExtractedTile(TileMatrixSet.TileCoordinate coordinate, BufferedImage image) {
+        public ExtractedTile {
+            image = copy(image);
+        }
+
+        @Override
+        public BufferedImage image() {
+            return copy(image);
+        }
+
+        private static BufferedImage copy(BufferedImage image) {
+            return new BufferedImage(
+                    image.getColorModel(),
+                    image.copyData(null),
+                    image.isAlphaPremultiplied(),
+                    null);
+        }
     }
 
     /**

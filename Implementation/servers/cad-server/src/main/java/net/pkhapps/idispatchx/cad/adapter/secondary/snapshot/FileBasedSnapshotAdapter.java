@@ -166,7 +166,8 @@ public final class FileBasedSnapshotAdapter implements SnapshotPort {
     }
 
     static long extractSeq(Path path) {
-        String name = path.getFileName().toString();
+        var fileName = path.getFileName();
+        String name = fileName == null ? path.toString() : fileName.toString();
         int dashPos = name.indexOf('-');
         int dotPos = name.lastIndexOf('.');
         return Long.parseLong(name.substring(dashPos + 1, dotPos));

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- jOOQ-generated metadata classes inherit equality behavior from jOOQ base types. -->
+    <Match>
+        <Class name="~net\.pkhapps\.idispatchx\.gis\.database\.jooq\..*"/>
+        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS"/>
+    </Match>
+
+    <!-- Constructors use fail-fast null validation; none of these classes expose finalizers. -->
+    <Match>
+        <Class name="~net\.pkhapps\.idispatchx\.cad\..*"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <!-- EntityLockManager returns ownership through LockHandle, which releases via AutoCloseable. -->
+    <Match>
+        <Class name="net.pkhapps.idispatchx.cad.application.handler.EntityLockManager"/>
+        <Method name="acquire"/>
+        <Bug pattern="UL_UNRELEASED_LOCK"/>
+    </Match>
+
+    <!-- Shared framework/service handles are intentionally returned or stored as collaborators. -->
+    <Match>
+        <Or>
+            <Class name="~net\.pkhapps\.idispatchx\..*\.auth\.JwtAuthHandler"/>
+            <Class name="net.pkhapps.idispatchx.cad.adapter.secondary.wal.JsonDomainEventSerializer"/>
+            <Class name="net.pkhapps.idispatchx.cad.adapter.secondary.wal.SmileDomainEventSerializer"/>
+            <Class name="net.pkhapps.idispatchx.gis.server.db.DataSourceProvider"/>
+            <Class name="net.pkhapps.idispatchx.gis.server.db.FlywayMigrator"/>
+            <Class name="net.pkhapps.idispatchx.gis.server.db.JooqContextProvider"/>
+            <Class name="net.pkhapps.idispatchx.gis.importer.db.DatabaseConnection"/>
+            <Class name="net.pkhapps.idispatchx.gis.importer.db.MunicipalityImporter"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+</FindBugsFilter>

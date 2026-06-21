@@ -56,6 +56,7 @@ public record ErrorResponse(
         public ErrorBody {
             Objects.requireNonNull(code, "code must not be null");
             Objects.requireNonNull(message, "message must not be null");
+            details = details == null ? null : Map.copyOf(details);
         }
     }
 
