@@ -325,11 +325,12 @@ public final class CadServer implements AutoCloseable {
             javalinConfig.startup.showJavalinBanner = false;
             javalinConfig.registerPlugin(new OpenApiPlugin(openApiConfig -> openApiConfig
                 .withDocumentationPath(config.contextPath() + "/openapi")
-                .withDefinitionConfiguration((version, definition) -> definition
-                    .info(info -> info
-                        .title("CAD Server API")
-                        .version("1.0.0")
-                        .description("Computer-Aided Dispatch REST API for iDispatchX")))
+                .withDefinitionConfiguration((version, definition) ->
+                    OpenApiContextPathSupport.applyContextPathServer(definition, config.contextPath())
+                        .info(info -> info
+                            .title("CAD Server API")
+                            .version("1.0.0")
+                            .description("Computer-Aided Dispatch REST API for iDispatchX")))
             ));
             if (!corsOrigins.isBlank()) {
                 var origins = corsOrigins.split(",");
