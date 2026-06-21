@@ -176,7 +176,7 @@ export class WindowFooter extends HTMLElement {
             this.#applyStatus(this.#statusService.getStatus());
             this.#statusService.onStatusChanged(status => this.#applyStatus(status));
         } else {
-            this.#modeText.textContent = t('footer.normalMode');
+            modeEl.hidden = true;
         }
     }
 

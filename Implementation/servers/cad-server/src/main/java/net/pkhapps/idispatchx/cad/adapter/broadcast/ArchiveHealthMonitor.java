@@ -55,7 +55,7 @@ public final class ArchiveHealthMonitor {
      * @param intervalSeconds  probe interval in seconds
      */
     public void start(ScheduledExecutorService scheduler, long intervalSeconds) {
-        scheduler.scheduleAtFixedRate(this::probe, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::probe, 0, intervalSeconds, TimeUnit.SECONDS);
         log.info("ArchiveHealthMonitor started with interval={}s", intervalSeconds);
     }
 
