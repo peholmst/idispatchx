@@ -189,8 +189,9 @@ public final class CallController {
         boolean outcomePresent = jsonBody.has("outcome");
         boolean outcomeRationalePresent = jsonBody.has("outcomeRationale");
 
-        // outcomeRationale without outcome cannot be applied — reject rather than silently discard
-        if (outcomeRationalePresent && body.outcomeRationale() != null && !outcomePresent) {
+        // outcomeRationale requires a non-null outcome — reject when outcome is absent or explicitly null
+        boolean outcomeIsAbsentOrNull = !outcomePresent || body.outcome() == null;
+        if (outcomeRationalePresent && body.outcomeRationale() != null && outcomeIsAbsentOrNull) {
             throw new ValidationException(CadErrorCode.VALIDATION_ERROR,
                     "outcomeRationale requires outcome to also be present");
         }

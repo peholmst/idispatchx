@@ -249,6 +249,18 @@ class CallControllerTest {
     }
 
     @Test
+    void updateCallDetails_outcomeRationaleWithExplicitNullOutcome_returns400() throws Exception {
+        var callId = createCallGetId();
+        var response = patch("/api/v1/calls/" + callId,
+                """
+                {"outcome":null,"outcomeRationale":"Some rationale"}
+                """,
+                UUID.randomUUID().toString());
+        assertEquals(400, response.statusCode());
+        assertTrue(response.body().contains("outcomeRationale"));
+    }
+
+    @Test
     void updateCallDetails_explicitNullClearsField_returns200() throws Exception {
         // First set a caller name
         var callId = createCallGetId();
