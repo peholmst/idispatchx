@@ -16,7 +16,7 @@ export interface Coordinates {
 export type MultilingualName = Record<string, string>;
 
 export interface Municipality {
-    code: string;
+    code: string | null;
     name: MultilingualName;
 }
 
