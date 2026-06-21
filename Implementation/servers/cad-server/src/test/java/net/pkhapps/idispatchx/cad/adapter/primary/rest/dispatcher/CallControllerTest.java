@@ -248,6 +248,30 @@ class CallControllerTest {
         assertTrue(response.body().contains("outcomeRationale"));
     }
 
+    @Test
+    void updateCallDetails_explicitNullClearsField_returns200() throws Exception {
+        // First set a caller name
+        var callId = createCallGetId();
+        patch("/api/v1/calls/" + callId,
+                """
+                {"callerName":"John Doe"}
+                """,
+                UUID.randomUUID().toString());
+
+        // Then clear it by sending explicit null
+        var response = patch("/api/v1/calls/" + callId,
+                """
+                {"callerName":null}
+                """,
+                UUID.randomUUID().toString());
+        assertEquals(200, response.statusCode());
+
+        var getResponse = get("/api/v1/calls/" + callId);
+        assertEquals(200, getResponse.statusCode());
+        var body = objectMapper.readTree(getResponse.body());
+        assertTrue(body.get("callerName").isNull());
+    }
+
     // -----------------------------------------------------------------------
     // POST /api/v1/calls/{callId}/end
     // -----------------------------------------------------------------------

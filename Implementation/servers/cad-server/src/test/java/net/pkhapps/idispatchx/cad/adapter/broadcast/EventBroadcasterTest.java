@@ -94,7 +94,8 @@ class EventBroadcasterTest {
     void broadcast_callUpdatedEvent_sendsCallUpdatedMessage() {
         addCallToRepo();
         var event = new CallUpdatedEvent(EventId.generate(), NOW, CommandId.generate(), DISPATCHER,
-                CALL_ID, null, null, null, null, null, null, null);
+                CALL_ID, null, null, null, null, null, null, null,
+                null, null, null, null);
         broadcaster.broadcast(event, 2L);
         assertEquals("call.updated", broadcastCalls.getFirst().type());
     }
@@ -179,7 +180,8 @@ class EventBroadcasterTest {
         // fetch the full aggregate from the repository to build the snapshot.
         addCallToRepo();
         var event = new CallUpdatedEvent(EventId.generate(), NOW, CommandId.generate(), DISPATCHER,
-                CALL_ID, null, null, null, null, null, null, null);
+                CALL_ID, null, null, null, null, null, null, null,
+                null, null, null, null);
         broadcaster.broadcast(event, 2L);
         var payload = (Map<?, ?>) broadcastCalls.getFirst().payload();
         // "active" comes from the repository, not from the event (which has no state field)

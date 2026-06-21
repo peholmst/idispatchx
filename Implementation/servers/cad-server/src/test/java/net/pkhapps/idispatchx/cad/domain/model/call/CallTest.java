@@ -66,7 +66,8 @@ class CallTest {
         call.applyEvent(new CallUpdatedEvent(
                 EventId.generate(), NOW, null,
                 DISPATCHER, CALL_ID, null, null, null, null,
-                CallOutcome.INCIDENT_CREATED, null, INCIDENT_ID));
+                CallOutcome.INCIDENT_CREATED, null, INCIDENT_ID,
+                null, null, null, null));
         var endPending = call.prepareEnd(NOW);
         assertNotNull(endPending);
     }
@@ -77,7 +78,8 @@ class CallTest {
         call.applyEvent(new CallUpdatedEvent(
                 EventId.generate(), NOW, null,
                 DISPATCHER, CALL_ID, null, null, null, null,
-                CallOutcome.INCIDENT_CREATED, null, null));
+                CallOutcome.INCIDENT_CREATED, null, null,
+                null, null, null, null));
         assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
@@ -87,7 +89,8 @@ class CallTest {
         call.applyEvent(new CallUpdatedEvent(
                 EventId.generate(), NOW, null,
                 DISPATCHER, CALL_ID, null, null, null, null,
-                CallOutcome.ATTACHED_TO_INCIDENT, null, null));
+                CallOutcome.ATTACHED_TO_INCIDENT, null, null,
+                null, null, null, null));
         assertThrows(IllegalStateException.class, () -> call.prepareEnd(NOW));
     }
 
@@ -120,7 +123,8 @@ class CallTest {
         call.applyEvent(new CallUpdatedEvent(
                 EventId.generate(), NOW, null,
                 DISPATCHER, CALL_ID, null, null, null, null,
-                CallOutcome.INCIDENT_CREATED, null, incidentId2));
+                CallOutcome.INCIDENT_CREATED, null, incidentId2,
+                null, null, null, null));
         assertThrows(IllegalStateException.class,
                 () -> call.prepareAttachToIncident(INCIDENT_ID, NOW));
     }
@@ -177,9 +181,45 @@ class CallTest {
 
     @Test
     void prepareUpdate_updatesDetailFields() {
-        var pending = call.prepareUpdate(NOW, null, null, null, new Description("updated"));
+        var pending = call.prepareUpdate(NOW, null, false, null, false, null, false, new Description("updated"), false);
         pending.applyMutation().run();
         assertEquals("updated", call.description().value());
         assertNull(call.outcome());
+    }
+
+    @Test
+    void prepareUpdate_clearsDetailFieldsWhenFlagSet() {
+        call.prepareUpdate(NOW, null, false, null, false, null, false, new Description("initial"), false).applyMutation().run();
+        assertEquals("initial", call.description().value());
+
+        call.prepareUpdate(NOW, null, false, null, false, null, false, null, true).applyMutation().run();
+        assertNull(call.description());
+    }
+
+    @Test
+    void prepareUpdate_preservesExistingValueWhenFieldAbsent() {
+        call.prepareUpdate(NOW, null, false, null, false, null, false, new Description("keep"), false).applyMutation().run();
+        call.prepareUpdate(NOW, null, false, null, false, null, false, null, false).applyMutation().run();
+        assertEquals("keep", call.description().value());
+    }
+
+    @Test
+    void applyEvent_walReplay_clearFlagNullTreatedAsFalse() {
+        // Simulate old WAL event without clear flags (null = absent = treat as false)
+        var callerName = new net.pkhapps.idispatchx.cad.domain.model.shared.CallerName("John");
+        call.applyEvent(new CallUpdatedEvent(
+                EventId.generate(), NOW, null,
+                DISPATCHER, CALL_ID, callerName, null, null, null,
+                null, null, null,
+                null, null, null, null));
+        assertEquals("John", call.callerName().value());
+
+        // Applying an event with null callerName and no clear flag must NOT clear the field
+        call.applyEvent(new CallUpdatedEvent(
+                EventId.generate(), NOW, null,
+                DISPATCHER, CALL_ID, null, null, null, null,
+                null, null, null,
+                null, null, null, null));
+        assertEquals("John", call.callerName().value());
     }
 }

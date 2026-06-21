@@ -304,15 +304,14 @@ export class CallDetailForm extends HTMLElement {
         if (!this.#currentCall || !this.#cadRest || Object.keys(this.#pendingUpdate).length === 0) return;
         const update = { ...this.#pendingUpdate };
         this.#pendingUpdate = {};
-        // The server treats null/undefined the same as an absent field (null = skip).
-        // Strip them so we never send a no-op PATCH and so callers can distinguish
-        // "nothing to save" from "save failed".
-        const nonNullUpdate = Object.fromEntries(
-            Object.entries(update).filter(([, v]) => v !== null && v !== undefined)
+        // Strip only undefined (absent fields). null values represent explicit clears and must
+        // be included in the PATCH payload so the server can clear the field.
+        const filteredUpdate = Object.fromEntries(
+            Object.entries(update).filter(([, v]) => v !== undefined)
         );
-        if (Object.keys(nonNullUpdate).length === 0) return;
+        if (Object.keys(filteredUpdate).length === 0) return;
         try {
-            await this.#cadRest.updateCall(this.#currentCall.callId, nonNullUpdate as UpdateCallParams);
+            await this.#cadRest.updateCall(this.#currentCall.callId, filteredUpdate as UpdateCallParams);
         } catch (err) {
             console.error('[CallDetailForm] Auto-save failed:', err);
             Object.assign(this.#pendingUpdate, update); // restore for retry

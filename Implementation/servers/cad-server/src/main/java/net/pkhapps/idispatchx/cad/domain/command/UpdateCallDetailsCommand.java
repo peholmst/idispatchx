@@ -14,7 +14,9 @@ import java.util.Objects;
 /**
  * Command to update call details (caller information, location, description).
  * <p>
- * Only non-null fields are applied; absent fields remain unchanged.
+ * A non-null field value replaces the existing value. A {@code null} value with the corresponding
+ * {@code clearXxx = false} leaves the field unchanged. A {@code null} value with {@code clearXxx = true}
+ * explicitly clears the field to {@code null}.
  * Use {@link SetCallOutcomeCommand} to set the call outcome and rationale.
  */
 public record UpdateCallDetailsCommand(
@@ -23,9 +25,13 @@ public record UpdateCallDetailsCommand(
         @Nullable IPAddress ipAddress,
         CallId callId,
         @Nullable CallerName callerName,
+        boolean clearCallerName,
         @Nullable PhoneNumber callerPhoneNumber,
+        boolean clearCallerPhoneNumber,
         @Nullable Location location,
-        @Nullable Description description
+        boolean clearLocation,
+        @Nullable Description description,
+        boolean clearDescription
 ) implements Command {
 
     public UpdateCallDetailsCommand {

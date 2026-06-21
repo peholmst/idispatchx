@@ -83,26 +83,32 @@ public final class Call extends Entity<CallId> {
     /**
      * Prepares an update of call detail fields (caller info, location, description).
      * <p>
-     * Only non-null fields in the arguments are applied; existing values are preserved for nulls.
+     * A non-null value for a field replaces the existing value. A {@code null} value with the
+     * corresponding {@code clearXxx = false} leaves the existing value unchanged. A {@code null}
+     * value with {@code clearXxx = true} explicitly clears the field to {@code null}.
      * Use {@link #prepareSetOutcome(Instant, CallOutcome, Description)} to change outcome or rationale.
      *
      * @param now authoritative timestamp supplied by the clock port
      */
     public PendingMutation<CallUpdatedEvent> prepareUpdate(
             Instant now,
-            @Nullable CallerName callerName,
-            @Nullable PhoneNumber callerPhoneNumber,
-            @Nullable Location location,
-            @Nullable Description description) {
-        var newCallerName = callerName != null ? callerName : this.callerName;
-        var newCallerPhoneNumber = callerPhoneNumber != null ? callerPhoneNumber : this.callerPhoneNumber;
-        var newLocation = location != null ? location : this.location;
-        var newDescription = description != null ? description : this.description;
+            @Nullable CallerName callerName, boolean clearCallerName,
+            @Nullable PhoneNumber callerPhoneNumber, boolean clearCallerPhoneNumber,
+            @Nullable Location location, boolean clearLocation,
+            @Nullable Description description, boolean clearDescription) {
+        var newCallerName = clearCallerName ? null : (callerName != null ? callerName : this.callerName);
+        var newCallerPhoneNumber = clearCallerPhoneNumber ? null : (callerPhoneNumber != null ? callerPhoneNumber : this.callerPhoneNumber);
+        var newLocation = clearLocation ? null : (location != null ? location : this.location);
+        var newDescription = clearDescription ? null : (description != null ? description : this.description);
 
         var event = new CallUpdatedEvent(
                 EventId.generate(), now, null, receivingDispatcher,
                 id(), newCallerName, newCallerPhoneNumber, newLocation, newDescription,
-                null, null, null);
+                null, null, null,
+                clearCallerName ? Boolean.TRUE : null,
+                clearCallerPhoneNumber ? Boolean.TRUE : null,
+                clearLocation ? Boolean.TRUE : null,
+                clearDescription ? Boolean.TRUE : null);
         return new PendingMutation<>(event, () -> applyUpdate(event));
     }
 
@@ -127,7 +133,8 @@ public final class Call extends Entity<CallId> {
         var event = new CallUpdatedEvent(
                 EventId.generate(), now, null, receivingDispatcher,
                 id(), null, null, null, null,
-                outcome, outcomeRationale, null);
+                outcome, outcomeRationale, null,
+                null, null, null, null);
         return new PendingMutation<>(event, () -> applyUpdate(event));
     }
 
@@ -241,10 +248,10 @@ public final class Call extends Entity<CallId> {
     }
 
     private void applyUpdate(CallUpdatedEvent e) {
-        if (e.callerName() != null) this.callerName = e.callerName();
-        if (e.callerPhoneNumber() != null) this.callerPhoneNumber = e.callerPhoneNumber();
-        if (e.location() != null) this.location = e.location();
-        if (e.description() != null) this.description = e.description();
+        if (Boolean.TRUE.equals(e.clearCallerName()) || e.callerName() != null) this.callerName = e.callerName();
+        if (Boolean.TRUE.equals(e.clearCallerPhoneNumber()) || e.callerPhoneNumber() != null) this.callerPhoneNumber = e.callerPhoneNumber();
+        if (Boolean.TRUE.equals(e.clearLocation()) || e.location() != null) this.location = e.location();
+        if (Boolean.TRUE.equals(e.clearDescription()) || e.description() != null) this.description = e.description();
         if (e.outcome() != null) this.outcome = e.outcome();
         if (e.outcomeRationale() != null) this.outcomeRationale = e.outcomeRationale();
         if (e.incidentId() != null) this.incidentId = e.incidentId();
