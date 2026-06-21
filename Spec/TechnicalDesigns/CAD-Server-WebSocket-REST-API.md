@@ -1389,10 +1389,35 @@ All messages from server to client use this envelope:
   "timestamp": "2026-04-03T10:30:00Z",
   "payload": {
     "serverId": "cad-primary",
-    "serverTime": "2026-04-03T10:30:00Z"
+    "serverTime": "2026-04-03T10:30:00Z",
+    "systemStatus": {
+      "cadArchiveAvailable": true
+    }
   }
 }
 ```
+
+The `systemStatus` field carries the current system health state at connect time so the client does not need a separate status request. `cadArchiveAvailable` is `false` when the CAD archive database is unreachable.
+
+**System status event:**
+
+| Type | Trigger |
+|------|---------|
+| `system.status_changed` | CAD archive availability changed |
+
+`system.status_changed` payload:
+```json
+{
+  "type": "system.status_changed",
+  "sequenceNumber": 12346,
+  "timestamp": "2026-04-03T10:31:00Z",
+  "payload": {
+    "cadArchiveAvailable": false
+  }
+}
+```
+
+The server broadcasts `system.status_changed` to all connected Dispatcher and Observer sessions whenever `cadArchiveAvailable` transitions between `true` and `false`. The `sequenceNumber` on this event is the current WAL sequence number at the time of the status transition (not derived from a domain event, since archive health is infrastructure state, not domain state).
 
 **Call events:**
 
@@ -1631,7 +1656,10 @@ Sent when a unit is dispatched to an incident (transition to `dispatching`). Als
   "type": "connected",
   "sequenceNumber": 12345,
   "timestamp": "2026-04-03T10:30:00Z",
-  "payload": { "serverTime": "2026-04-03T10:30:00Z" }
+  "payload": {
+    "serverTime": "2026-04-03T10:30:00Z",
+    "systemStatus": { "cadArchiveAvailable": true }
+  }
 }
 ```
 

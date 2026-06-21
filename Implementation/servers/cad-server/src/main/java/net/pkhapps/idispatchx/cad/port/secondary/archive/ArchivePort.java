@@ -17,4 +17,14 @@ public interface ArchivePort {
      * @param callId the ID of the unlinked call to archive
      */
     void scheduleUnlinkedCallArchival(CallId callId);
+
+    /**
+     * Returns {@code true} if the archive backend is currently reachable and healthy.
+     * <p>
+     * Called periodically by {@link net.pkhapps.idispatchx.cad.adapter.broadcast.ArchiveHealthMonitor}
+     * to detect transitions between available and unavailable states. Implementations
+     * should perform a lightweight probe (e.g., a single-row query). This method must
+     * not throw — implementations must catch internal errors and return {@code false}.
+     */
+    boolean isAvailable();
 }
