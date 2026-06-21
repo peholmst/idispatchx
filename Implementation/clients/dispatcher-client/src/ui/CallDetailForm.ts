@@ -283,6 +283,10 @@ export class CallDetailForm extends HTMLElement {
 
         this.#locationEntry.addEventListener(LocationChangedEvent.TYPE, () => {
             const loc = this.#locationEntry.value;
+            // null from LocationEntry can mean intentional clear (all fields empty) OR invalid/
+            // incomplete input. Only schedule a clear when the form is genuinely blank; skip
+            // invalid states so transient editing does not overwrite a saved location.
+            if (loc === null && !this.#locationEntry.isBlank) return;
             this.#scheduleSave({ location: loc });
 
             const coords = loc?.coordinates ?? null;

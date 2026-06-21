@@ -85,6 +85,16 @@ export class LocationEntry extends HTMLElement {
         this.#applyLocation(loc);
     }
 
+    /** Returns true when every input field is empty — distinguishes an intentional clear from an invalid/incomplete state. */
+    get isBlank(): boolean {
+        return !this.#municipalityInput?.value.trim() &&
+               !this.#locationNameInput?.value.trim() &&
+               !this.#numberInput?.value.trim() &&
+               !this.#crossStreetInput?.value.trim() &&
+               !this.#coordInput?.value.trim() &&
+               !this.#detailsTextarea?.value.trim();
+    }
+
     #buildDom(): void {
         const root = document.createElement('div');
         root.className = 'location-entry';
