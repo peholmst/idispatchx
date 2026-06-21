@@ -1,162 +1,48 @@
 # Agent Guidance
 
-This file provides guidance for agents working with code and specifications in this repository.
+Specifications in `Spec/` are authoritative. Agents must not invent behavior, data, or requirements.
 
-The specifications in the `Spec` directory are **authoritative**.  
-Agents must follow them strictly and must not invent behavior, data, or requirements.
+This repository uses active human-in-the-loop development. Surface uncertainty early, ask when
+specifications leave meaningful choices open, and avoid hidden automation or tooling that replaces
+developer judgment.
 
-This repository is developed in an active human-in-the-loop mode. Agents should preserve the
-developer's role in design and decision making: surface uncertainty early, ask for clarification
-when specifications leave meaningful choices open, and avoid replacing human judgment with hidden
-automation or tooling.
+## Authority
 
-## Specification Authority
+Precedence:
 
-The specification set is the single source of truth for iDispatchX.
-
-In case of conflicts, the following order of precedence applies:
-
-1. Non-Functional Requirements (NFRs)
+1. Non-Functional Requirements
 2. C4 Architectural Specifications
 3. Domain Model
 4. Use Cases
 
 No implementation may violate a higher-precedence specification.
 
-## Specification Structure
+## Before Implementing
 
-### `Spec/C4/` – Architecture (C4 Model)
+Read only the sources relevant to the task:
 
-* `Spec/C4/Context.md`  
-  **Must be read before implementing any feature.**
+* Applicable NFRs in `Spec/NonFunctionalRequirements/`.
+* `Spec/C4/Context.md` before implementing features.
+* `Spec/C4/Containers.md` when crossing container boundaries.
+* Relevant domain concepts in `Spec/Domain/`.
+* Only the specific use case being implemented from `Spec/UseCases/`.
+* Relevant technical designs in `Spec/TechnicalDesigns/` for containers or major subsystems.
+* `Implementation/README.md` for structure, namespaces, tech stacks, and build commands.
 
-* `Spec/C4/Containers.md`  
-  **Must be read before implementing any feature that crosses a container boundary.**
+Directory README files define local usage rules and indexes.
 
-Refer to `Spec/C4/README.md` for architectural scope and usage rules.
+## Implementation Rules
 
----
+* Keep changes focused, small, and reviewable.
+* Follow existing architecture, namespaces, and tech stacks.
+* Do not add frameworks, services, generated assets, or automation unless specified by specs, ADRs, or the developer.
+* Do not infer missing behavior from unrelated use cases.
+* Preserve degraded-mode semantics from the NFRs.
+* Do not increase data precision or completeness beyond what is specified.
+* Make assumptions visible in notes, commits, or review comments.
+* Leave Git authentication, remotes, and credentials to the developer or execution environment.
 
-### `Spec/NonFunctionalRequirements/` – System-wide Constraints
+## Specification Indexes
 
-* All Non-Functional Requirements are **authoritative**.
-* **All NFRs must be read and respected before implementing any feature.**
-* NFRs override use cases, domain concepts, and implementation convenience.
-
-Refer to `Spec/NonFunctionalRequirements/README.md` for authority and scope.
-
----
-
-### `Spec/Domain/` – Domain Model
-
-* Defines core domain concepts, attributes, invariants, and validation rules.
-* Domain concepts describe meaning and constraints, not implementation.
-* Degraded-mode semantics and authority boundaries are explicitly defined here.
-
-Refer to `Spec/Domain/README.md` before implementing or modifying domain-related code.
-
----
-
-### `Spec/UseCases/` – System Behavior
-
-* Use cases describe observable system behavior.
-* Use cases are grouped by **primary actor**.
-* **Only read and implement the specific use case you are working on.**
-* Do not infer behavior from other use cases.
-
-Use cases must:
-* Be consistent with C4 specifications
-* Respect all applicable NFRs
-* Reference relevant NFRs when behavior is constrained
-
-Refer to `Spec/UseCases/README.md` for usage rules.
-
----
-
-### `Spec/ADR/` – Architectural Decision Records
-
-* Document significant architectural decisions and their rationale.
-* Are historical records; superseded decisions get new ADRs rather than modifications.
-* Do **not** override NFRs or C4 specifications.
-
----
-
-### `Spec/TechnicalDesigns/` – Technical Design Documents
-
-* Provide detailed implementation guidance bridging specifications and code.
-* Define package structures, interfaces, threading models, and data flow.
-* Must comply with all higher-level specifications (NFRs, C4, Domain, Use Cases).
-* **Read the relevant technical design before implementing a container or major subsystem.**
-
----
-
-### `Spec/UXDesigns/` – User Experience Designs
-
-* Define interaction patterns and visual guidelines for client applications.
-* Inform frontend implementation decisions.
-* Must align with domain concepts and use case flows.
-
----
-
-### `Spec/Plans/` – Implementation Plans
-
-* Contain task breakdowns with dependencies and success criteria.
-* Used by agents and developers to implement features systematically.
-* Reference technical designs and specifications.
-* Track implementation status.
-
----
-
-### `Implementation/` – Container Implementations
-
-The `Implementation/` directory contains the actual code for all iDispatchX containers.
-
-Refer to `Implementation/README.md` for the complete directory structure, namespaces, tech stacks, and build instructions.
-
-#### Key Subdirectories
-
-| Directory        | Contents                                         |
-|------------------|--------------------------------------------------|
-| `servers/`       | Backend services (CAD Server, GIS Server)        |
-| `clients/`       | Frontend applications (Dispatcher, Admin, Mobile, Station Alert) |
-| `tools/`         | CLI utilities (GIS Data Importer)                |
-| `shared/`        | Shared libraries (Java Common)                   |
-| `deploy/`        | Deployment configurations (Docker, Kubernetes)   |
-
-#### Implementation Rules for Agents
-
-* **Specifications are authoritative.** All implementation code must conform to the specifications in `Spec/`.
-* Before implementing a feature:
-  1. Read the relevant NFRs
-  2. Read the relevant C4 specifications
-  3. Read the relevant domain concepts
-  4. Read the specific use case being implemented
-* Follow the namespace conventions defined in `Implementation/README.md`.
-* Use the tech stack specified for each container; do not introduce alternative frameworks or libraries without an ADR.
-* Build commands are documented in `Implementation/README.md`.
-
-## Maintaining Specification Indexes
-
-Each specification directory has a README with a file index table. When you add, rename, or remove a specification file:
-
-* Update the corresponding README's file index table
-* Keep entries alphabetically sorted within each section
-* Include a brief description (one line) for each file
-
-## General Rules for Agents
-
-* Specifications are authoritative. Do not invent functionality, behavior, or requirements.
-* Do not infer missing behavior, data, or rules.
-* If behavior is unclear or unspecified, ask for clarification instead of making assumptions.
-* Prefer the simplest implementation that does not violate:
-  * Non-Functional Requirements
-  * C4 architecture boundaries
-  * Domain invariants
-* Degraded modes described in the NFRs are intentional and must not be “fixed” by adding hidden dependencies, automation, or shortcuts.
-* Do not increase precision or completeness of data beyond what is explicitly provided.
-* Keep changes focused on the requested task and the relevant specifications.
-* Do not introduce new frameworks, runtime services, background automation, or generated assets unless the specifications, an ADR, or the human developer explicitly calls for them.
-* Prefer small, reviewable changes over broad rewrites.
-* Make assumptions visible in notes, commit messages, or review comments as appropriate.
-* When a task would benefit from a design decision, trade-off, or prioritization call, involve the human developer instead of silently choosing a direction.
-* Leave local Git authentication, remote configuration, and credential handling to the developer or the active execution environment.
+When adding, renaming, or removing a specification file, update the corresponding README index, keep
+entries alphabetically sorted, and include a one-line description.
