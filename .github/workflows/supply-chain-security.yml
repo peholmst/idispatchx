@@ -17,9 +17,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
+          # Requires npm >=11.10.0, which ships with Node.js 22 LTS, for the
+          # native min-release-age .npmrc setting to be available in client projects.
           node-version: "22"
 
       - name: Check NPM package minimum release age
+        # Primary enforcement is .npmrc min-release-age=3 in each client project.
+        # This step is a CI-level backstop that validates the committed lockfiles
+        # directly against the registry, catching any packages that bypassed .npmrc.
         run: |
           readarray -t LOCKFILES < <(find . \
             -name "package-lock.json" \
