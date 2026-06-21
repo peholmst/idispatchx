@@ -1,0 +1,30 @@
+name: Supply Chain Security
+
+on:
+  pull_request:
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+
+jobs:
+  npm-minimum-release-age:
+    name: NPM Minimum Release Age
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check NPM package minimum release age
+        run: |
+          readarray -t LOCKFILES < <(find . \
+            -name "package-lock.json" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/.claude/*")
+          node scripts/check-npm-package-age.mjs "${LOCKFILES[@]}"
+        env:
+          MIN_AGE_DAYS: 3
