@@ -1,9 +1,14 @@
-# AI TOOL GUIDANCE
+# Agent Guidance
 
-This file provides guidance for AI agents working with code and specifications in this repository.
+This file provides guidance for agents working with code and specifications in this repository.
 
 The specifications in the `Spec` directory are **authoritative**.  
-AI agents must follow them strictly and must not invent behavior, data, or requirements.
+Agents must follow them strictly and must not invent behavior, data, or requirements.
+
+This repository is developed in an active human-in-the-loop mode. Agents should preserve the
+developer's role in design and decision making: surface uncertainty early, ask for clarification
+when specifications leave meaningful choices open, and avoid replacing human judgment with hidden
+automation or tooling.
 
 ## Specification Authority
 
@@ -96,7 +101,7 @@ Refer to `Spec/UseCases/README.md` for usage rules.
 ### `Spec/Plans/` – Implementation Plans
 
 * Contain task breakdowns with dependencies and success criteria.
-* Used by AI agents and developers to implement features systematically.
+* Used by agents and developers to implement features systematically.
 * Reference technical designs and specifications.
 * Track implementation status.
 
@@ -118,7 +123,7 @@ Refer to `Implementation/README.md` for the complete directory structure, namesp
 | `shared/`        | Shared libraries (Java Common)                   |
 | `deploy/`        | Deployment configurations (Docker, Kubernetes)   |
 
-#### Implementation Rules for AI Agents
+#### Implementation Rules for Agents
 
 * **Specifications are authoritative.** All implementation code must conform to the specifications in `Spec/`.
 * Before implementing a feature:
@@ -138,39 +143,7 @@ Each specification directory has a README with a file index table. When you add,
 * Keep entries alphabetically sorted within each section
 * Include a brief description (one line) for each file
 
-## GitHub Authentication
-
-This repository is accessed via a **GitHub App** (not a personal access token or SSH key).  
-A fresh installation token must be obtained before every operation that contacts GitHub.
-
-### Scripts
-
-| Script | Purpose |
-|--------|---------|
-| `scripts/github-app-jwt.sh` | Generates a signed RS256 JWT from the app credentials |
-| `scripts/github-app-token.sh` | Exchanges the JWT for an installation access token (prints token to stdout) |
-| `scripts/github-configure-git.sh` | Rewrites the `origin` remote URL to embed a fresh token |
-
-Required environment variables (already persisted in the sandbox):
-
-```
-GITHUB_APP_CLIENT_ID=Iv23liD0s4TXagMLfvdM
-GITHUB_APP_PRIVATE_KEY_FILE=/home/agent/.config/idispatchx/idispatchx-agent.2026-04-24.private-key.pem
-```
-
-### Rules
-
-* **Before every `git push`**, run `scripts/github-configure-git.sh` to embed a fresh token in the remote URL. Tokens expire after one hour.
-* **Before every `gh` CLI command** that contacts the API, obtain a token and pass it via the `GH_TOKEN` environment variable:
-  ```bash
-  GH_TOKEN=$(scripts/github-app-token.sh) gh <command>
-  ```
-* Never use a cached or previously printed token without checking that it was obtained in the same session and less than one hour ago.
-* Never hardcode a token in any file, script, or command that gets committed.
-
----
-
-## General Rules for AI Agents
+## General Rules for Agents
 
 * Specifications are authoritative. Do not invent functionality, behavior, or requirements.
 * Do not infer missing behavior, data, or rules.
@@ -181,4 +154,9 @@ GITHUB_APP_PRIVATE_KEY_FILE=/home/agent/.config/idispatchx/idispatchx-agent.2026
   * Domain invariants
 * Degraded modes described in the NFRs are intentional and must not be “fixed” by adding hidden dependencies, automation, or shortcuts.
 * Do not increase precision or completeness of data beyond what is explicitly provided.
-
+* Keep changes focused on the requested task and the relevant specifications.
+* Do not introduce new frameworks, runtime services, background automation, or generated assets unless the specifications, an ADR, or the human developer explicitly calls for them.
+* Prefer small, reviewable changes over broad rewrites.
+* Make assumptions visible in notes, commit messages, or review comments as appropriate.
+* When a task would benefit from a design decision, trade-off, or prioritization call, involve the human developer instead of silently choosing a direction.
+* Leave local Git authentication, remote configuration, and credential handling to the developer or the active execution environment.
