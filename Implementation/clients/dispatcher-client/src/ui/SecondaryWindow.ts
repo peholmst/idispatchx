@@ -5,6 +5,7 @@ import { LookupBar } from './LookupBar.ts';
 import { LayersClient } from '../gis/LayersClient.ts';
 import { GeocodingClient } from '../gis/GeocodingClient.ts';
 import type { HttpClient } from '../http/HttpClient.ts';
+import { UnauthorizedError } from '../http/HttpClient.ts';
 import type { AuthState } from '../auth/AuthState.ts';
 import { t } from '../i18n/index.ts';
 import OlMap from 'ol/Map';
@@ -42,6 +43,7 @@ export class SecondaryWindow extends HTMLElement {
     #olMap: OlMap | null = null;
     #tileLayer: TileLayer<WMTS> | null = null;
     #baseLayerSelect: HTMLSelectElement | null = null;
+    #gisErrorBanner: HTMLDivElement | null = null;
     #onBeforeUnload: (() => void) | null = null;
 
     constructor() {
@@ -75,6 +77,12 @@ export class SecondaryWindow extends HTMLElement {
         mapContainer.className = 'map-container';
 
         mapContainer.appendChild(this.#makeToolbar());
+
+        const gisErrorBanner = document.createElement('div');
+        gisErrorBanner.className = 'gis-error-banner';
+        gisErrorBanner.hidden = true;
+        this.#gisErrorBanner = gisErrorBanner;
+        mapContainer.appendChild(gisErrorBanner);
 
         const lookupBarEl = document.createElement(LookupBar.TAG) as LookupBar;
         mapContainer.appendChild(lookupBarEl);
@@ -233,13 +241,18 @@ export class SecondaryWindow extends HTMLElement {
             }
             select.disabled = false;
             this.#updateTileLayerSource(layers[0].id);
-        } catch {
+        } catch (err) {
             select.innerHTML = '';
             const opt = document.createElement('option');
             opt.value = '';
             opt.textContent = t('lookup.layers.unavailable');
             select.appendChild(opt);
             select.disabled = true;
+
+            if (err instanceof UnauthorizedError && this.#gisErrorBanner) {
+                this.#gisErrorBanner.textContent = t('gis.unavailable.unauthorized');
+                this.#gisErrorBanner.hidden = false;
+            }
         }
     }
 

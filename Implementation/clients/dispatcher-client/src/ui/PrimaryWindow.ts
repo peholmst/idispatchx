@@ -40,13 +40,14 @@ export class PrimaryWindow extends HTMLElement {
         cadServerUrl: string,
         gisServerUrl: string,
         http: HttpClient,
+        gisHttp: HttpClient,
         authState: AuthState,
     ): void {
         this.#username = username;
         this.#cadRest = new CadRestClient(cadServerUrl, http);
         this.#wsClient = new DispatcherWebSocketClient(cadServerUrl, authState);
 
-        const geocodingClient = new GeocodingClient(gisServerUrl, http);
+        const geocodingClient = new GeocodingClient(gisServerUrl, gisHttp);
 
         this.#stashedGeocodingClient = geocodingClient;
     }

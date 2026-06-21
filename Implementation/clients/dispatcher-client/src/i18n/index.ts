@@ -118,7 +118,8 @@ export type TranslationKey =
     | 'vicinity.banner'
     | 'vicinity.clear'
     | 'ws.disconnected'
-    | 'ws.reconnecting';
+    | 'ws.reconnecting'
+    | 'gis.unavailable.unauthorized';
 
 type Translations = Record<TranslationKey, string>;
 
@@ -231,6 +232,7 @@ const EN: Translations = {
     'ws.disconnected':              'Disconnected',
     'ws.reconnecting':              'Reconnecting…',
     'primaryWindow.empty':          'Select a call or create a new one.',
+    'gis.unavailable.unauthorized': 'Map unavailable: the GIS server rejected the access token. Contact your administrator.',
 };
 
 const FI: Translations = {
@@ -336,6 +338,7 @@ const FI: Translations = {
     'ws.disconnected':              'Yhteys katkaistu',
     'ws.reconnecting':              'Yhdistetään uudelleen…',
     'primaryWindow.empty':          'Valitse puhelu tai luo uusi.',
+    'gis.unavailable.unauthorized': 'Kartta ei ole käytettävissä: GIS-palvelin hylkäsi käyttöoikeustunnuksen. Ota yhteys järjestelmänvalvojaan.',
 };
 
 const SV: Translations = {
@@ -441,6 +444,7 @@ const SV: Translations = {
     'ws.disconnected':              'Frånkopplad',
     'ws.reconnecting':              'Återansluter…',
     'primaryWindow.empty':          'Välj ett samtal eller skapa ett nytt.',
+    'gis.unavailable.unauthorized': 'Kartan är inte tillgänglig: GIS-servern nekade åtkomsttoken. Kontakta administratören.',
 };
 
 const LOCALE_MAP: Record<Locale, Translations> = { en: EN, fi: FI, sv: SV };

@@ -68,22 +68,29 @@ async function boot(): Promise<void> {
     const authState = new AuthState(oidcClient, config);
     const sessionManager = new SessionManager(authState, config.session);
 
-    // The HttpClient is the entry point for all authenticated API calls.
-    // On 401, it signals that the server has revoked the session.
-    const httpClient = new HttpClient(authState, () => {
+    // CAD HTTP client — a 401 means the server has revoked the session.
+    const cadHttpClient = new HttpClient(authState, () => {
         authState.forceLogout('forced-logout');
+    });
+
+    // GIS HTTP client — a 401 means the GIS server rejected our token due to a
+    // server-side configuration error, not a revoked user session. Only GIS
+    // features are degraded; the dispatcher's session remains active.
+    const gisHttpClient = new HttpClient(authState, () => {
+        // GIS 401 does not affect the user's CAD session.
+        // OperationalStatusService will be notified here once issue #34 is implemented.
     });
 
     // Mount the AppShell AFTER initialize() so that connectedCallback fires
     // with a fully wired authState — ensuring event listeners are registered.
     const shell = document.createElement(AppShell.TAG) as AppShell;
-    shell.initialize(authState, sessionManager, windowType, httpClient, config.gisServerUrl, config.cadServerUrl);
+    shell.initialize(authState, sessionManager, windowType, cadHttpClient, gisHttpClient, config.gisServerUrl, config.cadServerUrl);
     appEl.appendChild(shell);
 
     // Expose authState for Playwright E2E tests in development mode
     if (import.meta.env.DEV) {
         (window as Window & { __authState?: AuthState; __httpClient?: HttpClient }).__authState = authState;
-        (window as Window & { __authState?: AuthState; __httpClient?: HttpClient }).__httpClient = httpClient;
+        (window as Window & { __authState?: AuthState; __httpClient?: HttpClient }).__httpClient = cadHttpClient;
     }
 
     // Start the OIDC boot sequence. This may redirect the browser.
