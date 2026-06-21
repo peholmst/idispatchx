@@ -268,7 +268,10 @@ export class CallDetailForm extends HTMLElement {
 
         this.#outcomeSelect.addEventListener('change', () => {
             const outcome = (this.#outcomeSelect.value as CallOutcome) || null;
-            this.#scheduleSave({ outcome });
+            // Clearing the outcome is not supported — only schedule a save when a value is selected.
+            if (outcome !== null) {
+                this.#scheduleSave({ outcome });
+            }
             this.#toggleRationaleField(outcome);
         });
 
