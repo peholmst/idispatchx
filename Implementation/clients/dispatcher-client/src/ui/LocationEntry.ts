@@ -439,7 +439,7 @@ export class LocationEntry extends HTMLElement {
         if (hasNumber && hasCross) return null; // conflicting input
 
         const muniName = this.#municipalityInput.value.trim();
-        const municipality: Municipality = this.#municipality ?? { code: '', name: { fi: muniName } };
+        const municipality: Municipality = this.#municipality ?? { code: null, name: { fi: muniName } };
         const coordinates = this.#parseCoordinates();
         const details = this.#detailsTextarea.value.trim() || null;
         const locationName = this.#locationNameInput.value.trim();
