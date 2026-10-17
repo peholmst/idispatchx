@@ -1,0 +1,8 @@
+[package]
+name = "idispatchx-ptt-server"
+version = "1.0.0"
+edition = "2024"
+description = "PTT communication server for iDispatchX"
+license = "AGPL-3.0-or-later"
+
+[dependencies]

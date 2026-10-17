@@ -22,5 +22,8 @@
         "callsigns"
     ],
     "java.compile.nullAnalysis.mode": "disabled",
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "rust-analyzer.linkedProjects": [
+        "./Implementation/servers/ptt-server/Cargo.toml"
+    ]
 }
