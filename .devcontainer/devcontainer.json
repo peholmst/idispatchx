@@ -30,7 +30,6 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "anthropic.claude-code",
                 "jebbs.plantuml",
                 "streetsidesoftware.code-spell-checker",
                 "fill-labs.dependi"
@@ -54,12 +53,8 @@
     },
     "remoteUser": "vscode",
     "mounts": [
-        "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
         "source=m2-${devcontainerId},target=/home/vscode/.m2,type=volume"
     ],
-    "containerEnv": {
-        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
-    },
     "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
     "workspaceFolder": "/workspace",
     "postCreateCommand": "/workspace/.devcontainer/install_android_cmdline_tools.sh",
