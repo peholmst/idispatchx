@@ -174,7 +174,16 @@ export interface IncidentLogEntryAddedPayload {
     logEntry: IncidentLogEntry;
 }
 
+export interface SystemStatus {
+    cadArchiveAvailable: boolean;
+}
+
 export interface ConnectedPayload {
     serverId?: string;
     serverTime: string;
+    systemStatus?: SystemStatus;
+}
+
+export interface SystemStatusChangedPayload {
+    cadArchiveAvailable: boolean;
 }

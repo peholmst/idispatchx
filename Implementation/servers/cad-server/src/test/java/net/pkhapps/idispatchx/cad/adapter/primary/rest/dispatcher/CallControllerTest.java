@@ -504,7 +504,7 @@ class CallControllerTest {
         var walPort = new RecordingWalPort();
         var lockManager = new EntityLockManager();
         ClockPort clock = () -> FIXED_TIME;
-        ArchivePort archivePort = id -> {};
+        ArchivePort archivePort = new net.pkhapps.idispatchx.cad.port.secondary.archive.NoOpArchivePort();
         var dispatcher = DispatcherFactory.create(entry -> {}, clock, Duration.ofMinutes(5));
         var callRepo = new InMemoryCallRepository();
         var incidentRepo = new InMemoryIncidentRepository();

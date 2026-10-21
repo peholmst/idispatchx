@@ -2,6 +2,7 @@
 
 import STYLES from './WindowChrome.css?inline';
 import { t } from '../i18n/index.ts';
+import type { OperationalStatusService, OperationalStatus } from '../cad/OperationalStatusService.ts';
 
 const HELSINKI_TZ = 'Europe/Helsinki';
 
@@ -115,15 +116,19 @@ export class WindowHeader extends HTMLElement {
  * `<idispatch-window-footer>` Web Component.
  *
  * Displays the current username on the left and the normal/degraded mode
- * indicator on the right. Set `username` before or after connection.
+ * indicator on the right. Set `username` and `operationalStatusService`
+ * before or after connection.
  */
 export class WindowFooter extends HTMLElement {
     static readonly TAG = 'idispatch-window-footer' as const;
 
     #shadow: ShadowRoot;
     #usernameEl: HTMLSpanElement | null = null;
-    // Buffers the value set before connectedCallback creates the element
+    #modeDot: HTMLSpanElement | null = null;
+    #modeText: HTMLSpanElement | null = null;
+    // Buffers values set before connectedCallback creates the elements
     #pendingUsername = '';
+    #statusService: OperationalStatusService | null = null;
 
     constructor() {
         super();
@@ -134,6 +139,14 @@ export class WindowFooter extends HTMLElement {
         this.#pendingUsername = value;
         if (this.#usernameEl) {
             this.#usernameEl.textContent = value;
+        }
+    }
+
+    set operationalStatusService(service: OperationalStatusService) {
+        this.#statusService = service;
+        if (this.#modeText) {
+            this.#applyStatus(service.getStatus());
+            service.onStatusChanged(status => this.#applyStatus(status));
         }
     }
 
@@ -150,16 +163,41 @@ export class WindowFooter extends HTMLElement {
         const modeEl = document.createElement('span');
         modeEl.className = 'footer-right';
 
-        const modeDot = document.createElement('span');
-        modeDot.className = 'mode-dot';
-        modeDot.setAttribute('aria-hidden', 'true');
+        this.#modeDot = document.createElement('span');
+        this.#modeDot.className = 'mode-dot';
+        this.#modeDot.setAttribute('aria-hidden', 'true');
 
-        const modeText = document.createElement('span');
-        // Placeholder — actual degraded-mode detection is added in a later iteration
-        modeText.textContent = t('footer.normalMode');
+        this.#modeText = document.createElement('span');
 
-        modeEl.append(modeDot, modeText);
-
+        modeEl.append(this.#modeDot, this.#modeText);
         this.#shadow.append(style, this.#usernameEl, modeEl);
+
+        if (this.#statusService) {
+            this.#applyStatus(this.#statusService.getStatus());
+            this.#statusService.onStatusChanged(status => this.#applyStatus(status));
+        } else {
+            modeEl.hidden = true;
+        }
+    }
+
+    #applyStatus(status: OperationalStatus): void {
+        if (!this.#modeText || !this.#modeDot) return;
+
+        if (!status.cadServerConnected) {
+            this.#modeText.textContent = t('footer.degradedMode.noServer');
+            this.#modeDot.classList.add('mode-dot--degraded');
+        } else if (!status.cadArchiveAvailable && !status.gisServerAvailable) {
+            this.#modeText.textContent = t('footer.degradedMode');
+            this.#modeDot.classList.add('mode-dot--degraded');
+        } else if (!status.cadArchiveAvailable) {
+            this.#modeText.textContent = t('footer.degradedMode.noArchive');
+            this.#modeDot.classList.add('mode-dot--degraded');
+        } else if (!status.gisServerAvailable) {
+            this.#modeText.textContent = t('footer.degradedMode.noGis');
+            this.#modeDot.classList.add('mode-dot--degraded');
+        } else {
+            this.#modeText.textContent = t('footer.normalMode');
+            this.#modeDot.classList.remove('mode-dot--degraded');
+        }
     }
 }

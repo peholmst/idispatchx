@@ -2,7 +2,7 @@ import STYLES from './CallDetailForm.css?inline';
 import { LocationEntry, LocationChangedEvent } from './LocationEntry.ts';
 import type { CadRestClient, UpdateCallParams } from '../cad/CadRestClient.ts';
 import type { DispatcherWebSocketClient } from '../cad/DispatcherWebSocketClient.ts';
-import type { GeocodingClient } from '../gis/GeocodingClient.ts';
+import type { Geocoder } from '../gis/GeocodingClient.ts';
 import type { Call, CallSummary, CallOutcome, Coordinates } from '../cad/types.ts';
 import { t } from '../i18n/index.ts';
 
@@ -32,7 +32,7 @@ export class CallDetailForm extends HTMLElement {
     #shadow: ShadowRoot;
     #cadRest: CadRestClient | null = null;
     #wsClient: DispatcherWebSocketClient | null = null;
-    #geocodingClient: GeocodingClient | null = null;
+    #geocodingClient: Geocoder | null = null;
     #currentCall: Call | null = null;
     #autosaveTimer: ReturnType<typeof setTimeout> | null = null;
     #pendingUpdate: Record<string, unknown> = {};
@@ -64,7 +64,7 @@ export class CallDetailForm extends HTMLElement {
     initialize(
         cadRest: CadRestClient,
         wsClient: DispatcherWebSocketClient,
-        geocodingClient: GeocodingClient,
+        geocodingClient: Geocoder,
     ): void {
         this.#cadRest = cadRest;
         this.#wsClient = wsClient;

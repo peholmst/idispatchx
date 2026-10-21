@@ -22,6 +22,10 @@ export interface GeocodeResponse {
     resultCount: number;
 }
 
+export interface Geocoder {
+    search(q: string, limit?: number): Promise<GeocodeResponse>;
+}
+
 export class GeocodingTimeoutError extends Error {
     constructor() {
         super('GIS Server request timed out');

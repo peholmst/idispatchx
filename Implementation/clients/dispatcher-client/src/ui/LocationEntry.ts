@@ -1,7 +1,7 @@
 import STYLES from './LocationEntry.css?inline';
 import { CoordInput } from './CoordInput.ts';
 import { parseCoordinates, validateFinlandBounds, formatCoordinates } from '../geo/coordinates.ts';
-import type { GeocodingClient, GeocodeResult } from '../gis/GeocodingClient.ts';
+import type { Geocoder, GeocodeResult } from '../gis/GeocodingClient.ts';
 import type {
     Location,
     Municipality,
@@ -39,7 +39,7 @@ export class LocationEntry extends HTMLElement {
     static readonly TAG = 'idispatch-location-entry' as const;
 
     #shadow: ShadowRoot;
-    #geocodingClient: GeocodingClient | null = null;
+    #geocodingClient: Geocoder | null = null;
 
     #municipalityInput!: HTMLInputElement;
     #locationNameInput!: HTMLInputElement;
@@ -65,7 +65,7 @@ export class LocationEntry extends HTMLElement {
         this.#shadow = this.attachShadow({ mode: 'open' });
     }
 
-    initialize(geocodingClient: GeocodingClient): void {
+    initialize(geocodingClient: Geocoder): void {
         this.#geocodingClient = geocodingClient;
     }
 

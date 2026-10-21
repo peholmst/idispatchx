@@ -137,3 +137,7 @@
     background: #4caf50;
     flex-shrink: 0;
 }
+
+.mode-dot--degraded {
+    background: #f48771;
+}
