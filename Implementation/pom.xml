@@ -30,7 +30,7 @@
         <javalin-openapi.version>7.2.2</javalin-openapi.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.27</logback.version>
-        <jackson3.version>3.2.0</jackson3.version>
+        <jackson3.version>3.2.1</jackson3.version>
         <nimbus-jose-jwt.version>10.7</nimbus-jose-jwt.version>
         <jooq.version>3.20.11</jooq.version>
         <flyway.version>12.0.0</flyway.version>
